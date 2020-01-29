@@ -78,6 +78,7 @@ conda install pyqt=5.9.2
 conda install -c conda-forge pims
 conda install pandas
 conda install matplotlib
+conda install -c conda-forge moviepy 
 
 python setup.py install # Installing pymovscore
 ```
