@@ -1,0 +1,291 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun  1 13:11:07 2016
+
+@author: bgeurten
+"""
+
+class UserInputControl():
+    def __init__(self,animal1,animal2,movie,
+                 keyBindings = [113,119,97,115,120,121,111,112,107,108,109,44,
+                                116,117,32,13,8,50,49,276,275,274,273]):
+        self.animal1      = animal1
+        self.animal2      = animal2
+        self.movie        = movie
+        self.keyBindings  = keyBindings
+#                        0                   1                           2                       3
+#        variables= [self.animal1,self.animal1.behav1.status,self.animal1.behav2.status,self.animal1.behav3.status,
+#                        4                   5                           6                       7
+#                    self.animal2,self.animal2.behav1.status,self.animal2.behav2.status,self.animal2.behav3.status,
+#                        8        9          10        11
+#                    mediafps,runMov,movBackWards,self.movie];
+                    
+        self.keySwitch = {keyBindings[0]  :lambda y: self.behavButtonReac('Behav1', 'Idle1', y[1],y[0],1),
+                          keyBindings[1]  :lambda y: self.behavButtonReac('Behav2', 'Idle1', y[1],y[0],2),
+                          keyBindings[2]  :lambda y: self.behavButtonReac('Behav3', 'Idle2', y[2],y[0],1),
+                          keyBindings[3]  :lambda y: self.behavButtonReac('Behav4', 'Idle2', y[2],y[0],2),
+                          keyBindings[4]  :lambda y: self.behavButtonReac('Behav5', 'Idle3', y[3],y[0],1),
+                          keyBindings[5]  :lambda y: self.behavButtonReac('Behav6', 'Idle3', y[3],y[0],2),
+                          keyBindings[6]  :lambda y: self.behavButtonReac('Behav1', 'Idle1', y[5],y[4],1),
+                          keyBindings[7]  :lambda y: self.behavButtonReac('Behav2', 'Idle1', y[5],y[4],2),
+                          keyBindings[8]  :lambda y: self.behavButtonReac('Behav3', 'Idle2', y[6],y[4],1),
+                          keyBindings[9]  :lambda y: self.behavButtonReac('Behav4', 'Idle2', y[6],y[4],2),
+                          keyBindings[10] :lambda y: self.behavButtonReac('Behav5', 'Idle3', y[7],y[4],1),
+                          keyBindings[11] :lambda y: self.behavButtonReac('Behav6', 'Idle3', y[7],y[4],2),
+                          keyBindings[12] :lambda y: self.deleteBehav(y[0]),
+                          keyBindings[13] :lambda y: self.deleteBehav(y[4]),
+                          keyBindings[14] :lambda y: self.toggleRunMov(y[9]), # returnsValue
+                          keyBindings[15] :lambda y: self.stopToggle(y[9]),# returnsValue
+                          keyBindings[16] :lambda y: self.toggleMovieDir(y[10]),# returnsValue
+                          keyBindings[17] :lambda y: self.changeFPS(y[8],1),# returnsValue
+                          keyBindings[18] :lambda y: self.changeFPS(y[8],-1),# returnsValue
+                          keyBindings[19] :lambda y: self.changeFrameNo(-1),# returnsValue
+                          keyBindings[20] :lambda y: self.changeFrameNo(1),# returnsValue
+                          keyBindings[21] :lambda y: self.changeFrameNo(-10),# returnsValue
+                          keyBindings[22] :lambda y: self.changeFrameNo(10)}# returnsValue
+                          
+    def toggleRunMov(self,runMov):
+        return not runMov
+        
+    def stopToggle(self,runMov):
+        if (runMov == True):
+            runMov = False
+        else:
+            self.movie.frameNo = 0
+        return runMov
+        
+    def toggleMovieDir(self,movBackWards):
+        return not movBackWards
+        
+    def behavButtonReac(self,behavType,IdleType,status,animal,statType):
+        if (status !=statType):
+             animal.setBehaviour(behavType,self.movie.get_frameNo())
+        else:
+             animal.setBehaviour(IdleType,self.movie.get_frameNo())
+             
+    def deleteBehav(self,animal):        
+         status =  animal.behav1.status
+         if (status !=-1):
+              animal.setBehaviour('Del1',self.movie.get_frameNo())
+              animal.setBehaviour('Del2',self.movie.get_frameNo())
+              animal.setBehaviour('Del3',self.movie.get_frameNo())
+         else:
+              animal.setBehaviour('Idle1',self.movie.get_frameNo())
+              animal.setBehaviour('Idle2',self.movie.get_frameNo())
+              animal.setBehaviour('Idle3',self.movie.get_frameNo())
+              
+    def changeFrameNo(self,step):
+        frameNo = self.movie.get_frameNo()+step
+        self.movie.frameNo =frameNo
+        return False        
+             
+    def changeFPS(self,mediafps,step):
+        mediafps = mediafps+step
+        if (mediafps >100):
+            mediafps = 100
+        elif (mediafps < 1):
+            mediafps =1
+        return mediafps
+        
+    def checkButton(self,button,runMov):
+         '''
+         This function updates the status using the joypad event dictionary which 
+         runs the getNewStatus function.
+         Also this function logs the button press.
+                  B6                                   B7
+                  B4                                   B5
+               _=====_                               _=====_
+              / _____ \                             / _____ \
+            +.-'_____'-.---------------------------.-'_____'-.+
+           /   |     |  '.                       .'  |     |   \
+          / ___| H2+ |___ \                     / ___| B0  |___ \
+         / |             | ;  __           _   ; |             | ;
+         | | H1-      H1+|   |__|B8     B9|_:> | | B3       B1 | |
+         | |___       ___| ;SELECT       START ; |___       ___| ;
+         |\    | H2- |    /  _     ___      _   \    | B2  |    /|
+         | \   |_____|  .','" "', |___|  ,'" "', '.  |_____|  .' |
+         |  '-.______.-' /  A1-  \ANALOG/  A4-  \  '-._____.-'   |
+         |               |A0- A0+|------|A3- A3+|                |
+         |              /\  A1+  /      \  A4+  /\               |
+         |             /  '.___.'        '.___.'  \              |
+         |            /     B10            B11     \             |
+          \          /                              \           /
+           \________/                                \_________/
+                             PS2 CONTROLLER
+         '''
+         #event call back dictionary
+         if (button=='B0'): 
+             self.behavButtonReac('Behav3', 'Idle2', self.animal2.behav2.status,self.animal2,1)
+                 
+         elif (button=='B2'):
+             self.behavButtonReac('Behav4', 'Idle2', self.animal2.behav2.status,self.animal2,2)
+                  
+         elif (button=='B3'): 
+             self.behavButtonReac('Behav5', 'Idle3', self.animal2.behav3.status,self.animal2,1)
+
+         elif (button=='B1'):
+             self.behavButtonReac('Behav6', 'Idle3', self.animal2.behav3.status,self.animal2,2)
+                  
+         elif (button=='B4'): 
+             self.behavButtonReac('Behav1', 'Idle1', self.animal1.behav1.status,self.animal1,1)
+                 
+         elif (button=='B6'):
+             self.behavButtonReac('Behav2', 'Idle1', self.animal1.behav1.status,self.animal1,2)
+             
+         elif (button=='B5'): 
+             self.behavButtonReac('Behav1', 'Idle1', self.animal2.behav1.status,self.animal2,1)
+        
+         elif (button=='B7'): 
+             self.behavButtonReac('Behav2', 'Idle1', self.animal2.behav1.status,self.animal2,2)
+                  
+         elif (button=='B8'):
+             self.deleteBehav(self.animal1) 
+             
+         elif (button=='B9'): 
+             self.deleteBehav(self.animal2)
+         
+         elif (button =='B10'):
+              runMov = not runMov       
+              
+         elif (button == 'B11'):
+             if (runMov == True):
+                 runMov = False
+             else:
+                 self.movie.frameNo = 0
+                 
+         return runMov
+         
+#    ,self.animal1.behav3.status,
+    def checkAxis(self,event,mediafps,runMov,movBackWards):
+        value = event.dict['value']
+        
+        if (event.dict['axis'] == 0):
+            if (value < -0.3):
+                movBackWards = True
+            elif (value > 0.3):
+                movBackWards = False
+
+        if (event.dict['axis'] == 1):
+            if (value < -0.3):
+                mediafps = self.changeFPS(mediafps,1)
+            elif (value > 0.3):
+                mediafps = self.changeFPS(mediafps,-1)
+            else:
+                mediafps = self.changeFPS(mediafps,0)
+                
+            
+            
+        if (event.dict['axis'] == 3):
+            if (value < -0.3):
+                runMov = self.changeFrameNo(-1)
+            elif (value > 0.3):
+                runMov = self.changeFrameNo(1)
+            else:
+                runMov = self.changeFrameNo(0)
+        
+        
+        if (event.dict['axis'] == 4):
+            if (value < +0.3):
+                runMov = self.changeFrameNo(-10)
+            elif (value > -0.3):
+                runMov = self.changeFrameNo(10)
+            else:                
+                runMov = self.changeFrameNo(0)
+                
+        
+        return mediafps,runMov,movBackWards
+        
+
+                  
+    def checkHat(self,event):
+
+        value = event.dict['value']
+        
+        if ((value[0] == 0) and (value[1] == 1)):
+             self.behavButtonReac('Behav3', 'Idle2', self.animal1.behav2.status,self.animal1,1)
+                  
+        elif ((value[0] == 0) and (value[1] == -1)):
+             self.behavButtonReac('Behav4', 'Idle2', self.animal1.behav2.status,self.animal1,2)
+                  
+        elif ((value[0] == 1) and (value[1] == 0)):
+             self.behavButtonReac('Behav6', 'Idle3', self.animal1.behav3.status,self.animal1,2)
+                  
+        elif ((value[0] == -1) and (value[1] == 0)):
+             self.behavButtonReac('Behav5', 'Idle3', self.animal1.behav3.status,self.animal1,1)
+             
+    def checkKeys(self,event,mediafps,runMov,movBackWards):
+        
+        button = event.key
+        
+        if (button==113): 
+             self.behavButtonReac('Behav1', 'Idle1', self.animal1.behav1.status,self.animal1,1)
+                 
+        elif (button==119):
+             self.behavButtonReac('Behav2', 'Idle1', self.animal1.behav1.status,self.animal1,2)
+                
+        elif (button==97):
+             self.behavButtonReac('Behav3', 'Idle2', self.animal1.behav2.status,self.animal1,1)
+                  
+        elif (button==115):
+             self.behavButtonReac('Behav4', 'Idle2', self.animal1.behav2.status,self.animal1,2)
+                  
+        elif (button==120):
+             self.behavButtonReac('Behav5', 'Idle3', self.animal1.behav3.status,self.animal1,1)
+             
+        elif (button==121):
+             self.behavButtonReac('Behav6', 'Idle3', self.animal1.behav3.status,self.animal1,2)
+                  
+             
+        elif (button==111): 
+             self.behavButtonReac('Behav1', 'Idle1', self.animal2.behav1.status,self.animal2,1)
+        
+        elif (button==112): 
+             self.behavButtonReac('Behav2', 'Idle1', self.animal2.behav1.status,self.animal2,2)
+             
+        elif (button==107): 
+             self.behavButtonReac('Behav3', 'Idle2', self.animal2.behav2.status,self.animal2,1)
+                 
+        elif (button==108):
+             self.behavButtonReac('Behav4', 'Idle2', self.animal2.behav2.status,self.animal2,2)
+                  
+        elif (button==109): 
+             self.behavButtonReac('Behav5', 'Idle3', self.animal2.behav3.status,self.animal2,1)
+
+        elif (button==44):
+             self.behavButtonReac('Behav6', 'Idle3', self.animal2.behav3.status,self.animal2,2)
+                  
+    
+        elif (button==116):
+             self.deleteBehav(self.animal1) 
+             
+        elif (button==117): 
+             self.deleteBehav(self.animal2)
+         
+        elif (button ==32):      
+              runMov = self.toggleRunMov(runMov)
+              
+        elif (button == 13):
+             runMov = self.stopToggle(runMov)
+                 
+        elif (button ==8):
+              movBackWards = self.toggleMovieDir(movBackWards)          
+             
+        elif (button ==50):
+             mediafps = self.changeFPS(mediafps,1)
+            
+        elif (button ==49):
+             mediafps = self.changeFPS(mediafps,-1)
+            
+        elif (button ==276):
+             runMov = self.changeFrameNo(-1)
+            
+        elif (button ==275):
+             runMov = self.changeFrameNo(1)
+            
+        elif (button ==274):
+             runMov = self.changeFrameNo(-10)
+         
+        elif (button ==273):
+             runMov = self.changeFrameNo(10)
+                
+        return mediafps,runMov,movBackWards     

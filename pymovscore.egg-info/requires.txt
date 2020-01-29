@@ -1,0 +1,10 @@
+pillow
+pygame
+numpy
+matplotlib
+pims
+av
+pandas
+scipy
+dill
+xlsxwriter

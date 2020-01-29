@@ -1,0 +1,40 @@
+[
+    [
+        "animal_1", 
+        [
+            {
+                "color": "#ff55ff", 
+                "compatible": [], 
+                "name": "agression", 
+                "icon": ""
+            }, 
+            {
+                "color": "#916cff", 
+                "compatible": [], 
+                "name": "mating", 
+                "icon": ""
+            }
+        ]
+    ], 
+    [
+        "animal_2", 
+        [
+            {
+                "color": "#000000", 
+                "compatible": [], 
+                "name": "unnamed", 
+                "icon": ""
+            }, 
+            {
+                "color": "#000000", 
+                "compatible": [], 
+                "name": "unnamed", 
+                "icon": ""
+            }
+        ]
+    ], 
+    [
+        "animal_3", 
+        []
+    ]
+]
