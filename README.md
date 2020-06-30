@@ -67,9 +67,10 @@ bash ~/Downloads/Anaconda2-4.0.0-Linux-x86_64.sh
 
 Make conda environment
 ```
-conda create --name movScore python=3.5
+
+conda create --name movScore python=3.7
 conda activate movScore
-conda install -c CogSci pygame=1.9.2a0
+python -m pip install pygame
 conda install -c anaconda pillow
 conda install -c conda-forge av
 conda install opencv
