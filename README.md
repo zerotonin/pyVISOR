@@ -47,10 +47,11 @@ sudo apt install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-d
 sudo apt install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo apt-get install libsdl-ttf2.0-0
 ```
-
-
-Than download and install https://www.riverbankcomputing.com/software/pyqt/download5
-
+PyQt Install
+```
+sudo apt install python3-pip
+pip3 install PyQt5
+```
 Anaconda is a package that includes all sub packages we need except opencv, pyav and pims, which can be installed easily:
 
 Download from https://www.continuum.io/downloads
