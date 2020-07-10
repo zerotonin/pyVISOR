@@ -33,20 +33,11 @@ You might need an Xbox One Gamepad driver:
 https://github.com/paroj/xpad
 
 ```
-sudo git clone https://github.com/paroj/xpad.git /usr/src/xpad-0.4
-sudo dkms install -m xpad -v 0.4
-sudo apt install -y libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
+    $ sudo apt-get install xboxdrv
+    $ sudo systemctl enable xboxdrv.service
+    $ sudo systemctl start xboxdrv.service
 ```
-OpenCV installation:
 
-https://docs.opencv.org/trunk/d7/d9f/tutorial_linux_install.html
-
-```
-sudo apt install build-essential
-sudo apt install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
-sudo apt install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
-sudo apt-get install libsdl-ttf2.0-0
-```
 
 Anaconda is a package that includes all sub packages we need except opencv, pyav and pims, which can be installed easily:
 
@@ -54,21 +45,20 @@ Download from https://www.continuum.io/downloads
 
 Than install everything through Anaconda
 ```
-sudo apt install qt5-default
-bash ~/Downloads/Anaconda2-4.0.0-Linux-x86_64.sh 
-
-???pip install https://github.com/soft-matter/pims/archive/master.zip
-
+    $ conda env create -f visor.yaml
+    $ conda activate visor
+    $ conda install -c conda-forge av
+    $ python -m pip install pygame
+    $ conda install -c conda-forge moviepy S
+    $ python setup.py install # Installing pymovscore
 ```
 
-Make conda environment
+### Troubleshouting
+
+after installation resource json and del.png are not found copy those files resources to /path/to/ANACONDA/env/visor/lib/python/sitepackeges/pymovscore
+
 ```
-
-conda env create -f visor.yaml
-conda activate visor
-conda install -c conda-forge av
-python -m pip install pygame
-conda install -c conda-forge moviepy 
-
-python setup.py install # Installing pymovscore
+    $ cp -rvf /visor/resources....
+    $ cp -rvf json
+    $ cp -rvf pictures Gui
 ```
