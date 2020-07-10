@@ -47,11 +47,7 @@ sudo apt install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-d
 sudo apt install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
 sudo apt-get install libsdl-ttf2.0-0
 ```
-PyQt Install
-```
-sudo apt install python3-pip
-pip3 install PyQt5
-```
+
 Anaconda is a package that includes all sub packages we need except opencv, pyav and pims, which can be installed easily:
 
 Download from https://www.continuum.io/downloads
@@ -68,18 +64,10 @@ bash ~/Downloads/Anaconda2-4.0.0-Linux-x86_64.sh
 Make conda environment
 ```
 
-conda create --name movScore python=3.7
-conda activate movScore
-python -m pip install pygame
-conda install -c anaconda pillow
+conda env create -f visor.yaml
+conda activate visor
 conda install -c conda-forge av
-conda install opencv
-conda install xlsxwriter
-conda install qt
-conda install pyqt=5.9.2
-conda install -c conda-forge pims
-conda install pandas
-conda install matplotlib
+python -m pip install pygame
 conda install -c conda-forge moviepy 
 
 python setup.py install # Installing pymovscore
