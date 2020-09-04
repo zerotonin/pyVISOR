@@ -4,14 +4,14 @@
 @date 15.06.16
 """
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QRect
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication)
 
-import os, pickle
+import os
+import pickle
 
 from .tab_behaviours.tab_behaviours import TabBehaviours
-from .tab_buttons import TabButtons
 from .tab_analysis import TabAnalysis
 from .tab_results import TabResults
 from .tab_buttons2 import TabSimpleButtons
@@ -28,7 +28,7 @@ class MovScoreGUI(QWidget):
         super(MovScoreGUI, self).__init__()
 
         try:
-            with open(HOME + "/.pymovscore/guidefaults_movscoregui.pkl", 'rb') as f:
+            with open(HOME + "/.pyvisor/guidefaults_movscoregui.pkl", 'rb') as f:
                 self.values = pickle.load(f)
         except:
             try:
@@ -39,7 +39,6 @@ class MovScoreGUI(QWidget):
                 self.values['display'] = dict()
                 self.values['display']['geometry'] = QRect(0,0,640,480)
 
-
         self.initUI()
 
     def initUI(self):
@@ -49,7 +48,7 @@ class MovScoreGUI(QWidget):
         self.setGeometry(self.values['display']['geometry'])
         self.move(self.values['display']['geometry'].topLeft())
         # set title bar
-        self.setWindowTitle('PyMovScore')
+        self.setWindowTitle('Pyvisor')
         self.setWindowIcon(QIcon(HERE + '/../resources/icons/game/MES_trans.png'))
         vbox = QVBoxLayout()
         self.setLayout(vbox)
@@ -78,6 +77,7 @@ class MovScoreGUI(QWidget):
 
     def get_assignmens(self):
         return self.shortHandButton.getAssignments()
+    
     def get_UIC_layout(self):
         return self.shortHandButton.getSelectedLayout()
             
@@ -91,7 +91,7 @@ class MovScoreGUI(QWidget):
         Pops up a dialog-window when the user wants to close the GUI's window.
         """
         self.values['display']['geometry'] = self.frameGeometry()
-        with open(HOME + '/.pymovscore/guidefaults_movscoregui.pkl', 'wb') as f:
+        with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
         
         ## list of close events of child processes/widgets to call
@@ -99,24 +99,24 @@ class MovScoreGUI(QWidget):
         self.tab_list[1].close_event()  # tab_list[1] is a TabButtons object        
 
         reply = QMessageBox.question(self,
-                                           'Message',
-                                           "Do you really want to quit? \n(Saved everything etc.?)",
-                                           QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                     'Message',
+                                     "Do you really want to quit? \n(Saved everything etc.?)",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             event.accept()
         else:
             event.ignore()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     import sys
-    app=QApplication(sys.argv)
-    gui=MovScoreGUI()
+    app = QApplication(sys.argv)
+    gui = MovScoreGUI()
     gui.show()
 
     import os
-    if not os.path.isdir(HOME+'/.pymovscore'):
-        os.makedirs(HOME+'/.pymovscore')
+    if not os.path.isdir(HOME+'/.pyvisor'):
+        os.makedirs(HOME+'/.pyvisor')
 
     sys.exit(app.exec_())

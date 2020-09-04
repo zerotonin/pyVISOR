@@ -1,13 +1,11 @@
-
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QTabWidget, QWidget
 
 import os
-HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 import json
 from .single_animal_tab import SingleAnimalTab
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+HOME = os.path.expanduser("~")
 
 class AnimalTabWidget(QTabWidget):
 
@@ -15,7 +13,7 @@ class AnimalTabWidget(QTabWidget):
         super(AnimalTabWidget, self).__init__(parent)
         self.parent = parent  # parent should be TabBehaviours object
         try:
-            with open(HOME + "/.pymovscore/guidefaults_animaltab.json", 'r') as f:
+            with open(HOME + "/.pyvisor/guidefaults_animaltab.json", 'r') as f:
                 self.values = json.load(f)
         except:
             with open(HERE + "/../guidefaults_animaltab.json", 'r') as f:
@@ -96,5 +94,5 @@ class AnimalTabWidget(QTabWidget):
         self.tabs_.append(tab)
 
     def close_event(self):
-        with open(HOME + '/.pymovscore/guidefaults_animaltab.json', 'w') as f:
+        with open(HOME + '/.pyvisor/guidefaults_animaltab.json', 'w') as f:
             json.dump(self.values, f, indent=4)

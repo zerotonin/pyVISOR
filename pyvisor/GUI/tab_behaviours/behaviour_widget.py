@@ -69,7 +69,7 @@ class BehaviourWidget(QFrame):
                            int(color_str[5: 7], 16))
             tmp_icon_str = write_tmp_icon(self.current_icon,
                                           color_tuple)
-            self.btn_icon.setIcon(QIcon(HOME + "/.pymovscore/.tmp_icons/" + tmp_icon_str))        
+            self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))        
         self.btn_icon.clicked.connect(self.set_icon_via_gallery)
         self.grid.addWidget(self.btn_icon,
                             2, 0)        
@@ -122,7 +122,7 @@ class BehaviourWidget(QFrame):
         self.param_dict['icon'] = self.current_icon        
         tmp_icon_str = write_tmp_icon(self.current_icon,
                                       color_tuple)
-        self.btn_icon.setIcon(QIcon(HOME + "/.pymovscore/.tmp_icons/" + tmp_icon_str))
+        self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
 
     def set_color(self):
         color = QColorDialog.getColor()
@@ -134,7 +134,7 @@ class BehaviourWidget(QFrame):
                        int(color_str[5: 7], 16))
         tmp_icon_str = write_tmp_icon(self.current_icon,
                                       color_tuple)
-        self.btn_icon.setIcon(QIcon(HOME + "/.pymovscore/.tmp_icons/" + tmp_icon_str))
+        self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
 
     def rename(self):
         self.name_edit = QLineEdit(self.btn_name.text())

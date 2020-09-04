@@ -1,14 +1,13 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QSize
+#from PyQt5.QtGui import 
+from PyQt5.QtWidgets import QScrollArea, QWidget, QGridLayout, QButtonGroup
 import glob
 import os
-HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
-
 from .icon_button import IconButton
 from ... import icon
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+HOME = os.path.expanduser("~")
 
 class IconGallery(QScrollArea):
     
@@ -42,7 +41,7 @@ class IconGallery(QScrollArea):
             tmp_str = icon.write_tmp_icon(icon_paths[i], self.bg_color)
             self.ICONS_TO_DELETE.append(tmp_str)
             new_icon_button = IconButton(self,
-                                         HOME + '/.pymovscore/.tmp_icons/' + tmp_str,
+                                         HOME + '/.pyvisor/.tmp_icons/' + tmp_str,
                                          icon_paths[i])
             new_icon_button.setIconSize(QSize(*self.icon_size))                        
             grid.addWidget(new_icon_button, row, column)

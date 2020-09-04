@@ -1,12 +1,15 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
+                             QFileDialog, QPushButton, QMessageBox, QComboBox, QInputDialog)
 
-import numpy as np
-import pygame, pickle
+import pygame
+import pickle
 from pygame.locals import *
-from . import styles, behavBinding
-import os, copy, collections
+from . import behavBinding
+import os
+import copy
+import collections
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png", 
@@ -119,7 +122,7 @@ class TabSimpleButtons(QWidget):
         #set signals and slots
         self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
         try:
-            self.loadPreset(0,filename = HOME + '/.pymovscore/guidefaults_buttons.pkl',warningFlag=False)
+            self.loadPreset(0,filename = HOME + '/.pyvisor/guidefaults_buttons.pkl',warningFlag=False)
         except:
             print('No preset for button bindings found')
     def makeLoadSavePreset(self):
@@ -169,7 +172,9 @@ class TabSimpleButtons(QWidget):
             if warningFlag:
             #the input device was not found throw warning
                 if goOn == 'InputDeviceNotFound':
-                    msg = 'Tried to assign buttons for ' + buttonBindingSaveDict['selected_device']+'.\n Please connect this device to the computer and restart the program!'
+                    msg = 'Tried to assign buttons for '
+                    msg += buttonBindingSaveDict['selected_device'] 
+                    msg += '.\n Please connect this device to the computer and restart the program!'
                     QMessageBox.warning(self,'Wrong Input device',msg)
                 # there are too many behaviours ask if we shopuld still proceed
                 else:
@@ -201,7 +206,6 @@ class TabSimpleButtons(QWidget):
                         buttonBindingSaveDict['behavAssignment'] = bAs
                         buttonBindingSaveDict['keys']            = kAs
                         self.setButtonPreset(buttonBindingSaveDict)
-                        
 
     def setButtonPreset(self,buttonBindingSaveDict):
         self.selected_device = buttonBindingSaveDict['selected_device'] 
@@ -256,12 +260,12 @@ class TabSimpleButtons(QWidget):
                     
                 if goOn == 'ButtonMissing':
                     QMessageBox.warning(self, 'Key Assignment failed!',
-                                                    errorMsg + " is not assigned to a key / button",
-                                                    QMessageBox.Ok)
+                                        errorMsg + " is not assigned to a key / button",
+                                        QMessageBox.Ok)
                 else:
                     QMessageBox.warning(self, 'Behaviours Not Synchronized!',
-                                                    "There is an internal problem with " +errorMsg[0]+"/"+errorMsg[1],
-                                                    QMessageBox.Ok)
+                                        "There is an internal problem with " + errorMsg[0]+"/" + errorMsg[1],
+                                        QMessageBox.Ok)
 
         
     def makeJoyStickInfo(self):
@@ -357,7 +361,6 @@ class TabSimpleButtons(QWidget):
         #return layout
         return hboxTemp
         
-
     def makeDeviceFeatureInfo(self,devFeature,number,animal,behaviour):
         hboxTemp = QHBoxLayout()
         deviceText = devFeature + ' ' + str(number)
@@ -391,6 +394,7 @@ class TabSimpleButtons(QWidget):
         self.hboxDeviceChoice.addWidget(self.lbl_input_device)
         self.hboxDeviceChoice.addWidget(self.combo_input_device)
         self.hboxDeviceChoice.addStretch()
+        
     def makeMovieInfoBox(self):
         # top label
         movieBox = QVBoxLayout()
@@ -420,14 +424,13 @@ class TabSimpleButtons(QWidget):
                 else:
                     buttonLabel.setStyleSheet('color: #ffffff') 
 
-
-
                 tempBox.addWidget(behavLabel)
                 tempBox.addWidget(btn_setUIC)
                 tempBox.addWidget(buttonLabel)
                 movieBox.addLayout(tempBox)
 
         return movieBox
+    
     def makeBehaviourSummary(self):
         self.clearLayout(self.hboxConciseBehav)
         # ------------------------
@@ -453,7 +456,6 @@ class TabSimpleButtons(QWidget):
         self.hboxConciseBehav.addStretch()
 
         self.makeJoyStickInfo()
-    
 
     def makeBehavInfoBox(self,animalNo,animalName,behavDict):
         # top label
@@ -487,10 +489,8 @@ class TabSimpleButtons(QWidget):
             else:
                 buttonLabel.setStyleSheet('color: #ffffff') 
 
-            
-
             tempBox.addWidget(behavLabel)
-            if binding.iconPos is not 'None':
+            if binding.iconPos != 'None':
                 imageLabel =  QLabel() 
                 pixmap =  QPixmap(binding.iconPos)
                 pixmap = pixmap.scaledToWidth(20)
@@ -553,8 +553,6 @@ class TabSimpleButtons(QWidget):
             elif child.layout() is not None:
                 self.clearLayout(child.layout())
  
-    
-    
     def assignBehav(self,buttonBinding):
         # print self.selected_device, self.deviceLayout
         goOn = False
@@ -562,15 +560,15 @@ class TabSimpleButtons(QWidget):
         # check if device was selected
         if (self.selected_device == ""):
             QMessageBox.warning(self, 'Set device first!',
-                                            "You need to choose an input device first",
-                                            QMessageBox.Ok)
+                                "You need to choose an input device first",
+                                QMessageBox.Ok)
             goOn = False  
         else:
             #check if layout was selected
             if (self.deviceLayout == ""):
                 QMessageBox.warning(self, 'Set layout first!',
-                                            "You need to choose an input device layout first",
-                                            QMessageBox.Ok)  
+                                    "You need to choose an input device layout first",
+                                    QMessageBox.Ok)  
                 goOn = False
 
         # Everything was setup correctly 
@@ -902,7 +900,7 @@ class TabSimpleButtons(QWidget):
     def close_event(self):        
         # save stuff for next run
         pass
-        self.savePreset(0,filename = HOME + '/.pymovscore/guidefaults_buttons.pkl',warningFlag=False)
+        self.savePreset(0,filename = HOME + '/.pyvisor/guidefaults_buttons.pkl',warningFlag=False)
     def resizeEvent(self, event):
         self.background_image.resize(event.size())   
     def getAssignments(self):

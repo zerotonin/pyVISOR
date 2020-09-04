@@ -1,9 +1,8 @@
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QApplication
 import os
-HOME = os.path.expanduser("~")
 import glob
-from pymovscore.GUI.main_gui import MovScoreGUI
+from pyvisor.GUI.main_gui import MovScoreGUI
+HOME = os.path.expanduser("~")
 
 
 def delete_files_from_folder(folder_path):
@@ -16,7 +15,7 @@ def delete_files_from_folder(folder_path):
 
         
 def empty_tmp_icon_folder():
-    delete_files_from_folder(HOME + '/.pymovscore/.tmp_icons')
+    delete_files_from_folder(HOME + '/.pyvisor/.tmp_icons')
 
         
 def main():
@@ -26,10 +25,10 @@ def main():
     gui.show()
 
     import os
-    if not os.path.isdir(HOME + '/.pymovscore'):
-        os.makedirs(HOME + '/.pymovscore')
-    if not os.path.isdir(HOME + '/.pymovscore/.tmp_icons'):
-        os.makedirs(HOME + '/.pymovscore/.tmp_icons')
+    if not os.path.isdir(HOME + '/.pyvisor'):
+        os.makedirs(HOME + '/.pyvisor')
+    if not os.path.isdir(HOME + '/.pyvisor/.tmp_icons'):
+        os.makedirs(HOME + '/.pyvisor/.tmp_icons')
     code = app.exec_()
     empty_tmp_icon_folder()
     sys.exit(code)

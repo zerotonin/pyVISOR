@@ -1,11 +1,11 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-import numpy as np
-import pymovscore.icon as ic
-import pymovscore.ManualEthologyScorer as MES
-from . import styles
-import time, os, collections
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QComboBox, QLineEdit,
+                             QVBoxLayout, QHBoxLayout, QFileDialog, QInputDialog, QMessageBox)
+import pyvisor.icon as ic
+import pyvisor.ManualEthologyScorer as MES
+import os
+import collections
 try:
     import thread as _thread
 except ImportError:
@@ -17,18 +17,17 @@ HOME = os.path.expanduser("~")
 
 class TabAnalysis(QWidget):
 
-    def __init__(self,parent):
+    def __init__(self, parent):
         
         self.analysis_list = [] 
-        super(TabAnalysis,self).__init__()
+        super().__init__()
 
-        self.parent=parent
+        self.parent = parent
 
         self.init_UI()
         self.sco = MES.ManualEthologyScorer()
-    def init_UI(self):
         
-
+    def init_UI(self):
         
         # ===========================
         # background image 
@@ -44,12 +43,11 @@ class TabAnalysis(QWidget):
         self.MediaType = ''
         self.background_image.resize(self.size())
         
-        
-        self.vbox=QVBoxLayout()
+        self.vbox = QVBoxLayout()
 
-        self.hboxMov=QHBoxLayout()
-        self.hboxConciseBehav=QHBoxLayout()
-        self.hboxCommand=QHBoxLayout()
+        self.hboxMov = QHBoxLayout()
+        self.hboxConciseBehav = QHBoxLayout()
+        self.hboxCommand = QHBoxLayout()
         # Comment out the following line to see desired output.
         self.vbox.addStretch()
         self.vbox.addLayout(self.hboxConciseBehav)
@@ -57,7 +55,7 @@ class TabAnalysis(QWidget):
         self.vbox.addLayout(self.hboxCommand)
         self.vbox.addStretch()
         
-        self.labelStyle="""
+        self.labelStyle = """
         color: white;
         background-color: rgba(255, 255, 255, 125);
         margin-top: 2px;
@@ -69,6 +67,7 @@ class TabAnalysis(QWidget):
         self.setLayout(self.vbox)
 
         self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
+        
     def makeBehaviourSummary(self):
         self.clearLayout(self.hboxConciseBehav)
         # ------------------------
@@ -77,7 +76,7 @@ class TabAnalysis(QWidget):
         
         # Create step label
         self.behav_stepLabel = QLabel('Step 1 Check behaviour settings: ')
-        self.behav_stepLabel.resize(20,40)
+        self.behav_stepLabel.resize(20, 40)
         self.behav_stepLabel.setStyleSheet(self.labelStyle)
         self.hboxConciseBehav.addWidget(self.behav_stepLabel)
         # get data from other tabs
@@ -87,20 +86,23 @@ class TabAnalysis(QWidget):
         # here for loop!
         for animalI in range(len(self.animal_tabs)):     
             # Create info label
-            vbox = self.makeBehavInfoBox(animalI,self.animal_tabs[animalI].name,self.animal_tabs[animalI].behaviour_dicts,
-                                                 self.assignment[1]) # 1 is here for the behaviour assigments / zero would be keys
+            vbox = self.makeBehavInfoBox(animalI, self.animal_tabs[animalI].name,
+                                         self.animal_tabs[animalI].behaviour_dicts,
+                                         self.assignment[1]) # 1 is here for the behaviour assigments / zero would be keys
             self.hboxConciseBehav.addLayout(vbox) 
         
         movieControlBox = self.makeMovieControlInfoBox(self.assignment[1])
         self.hboxConciseBehav.addLayout(movieControlBox) 
         self.hboxConciseBehav.addStretch()
-    def clearLayout(self,layout):
+        
+    def clearLayout(self, layout):
         while layout.count():
             child = layout.takeAt(0)
             if child.widget() is not None:
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clearLayout(child.layout())
+                
     def makeMovieFileIO(self):
         # ------------------------
         #       movie widgets
@@ -108,38 +110,39 @@ class TabAnalysis(QWidget):
 
         # Create step label
         self.mov_stepLabel = QLabel('Step 2 Load Image Data: ')
-        self.mov_stepLabel.resize(60,40)
+        self.mov_stepLabel.resize(60, 40)
         self.mov_stepLabel.setStyleSheet(self.labelStyle)
         self.hboxMov.addWidget(self.mov_stepLabel)
 
         # Create info label
         self.mov_label = QLabel('Nothing loaded ...')
-        self.mov_label.resize(280,40)
+        self.mov_label.resize(280, 40)
         self.mov_label.setStyleSheet(self.labelStyle)
         
         # Create Button Movie loading
-        self.btn_movie=QPushButton('load movie')
-        argList = [['*.avi', '*.mov', '*.mp4', '*.mpg', '*.mkv'],'movie loaded: ',
-                   'failed to load movie' ,'Movie','Single']
-        self.btn_movie.clicked.connect((lambda argList: lambda :self.loadMedia(argList))(argList))
+        self.btn_movie = QPushButton('load movie')
+        argList = [['*.avi', '*.mov', '*.mp4', '*.mpg', '*.mkv'], 'movie loaded: ',
+                   'failed to load movie', 'Movie', 'Single']
+        self.btn_movie.clicked.connect((lambda argList: lambda: self.loadMedia(argList))(argList))
         self.hboxMov.addWidget(self.btn_movie)
 
         # Create Button Img Sequence loading
-        self.btn_image=QPushButton('load image sequence')
-        argList = [ ['*.jpg', '*.png', '*.gif'],'image sequence loaded: ',
-                   'failed to load image sequence: ' ,'ImageSequence','Multi']
-        self.btn_image.clicked.connect((lambda argList: lambda :self.loadMedia(argList))(argList))
+        self.btn_image = QPushButton('load image sequence')
+        argList = [ ['*.jpg', '*.png', '*.gif'], 'image sequence loaded: ',
+                    'failed to load image sequence: ', 'ImageSequence', 'Multi']
+        self.btn_image.clicked.connect((lambda argList: lambda: self.loadMedia(argList))(argList))
         self.hboxMov.addWidget(self.btn_image)
 
         # Create Button Norpix loading
-        self.btn_norpix=QPushButton('load Norpix SEQ')
-        argList = [['*.seq'],'Norpix sequence file loaded: ',
-                   'failed to load Norpix sequence file','Norpix','Single']
-        self.btn_norpix.clicked.connect((lambda argList: lambda :self.loadMedia(argList))(argList))
+        self.btn_norpix = QPushButton('load Norpix SEQ')
+        argList = [['*.seq'], 'Norpix sequence file loaded: ',
+                   'failed to load Norpix sequence file', 'Norpix', 'Single']
+        self.btn_norpix.clicked.connect((lambda argList: lambda: self.loadMedia(argList))(argList))
         self.hboxMov.addWidget(self.btn_norpix)
                
         self.hboxMov.addWidget(self.mov_label)
         self.hboxMov.addStretch()
+        
     def makeCommandoRow(self):
         # ------------------------
         #       command widgets
@@ -187,8 +190,10 @@ class TabAnalysis(QWidget):
         self.comboBox.addItems(self.modeDict.keys())
         self.hboxCommand.addWidget(self.comboBox)
         self.hboxCommand.addStretch()
+        
     def close_event(self):        
         self.tabs.close_event()
+        
     def makeBehavInfoBox(self,animalNo,animalName,behavDict,assignment):
         behavBox = QVBoxLayout()
         nameLabel = QLabel(animalName+ ' (A' +str(animalNo)+')')
@@ -196,21 +201,20 @@ class TabAnalysis(QWidget):
         behavBox.addWidget(nameLabel)
         for i in range(len(behavDict)):
             
-            hbox = QHBoxLayout();
+            hbox = QHBoxLayout()
             behavLabel = QLabel(behavDict[i]['name'])
             behavLabel.setStyleSheet('color: '+behavDict[i]['color']) 
             hbox.addWidget(behavLabel)
 
-            
-            if behavDict[i]['icon'] is not 'None':
+            if behavDict[i]['icon'] != 'None':
                 imageLabel = QLabel()
                 pixmap =  QPixmap(behavDict[i]['icon'])
                 pixmap = pixmap.scaledToWidth(20)
-                imageLabel.setStyleSheet('color: '+ behavDict[i]['color'])
+                imageLabel.setStyleSheet('color: ' + behavDict[i]['color'])
                 imageLabel.setPixmap(pixmap) 
                 hbox.addWidget(imageLabel)
             
-            key = 'A'+str(animalNo) +'_'+behavDict[i]['name']
+            key = 'A'+str(animalNo) + '_' + behavDict[i]['name']
             if key in assignment.keys():
                 deviceLabel = QLabel(assignment[key].UICdevice)
                 deviceLabel.setStyleSheet('color: #C0C0C0') 
@@ -229,7 +233,8 @@ class TabAnalysis(QWidget):
             behavBox.addLayout(hbox)
 
         return behavBox
-    def makeMovieControlInfoBox(self,behavAssignment):
+    
+    def makeMovieControlInfoBox(self, behavAssignment):
         # top label
         movieBox = QVBoxLayout()
         nameLabel = QLabel('movie actions')
@@ -241,7 +246,7 @@ class TabAnalysis(QWidget):
         except AttributeError:
             item_iterator = behavAs.items()
         
-        for key,binding in item_iterator:
+        for key, binding in item_iterator:
             if binding.animal == 'movie':
                 tempBox = QHBoxLayout()
                 behavLabel = QLabel(binding.behaviour)
@@ -253,8 +258,6 @@ class TabAnalysis(QWidget):
                     buttonLabel.setStyleSheet('color: #C0C0C0') 
                 else:
                     buttonLabel.setStyleSheet('color: #ffffff') 
-
-
 
                 tempBox.addWidget(behavLabel)
                 tempBox.addWidget(deviceLabel)
@@ -278,7 +281,7 @@ class TabAnalysis(QWidget):
         filenames = []
         # execute dialogue
         if dlg.exec_():
-                filenames = dlg.selectedFiles()
+            filenames = dlg.selectedFiles()
         # if we are looking for a directory we also need to know the file extension
         ok = True
         if argList[-1] != 'Single':
@@ -286,23 +289,24 @@ class TabAnalysis(QWidget):
             if ok:
                 filenames[0] = filenames[0]+'/'+text
         # if everything was set up correctly we save the info for later use
-        if (len(filenames) > 0) and (ok == True):
-            succStr = argList[1] +filenames[0]
+        if (len(filenames) > 0) and (ok is True):
+            succStr = argList[1] + filenames[0]
             self.mov_label.setText(succStr)
             self.MediaFileName = str(filenames[0]) # for some reason the media handler dislikes Qstrings
             self.MediaType = argList[3]
         
         else:
-            self.mov_label.setText(argList[2])   
+            self.mov_label.setText(argList[2])
+            
     def loadData(self):
         # load data
         filename = self.getFileName(title='Load Annotation', path=HOME, fileFilter = '*.pkl, *.pickle', mode ='load')
         if (len(filename) > 0):
-            self.sco.load_data(str(filename),'pickle')
+            self.sco.load_data(str(filename), 'pickle')
         else:
             QMessageBox.warning(self, 'Data Loading Aborted!',
-                                      "Data was not loaded!",
-                                       QMessageBox.Ok)
+                                "Data was not loaded!",
+                                QMessageBox.Ok)
 
     def saveData(self, irrelevant, filename='verboseMode'):
         if filename == 'verboseMode':
@@ -313,17 +317,17 @@ class TabAnalysis(QWidget):
             self.sco.save_data(str(filename)+'.pkl','pickle')
         else:
             QMessageBox.warning(self, 'Data Saving Aborted!',
-                                        "Data was  not saved!",
-                                        QMessageBox.Ok)
+                                "Data was  not saved!",
+                                QMessageBox.Ok)
+            
     def exportData(self, irrelevant, filename='verboseMode',):
         
         mode = str(self.comboBox.currentText())
-
    
         if mode == 'choose format':
             QMessageBox.warning(self, 'Data Saving Aborted!',
-                                        "Data was  not saved! You need to choose a format",
-                                        QMessageBox.Ok)     
+                                "Data was  not saved! You need to choose a format",
+                                QMessageBox.Ok)     
         else:
             
             if filename == 'verboseMode':
@@ -333,8 +337,9 @@ class TabAnalysis(QWidget):
                 self.sco.save_data(str(filename),self.modeDict[mode])
             else:
                 QMessageBox.warning(self, 'Data Saving Aborted!',
-                                            "Data was  not saved!",
-                                            QMessageBox.Ok)
+                                    "Data was  not saved!",
+                                    QMessageBox.Ok)
+                
     def exportFrame(self, irrelevant, filename='verboseMode',frameNo = 'verboseMode'):
         goOn = True
         if filename == 'verboseMode':
@@ -344,7 +349,6 @@ class TabAnalysis(QWidget):
             goOn = True
         else:
             goOn = False
-            
 
         if frameNo == 'verboseMode' and goOn:
             frameNo, ok = QInputDialog.getInt(self, 'Choose', 'Frame Number:')
@@ -354,7 +358,9 @@ class TabAnalysis(QWidget):
                 goOn = False
         if goOn:
             self.sco.dIO.saveOverlayImage(str(filename),frameNo)
-    def exportMovie(self,  irrelevant, dirname='verboseMode', prefix='verboseMode', extension='verboseMode'):
+            
+    def exportMovie(self,  irrelevant, dirname='verboseMode',
+                    prefix='verboseMode', extension='verboseMode'):
         goOn = True
         
         if dirname == 'verboseMode':
@@ -367,7 +373,7 @@ class TabAnalysis(QWidget):
 
         if prefix == 'verboseMode' and goOn:
             prefix , ok = QInputDialog.getText(self, 'Choose', 'Prefix for image files',
-                                                     QLineEdit.Normal,'frame')
+                                               QLineEdit.Normal, 'frame')
             if ok:       
                 goOn = True
             else:
@@ -384,7 +390,7 @@ class TabAnalysis(QWidget):
                 goOn = False
 
         if goOn:
-            self.sco.dIO.saveOverlayMovie(dirname,prefix,extension)
+            self.sco.dIO.saveOverlayMovie(dirname, prefix, extension)
 
     def getFileName(self,title,path,fileFilter,mode):
         if mode == 'load':
@@ -393,8 +399,8 @@ class TabAnalysis(QWidget):
             filename = QFileDialog.getSaveFileName(self,title, path, initialFilter=fileFilter)
         else:
             QMessageBox.warning(self, 'Unkown mode: ' + mode,
-                                        "Data IO stopped, in getFileName",
-                                        QMessageBox.Ok)
+                                "Data IO stopped, in getFileName",
+                                QMessageBox.Ok)
             return ''
             
         filename = filename[0]
@@ -438,6 +444,7 @@ class TabAnalysis(QWidget):
             allDisjunc.append(disjuncIndexList)
         
         return allDisjunc
+    
     def runScorer(self):
         # check if everything is setup correctly
         goOn = self.checkingInputs()
@@ -475,10 +482,10 @@ class TabAnalysis(QWidget):
 
                 #add animal to self.scorer object
                 self.sco.addAnimal(self.animal_tabs[animalI].name, #animal label
-                              100, # ethogram length
-                              behavList, # behaviour labels
-                              [0]*len(behavList), # beginning status
-                              disjuncList)# disjunction list first 4 or disjunct to each other as are the last two
+                                   100, # ethogram length
+                                   behavList, # behaviour labels
+                                   [0]*len(behavList), # beginning status
+                                   disjuncList)# disjunction list first 4 or disjunct to each other as are the last two
                 
                 # as list are mutable they cannot be hashed with set
                 # therefore we have to do this
@@ -561,7 +568,7 @@ class TabAnalysis(QWidget):
                 behav = self.assignment[0][key].behaviour
                 behav = behavStrListList[self.assignment[0][key].animal].index(behav)
             else:
-                behav =self.assignment[0][key].behaviour
+                behav = self.assignment[0][key].behaviour
                 
             if goOn:
                 freeBindingList.append( (self.assignment[0][key].keyBinding,animal,behav))
@@ -569,8 +576,9 @@ class TabAnalysis(QWidget):
         #here you would need to integrate axis thresholds if one has 
         # implemented a gui for axis thresholds
         self.sco.setUIC('Free',buttonBindings = self.assignment[0].keys(),
-                   freeBindingList=freeBindingList,
-                   UICdevice=self.UIC_layout)
+                        freeBindingList=freeBindingList,
+                        UICdevice=self.UIC_layout)
+        
     def guiUICLayout2scoLayout(self):
         
         if self.UIC_layout == 'X-Box':
@@ -583,6 +591,7 @@ class TabAnalysis(QWidget):
             print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
         else:
             print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
+            
     def checkingInputs(self):
         #initialise return variable
         goOn = True
@@ -590,8 +599,8 @@ class TabAnalysis(QWidget):
         # check if media file info is there
         if (self.MediaFileName == '') or (self.MediaType == ''):
             QMessageBox.warning(self, 'Choose media first!',
-                                            "You need to choose an input media file(s)!",
-                                            QMessageBox.Ok)
+                                "You need to choose an input media file(s)!",
+                                QMessageBox.Ok)
             goOn = False
         
         # check behaviour assignment
@@ -612,8 +621,8 @@ class TabAnalysis(QWidget):
                 msg = msg + behav +'\n'
 
             QMessageBox.warning(self, 'Cannot proceed!',
-                                            msg,
-                                            QMessageBox.Ok)
+                                msg,
+                                QMessageBox.Ok)
             goOn = False
         
         # check movie control inputs
@@ -624,7 +633,7 @@ class TabAnalysis(QWidget):
         except AttributeError:
             item_iterator = self.assignment[1].items()
         
-        for key,binding in item_iterator:
+        for key, binding in item_iterator:
             if binding.animal == 'movie':
                 if binding.keyBinding == 'no button assigned':
                     listOfUnassignedBehaviour.append(binding.behaviour)
@@ -632,11 +641,11 @@ class TabAnalysis(QWidget):
         if len(listOfUnassignedBehaviour) > 0:
             msg = 'There are unassigned movie controls:\n'
             for behav in listOfUnassignedBehaviour:
-                msg = msg + behav +'\n'
+                msg = msg + behav + '\n'
 
             QMessageBox.warning(self, 'Cannot proceed!',
-                                            msg,
-                                            QMessageBox.Ok)
+                                msg,
+                                QMessageBox.Ok)
             goOn = False
 
         return goOn

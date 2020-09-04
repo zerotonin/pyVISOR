@@ -87,10 +87,10 @@ def write_tmp_icon(path_to_icon, color):
     fname, extension = os.path.splitext(_file)
     color_str = "_%i_%i_%i" % color
     tmp_str = "/".join(folders) + "/" + fname + color_str + extension    
-    if (os.path.isfile(HOME + '/.pymovscore/.tmp_icons/' + tmp_str)):
+    if (os.path.isfile(HOME + '/.pyvisor/.tmp_icons/' + tmp_str)):
         return tmp_str
-    # os.makedirs(HOME + '/.pymovscore/.tmp_icons/' + folders)
-    current_path = HOME + '/.pymovscore/.tmp_icons'
+    # os.makedirs(HOME + '/.pyvisor/.tmp_icons/' + folders)
+    current_path = HOME + '/.pyvisor/.tmp_icons'
     for folder in folders:
         current_path = current_path + "/" + folder
         if (os.path.isdir(current_path)):
@@ -99,6 +99,6 @@ def write_tmp_icon(path_to_icon, color):
     I = icon(color=color)
     I.readImage(path_to_icon)
     I.decall2icon()
-    f = open(HOME + '/.pymovscore/.tmp_icons/' + tmp_str, 'wb')
+    f = open(HOME + '/.pyvisor/.tmp_icons/' + tmp_str, 'wb')
     I.icon.save(f)
     return tmp_str
