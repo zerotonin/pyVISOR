@@ -14,9 +14,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
 
-class icon():
+class icon:
     
-    def __init__(self,size = (96,96),color=(144,21,222),alpha = 255):
+    def __init__(self, size=(96, 96), color=(144, 21, 222), alpha=255):
         self.size   = size
         self.image  = []
         self.color  = color
@@ -25,26 +25,25 @@ class icon():
         self.decall = []
         self.radius = int(self.size[0]/2)
         self.icon   = []
-        
     
-    def readImage(self,filename):
+    def readImage(self, filename):
         self.decall = Image.open(filename).convert('RGBA')
     
-    def loadLibDecall(self,filename):
+    def loadLibDecall(self, filename):
         self.decall = Image.open(filename).convert('RGBA')
     
     def decall2icon(self):
         self.drawCircle()
         pos = self.getDecallPos()
         size = self.getMaxDecallSize()  
-        self.decall = self.decall.resize(size,Image.ANTIALIAS)
-        self.circle.paste(self.decall, pos,self.decall)
+        self.decall = self.decall.resize(size, Image.ANTIALIAS)
+        self.circle.paste(self.decall, pos, self.decall)
         self.icon = self.circle
     
     def drawCircle(self):  
         im = Image.new('RGBA',  self.size)
         draw = ImageDraw.Draw(im)
-        draw.ellipse((0,0,im.size[0],im.size[1]), fill=self.color)
+        draw.ellipse((0, 0, im.size[0], im.size[1]), fill=self.color)
         del draw
         self.circle = im
         

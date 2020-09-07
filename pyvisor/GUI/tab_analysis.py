@@ -469,11 +469,22 @@ class TabAnalysis(QWidget):
                 for i in range(len(behavDict)):
                     #get key
                     key = 'A'+str(animalI) +'_'+behavDict[i]['name']
-                    
+
+                    behav_binding = self.assignment[1][key]
                     #fill lists
-                    buttonList.append(self.assignment[1][key].keyBinding)
-                    behavList.append(str(self.assignment[1][key].behaviour))
-                    iconList.append((self.assignment[1][key].iconPos,self.assignment[1][key].color))
+                    buttonList.append(behav_binding.keyBinding)
+                    behavList.append(str(behav_binding.behaviour))
+                    icon_path, icon_color = (behav_binding.iconPos,
+                                             behav_binding.color)
+                    if len(icon_path) == 0:
+                        warnmsg = f"Animal {behav_binding.animal}, behaviour {behav_binding.behaviour} has no icon assigned. "
+                        warnmsg += "You have to assign an icon before the analysis "
+                        warnmsg += "can be started."
+                        QMessageBox.warning(self, "No Icon Assigned!",
+                                            warnmsg,
+                                            QMessageBox.Ok)
+                        return
+                    iconList.append((icon_path, icon_color))
                     # disjunction list needs to be updated because it is not implemented yet
                     disjuncList.append((behavDict[i]['name'],behavDict[i]['compatible']))
                     self.behavIterationList.append(key);
@@ -510,6 +521,7 @@ class TabAnalysis(QWidget):
             
             # make icons and 
             iconObjList = list()
+            print(iconList)
             for i in range(len(iconList)):
                 #make color
                 colorList = list()                                      
@@ -518,7 +530,7 @@ class TabAnalysis(QWidget):
                 colorTupel = (colorList[0],colorList[1],colorList[2])
                 
                 #make icon
-                icon = ic.icon(color=colorTupel)
+                icon = ic.icon(color=colorTupel)                
                 icon.readImage(iconList[i][0])
                 icon.decall2icon()
                 iconObjList.append(icon.icon2pygame())

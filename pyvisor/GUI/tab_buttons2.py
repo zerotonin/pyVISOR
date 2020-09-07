@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
 import pygame
 import pickle
 from pygame.locals import *
-from . import behavBinding
+from .behavBinding import BehavBinding
 import os
 import copy
 import collections
@@ -136,16 +136,20 @@ class TabSimpleButtons(QWidget):
         self.hboxLoadSavePreset.addWidget(saveButton)
         self.hboxLoadSavePreset.addWidget(resetButton)
         self.hboxLoadSavePreset.addStretch()
-    def loadPreset(self,irrelevant,filename = 'verboseMode',warningFlag = True):
+        
+    def loadPreset(self, irrelevant, filename='verboseMode', warningFlag=True):
         
         goOn = 'On you go'
 
         #get filename in verbose mode if needed
         if filename == 'verboseMode':
-            filename = QFileDialog.getOpenFileName(self, 'Load Button Binding', HOME, initialFilter='*.pkl')
+            filename = QFileDialog.getOpenFileName(self, 'Load Button Binding',
+                                                   HOME, initialFilter='*.pkl')
             filename = filename[0]
+        if len(filename) == 0:
+            return
         # read it
-        filehandler = open(str(filename),"rb")
+        filehandler = open(str(filename), "rb")
         buttonBindingSaveDict = pickle.load(filehandler)
         filehandler.close()
 
@@ -162,7 +166,6 @@ class TabSimpleButtons(QWidget):
         # if you found any superfluous behaviours set goOn 
         if len(listOfSuperfluousBehav) != 0:
             goOn = 'SuperfluousBehav'
-                
 
         # all is fine we can set the button binding
         if goOn=='On you go':
@@ -249,10 +252,11 @@ class TabSimpleButtons(QWidget):
             if filename == 'verboseMode':
                 filename = QFileDialog.getSaveFileName(self, 'Save Button Binding', HOME, initialFilter='*.pkl')
                 filename = str(filename[0])
-            print(filename)
+            if len(filename) == 0:
+                return
             # write it away
-            filehandler = open(filename,"wb")
-            pickle.dump(buttonBindingSaveDict,filehandler)
+            filehandler = open(filename, "wb")
+            pickle.dump(buttonBindingSaveDict, filehandler)
             filehandler.close()
         else:
             # There was an error show warnings if warning flag says so
@@ -528,7 +532,7 @@ class TabSimpleButtons(QWidget):
         for i in range(len(behavDict)):
             behav = 'A'+str(animalNo)+'_'+behavDict[i]['name']
             if behav not in listOfAssignments:
-                temp = behavBinding.behavBinding(animal     = animalNo,
+                temp = BehavBinding(animal     = animalNo,
                                                  iconPos    = behavDict[i]['icon'],
                                                  behaviour  = behavDict[i]['name'],
                                                  color      = behavDict[i]['color'],
@@ -740,24 +744,24 @@ class TabSimpleButtons(QWidget):
             
 
 
-            self.keys = {"B0"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0' ), 
-                         "B1"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0' ), 
-                         "B2"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0' ), 
-                         "B3"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0' ), 
-                         "B4"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0' ), 
-                         "B5"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
-                         "B5"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ), 
-                         "B6"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0' ), 
-                         "B7"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0' ), 
-                         "B8"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0' ), 
-                         "A2+"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "A2+" , color = '#C0C0C0' ), 
-                         "A5+"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "A5+" , color = '#C0C0C0' ), 
-                         "A2-"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "A2-" , color = '#C0C0C0' ), 
-                         "A5-"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "A5-" , color = '#C0C0C0' ), 
-                         "H01"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0' ), 
-                         "H0-1" : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0' ), 
-                         "H-10" : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0' ), 
-                         "H10"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0' )}
+            self.keys = {"B0"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0' ), 
+                         "B1"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0' ), 
+                         "B2"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0' ), 
+                         "B3"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0' ), 
+                         "B4"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0' ), 
+                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
+                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ), 
+                         "B6"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0' ), 
+                         "B7"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0' ), 
+                         "B8"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0' ), 
+                         "A2+"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A2+" , color = '#C0C0C0' ), 
+                         "A5+"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A5+" , color = '#C0C0C0' ), 
+                         "A2-"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A2-" , color = '#C0C0C0' ), 
+                         "A5-"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A5-" , color = '#C0C0C0' ), 
+                         "H01"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0' ), 
+                         "H0-1" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0' ), 
+                         "H-10" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0' ), 
+                         "H10"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0' )}
 
             standardKeys = ["B9", "B10","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
             movieBehavs  = ["toggleRunMov","stopToggle","runMovForward","runMovReverse",
@@ -793,21 +797,21 @@ class TabSimpleButtons(QWidget):
         
 
             
-            self.keys = {"B0"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0'), 
-                         "B1"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0'), 
-                         "B2"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0'), 
-                         "B3"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0'), 
-                         "B4"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0'), 
-                         "B5"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
-                         "B5"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'), 
-                         "B6"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0'), 
-                         "B7"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0'), 
-                         "B8"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0'), 
-                         "B9"   : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "B9"  , color = '#C0C0C0'), 
-                         "H01"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0'), 
-                         "H0-1" : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0'), 
-                         "H-10" : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0'), 
-                         "H10"  : behavBinding.behavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0')}
+            self.keys = {"B0"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0'), 
+                         "B1"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0'), 
+                         "B2"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0'), 
+                         "B3"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0'), 
+                         "B4"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0'), 
+                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
+                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'), 
+                         "B6"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0'), 
+                         "B7"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0'), 
+                         "B8"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0'), 
+                         "B9"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B9"  , color = '#C0C0C0'), 
+                         "H01"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0'), 
+                         "H0-1" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0'), 
+                         "H-10" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0'), 
+                         "H10"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0')}
 
 
             standardKeys = ["B10", "B11","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
@@ -848,7 +852,7 @@ class TabSimpleButtons(QWidget):
             
             # add all behaviours
             for i in range(len(behavDict)):
-                temp = behavBinding.behavBinding(animal = animalI,
+                temp = BehavBinding(animal = animalI,
                                                  iconPos = behavDict[i]['icon'],
                                                  behaviour = behavDict[i]['name'],
                                                  color = behavDict[i]['color'],
@@ -863,12 +867,12 @@ class TabSimpleButtons(QWidget):
                 #                         keyBinding : 'no button assigned',
                 #                         UICdevice  : 'None'})
             # add delete function
-            temp = behavBinding.behavBinding(animal = animalI,
-                                                 iconPos ='None',
-                                                 behaviour = 'delete',
-                                                 color = '#ffffff',
-                                                 keyBinding = 'no button assigned',
-                                                 UICdevice = 'None')
+            temp = BehavBinding(animal=animalI,
+                                iconPos='None',
+                                behaviour='delete',
+                                color='#ffffff',
+                                keyBinding='no button assigned',
+                                UICdevice='None')
             
             # self.bindingList.append({animal    : animalI,
             #                         iconPos    : 'None',
@@ -883,12 +887,12 @@ class TabSimpleButtons(QWidget):
                        'changeFPSlow', 'changeFPShigh', 'changeFrameNoLow1', 
                        'changeFrameNoHigh1', 'changeFrameNoLow10', 'changeFrameNoHigh10']
         for behavI in movieBehavs:
-            temp = behavBinding.behavBinding(animal = 'movie',
-                                             color  = '#ffffff',
-                                             iconPos = 'None',
-                                             behaviour = behavI,
-                                             keyBinding = 'no button assigned',
-                                             UICdevice  = 'None')
+            temp = BehavBinding(animal='movie',
+                                color='#ffffff',
+                                iconPos='None',
+                                behaviour=behavI,
+                                keyBinding='no button assigned',
+                                UICdevice='None')
             # self.bindingList.append({animal    : animalI,
             #                         iconPos    :'None',
             #                         behaviour  : behavDict[i]['name'],
