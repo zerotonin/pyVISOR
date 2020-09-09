@@ -15,7 +15,7 @@ class AnimalTabWidget(QTabWidget):
         try:
             with open(HOME + "/.pyvisor/guidefaults_animaltab.json", 'r') as f:
                 self.values = json.load(f)
-        except:
+        except FileNotFoundError:
             with open(HERE + "/../guidefaults_animaltab.json", 'r') as f:
                 self.values = json.load(f)
         self.tabs_ = []
@@ -34,7 +34,7 @@ class AnimalTabWidget(QTabWidget):
         # (full URL: http://stackoverflow.com/questions/19975137/how-can-i-add-a-new-tab-button-next-to-the-tabs-of-a-qmdiarea-in-tabbed-view-m)
         self.addTab(QWidget(), ' + ')
         self.currentChanged.connect(self.add_tab)         
-                
+
     def add_tab(self, index):
         # if last tab was clicked
         if index == self.count() - 1 and not self._block_add:            

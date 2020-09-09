@@ -81,7 +81,7 @@ class TabAnalysis(QWidget):
         self.hboxConciseBehav.addWidget(self.behav_stepLabel)
         # get data from other tabs
         self.animal_tabs = self.parent.get_animal_tabs()
-        self.assignment = self.parent.get_assignmens()
+        self.assignment = self.parent.get_assignments()
         self.UIC_layout = self.parent.get_UIC_layout()
         # here for loop!
         for animalI in range(len(self.animal_tabs)):     
@@ -89,6 +89,8 @@ class TabAnalysis(QWidget):
             vbox = self.makeBehavInfoBox(animalI, self.animal_tabs[animalI].name,
                                          self.animal_tabs[animalI].behaviour_dicts,
                                          self.assignment[1]) # 1 is here for the behaviour assigments / zero would be keys
+            print('-------- makeBehaviourSummary')
+            print(self.animal_tabs[animalI].behaviour_dicts)
             self.hboxConciseBehav.addLayout(vbox) 
         
         movieControlBox = self.makeMovieControlInfoBox(self.assignment[1])
@@ -449,108 +451,102 @@ class TabAnalysis(QWidget):
         # check if everything is setup correctly
         goOn = self.checkingInputs()
 
-        #go and run scorer
-        if goOn:
-            # initialise lists for icons and buttons
-            iconList   = list()
-            buttonList = list()
-            # make scorer object
-            self.sco = MES.ManualEthologyScorer()
-            #go through every animal and get needed information
-            uniqueDJB_NumList = list()
-            behav_NumList = list()
-            self.behavIterationList = list()
-            for animalI in range(len(self.animal_tabs)):
-                # initialise disjunction lists and behaviour lists
-                behavList   = list()
-                disjuncList = list()
-                #shorthand
-                behavDict   = self.animal_tabs[animalI].behaviour_dicts
-                for i in range(len(behavDict)):
-                    #get key
-                    key = 'A'+str(animalI) +'_'+behavDict[i]['name']
-
-                    behav_binding = self.assignment[1][key]
-                    #fill lists
-                    buttonList.append(behav_binding.keyBinding)
-                    behavList.append(str(behav_binding.behaviour))
-                    icon_path, icon_color = (behav_binding.iconPos,
-                                             behav_binding.color)
-                    if len(icon_path) == 0:
-                        warnmsg = f"Animal {behav_binding.animal}, behaviour {behav_binding.behaviour} has no icon assigned. "
-                        warnmsg += "You have to assign an icon before the analysis "
-                        warnmsg += "can be started."
-                        QMessageBox.warning(self, "No Icon Assigned!",
-                                            warnmsg,
-                                            QMessageBox.Ok)
-                        return
-                    iconList.append((icon_path, icon_color))
-                    # disjunction list needs to be updated because it is not implemented yet
-                    disjuncList.append((behavDict[i]['name'],behavDict[i]['compatible']))
-                    self.behavIterationList.append(key);
-                
-                disjuncList = self.compatabilityList2disjunctionList(disjuncList)
-
-                #add animal to self.scorer object
-                self.sco.addAnimal(self.animal_tabs[animalI].name, #animal label
-                                   100, # ethogram length
-                                   behavList, # behaviour labels
-                                   [0]*len(behavList), # beginning status
-                                   disjuncList)# disjunction list first 4 or disjunct to each other as are the last two
-                
-                # as list are mutable they cannot be hashed with set
-                # therefore we have to do this
-                uniqueDJB_NumList.append(len(set(tuple(row) for row in disjuncList)))
-                behav_NumList.append(len(behavList))
+        if goOn is False:
+            return
         
+        #go and run scorer                
+        # initialise lists for icons and buttons
+        iconList   = list()
+        buttonList = list()
+        # make scorer object
+        self.sco = MES.ManualEthologyScorer()
+        #go through every animal and get needed information
+        uniqueDJB_NumList = list()
+        behav_NumList = list()
+        self.behavIterationList = list()
+        for animalI in range(len(self.animal_tabs)):
+            # initialise disjunction lists and behaviour lists
+            behavList   = list()
+            disjuncList = list()
+            #shorthand
+            behavDict   = self.animal_tabs[animalI].behaviour_dicts
+            for i in range(len(behavDict)):
+                #get key
+                key = 'A'+str(animalI) +'_'+behavDict[i]['name']
+
+                behav_binding = self.assignment[1][key]
+                #fill lists
+                buttonList.append(behav_binding.keyBinding)
+                behavList.append(str(behav_binding.behaviour))
+                icon_path, icon_color = (behav_binding.iconPos,
+                                         behav_binding.color)
+                iconList.append((icon_path, icon_color))
+                # disjunction list needs to be updated because it is not implemented yet
+                disjuncList.append((behavDict[i]['name'],behavDict[i]['compatible']))
+                self.behavIterationList.append(key);
+
+            disjuncList = self.compatabilityList2disjunctionList(disjuncList)
+
+            #add animal to self.scorer object
+            self.sco.addAnimal(self.animal_tabs[animalI].name, #animal label
+                               100, # ethogram length
+                               behavList, # behaviour labels
+                               [0]*len(behavList), # beginning status
+                               disjuncList)# disjunction list first 4 or disjunct to each other as are the last two
+
+            # as list are mutable they cannot be hashed with set
+            # therefore we have to do this
+            uniqueDJB_NumList.append(len(set(tuple(row) for row in disjuncList)))
+            behav_NumList.append(len(behavList))
 
 
-            # load media
-            if self.MediaType == 'Movie':
-                self.sco.loadMovie(self.MediaFileName)
-            
-            elif self.MediaType == 'ImageSequence':
-                self.sco.loadImageSequence(self.MediaFileName)
-                    
-            elif self.MediaType == 'Norpix':
-                self.sco.loadNorPixSeq(self.MediaFileName)
-            
-            else:
-                print('Unknown media type: ' + self.MediaType)
-            
-            
-            # make icons and 
-            iconObjList = list()
-            print(iconList)
-            for i in range(len(iconList)):
-                #make color
-                colorList = list()                                      
-                for j in [1, 3, 5]: # colors are defined in hexcode e.g #ff32a2
-                    colorList.append(int(iconList[i][1][j:j+2],16))
-                colorTupel = (colorList[0],colorList[1],colorList[2])
-                
-                #make icon
-                icon = ic.icon(color=colorTupel)                
-                icon.readImage(iconList[i][0])
-                icon.decall2icon()
-                iconObjList.append(icon.icon2pygame())
-            
-            # All Icon Positions are set one after the other / this needs to be user definable
-            counterStart  = 0
-            counterStart2 = 0
-            for animalI in range(len(self.animal_tabs)):
-                counterStop    = counterStart+uniqueDJB_NumList[animalI]
-                counterStop2   = counterStart2+behav_NumList[animalI]
-                # the following line has to be changed
-                self.sco.animals[animalI].assignIconPos2UniqueDJB(self.sco.iconPos[counterStart:counterStop])
-                self.sco.animals[animalI].assignIcons(iconObjList[counterStart2:counterStop2],['simple']*(behav_NumList[animalI]))
-                counterStart = counterStop
-                counterStart2 = counterStop2
 
-            self.guiUICLayout2scoLayout()
-            self.UIC_switchWriter()
+        # load media
+        if self.MediaType == 'Movie':
+            self.sco.loadMovie(self.MediaFileName)
 
-            _thread.start_new_thread(self.sco.go, ())
+        elif self.MediaType == 'ImageSequence':
+            self.sco.loadImageSequence(self.MediaFileName)
+
+        elif self.MediaType == 'Norpix':
+            self.sco.loadNorPixSeq(self.MediaFileName)
+
+        else:
+            print('Unknown media type: ' + self.MediaType)
+
+
+        # make icons and 
+        iconObjList = list()
+        print(iconList)
+        for i in range(len(iconList)):
+            #make color
+            colorList = list()                                      
+            for j in [1, 3, 5]: # colors are defined in hexcode e.g #ff32a2
+                colorList.append(int(iconList[i][1][j:j+2],16))
+            colorTupel = (colorList[0],colorList[1],colorList[2])
+
+            #make icon
+            icon = ic.icon(color=colorTupel)                
+            icon.readImage(iconList[i][0])
+            icon.decall2icon()
+            iconObjList.append(icon.icon2pygame())
+
+        # All Icon Positions are set one after the other / this needs to be user definable
+        counterStart  = 0
+        counterStart2 = 0
+        for animalI in range(len(self.animal_tabs)):
+            counterStop    = counterStart+uniqueDJB_NumList[animalI]
+            counterStop2   = counterStart2+behav_NumList[animalI]
+            # the following line has to be changed
+            self.sco.animals[animalI].assignIconPos2UniqueDJB(self.sco.iconPos[counterStart:counterStop])
+            self.sco.animals[animalI].assignIcons(iconObjList[counterStart2:counterStop2],['simple']*(behav_NumList[animalI]))
+            counterStart = counterStop
+            counterStart2 = counterStop2
+
+        self.guiUICLayout2scoLayout()
+        self.UIC_switchWriter()
+
+        _thread.start_new_thread(self.sco.go, ())
 
     def UIC_switchWriter(self):
         #initialise list 
@@ -617,20 +613,38 @@ class TabAnalysis(QWidget):
         
         # check behaviour assignment
         listOfUnassignedBehaviour = list()
+        no_icons = []
         for animalI in range(len(self.animal_tabs)):
             behavDict = self.animal_tabs[animalI].behaviour_dicts
             for i in range(len(behavDict)):
-                key = 'A'+str(animalI) +'_'+behavDict[i]['name']
+                key = 'A'+str(animalI) + '_' + behavDict[i]['name']
                 if key not in self.assignment[1].keys():
                     listOfUnassignedBehaviour.append(key)
                 else:
                     if self.assignment[1][key].keyBinding == 'no button assigned':
                         listOfUnassignedBehaviour.append(key)
 
+                behav_binding = self.assignment[1][key]
+                icon_path = behav_binding.iconPos
+                print('------ checkingInputs')
+                print(behav_binding.animal, behav_binding.behaviour, icon_path)
+                if len(icon_path) == 0:
+                    no_icons.append((behav_binding.animal, behav_binding.behaviour))
+
+        if len(no_icons) > 0:            
+            warnmsg = "You have to assign an icon before the analysis "
+            warnmsg += "can be started.\n"
+            for ni in no_icons:
+                warnmsg += f"Animal {ni[0]}, behaviour {ni[1]} has no icon assigned.\n"
+            QMessageBox.warning(self, "No Icon Assigned!",
+                                warnmsg,
+                                QMessageBox.Ok)
+            goOn = False
+
         if len(listOfUnassignedBehaviour) > 0:
             msg = 'There are unassigned behaviours:\n'
             for behav in listOfUnassignedBehaviour:
-                msg = msg + behav +'\n'
+                msg = msg + behav + '\n'
 
             QMessageBox.warning(self, 'Cannot proceed!',
                                 msg,

@@ -30,14 +30,14 @@ class MovScoreGUI(QWidget):
         try:
             with open(HOME + "/.pyvisor/guidefaults_movscoregui.pkl", 'rb') as f:
                 self.values = pickle.load(f)
-        except:
+        except FileNotFoundError:
             try:
                 with open(HERE + "/guidefaults_movscoregui.pkl", 'rb') as f:
                     self.values = pickle.load(f)           
-            except:
+            except FileNotFoundError:
                 self.values = dict()
                 self.values['display'] = dict()
-                self.values['display']['geometry'] = QRect(0,0,640,480)
+                self.values['display']['geometry'] = QRect(0, 0, 640, 480)
 
         self.initUI()
 
@@ -75,7 +75,7 @@ class MovScoreGUI(QWidget):
     def get_animal_tabs(self):        
         return self.shortHandBehavTab.tabs.tabs_
 
-    def get_assignmens(self):
+    def get_assignments(self):
         return self.shortHandButton.getAssignments()
     
     def get_UIC_layout(self):

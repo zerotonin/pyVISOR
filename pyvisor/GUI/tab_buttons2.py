@@ -18,15 +18,14 @@ DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png",
            "Free": HERE + "/pictures/gamePad_free.png"}
 
 
-
 class TabSimpleButtons(QWidget):
 
-    def __init__(self,parent):
+    def __init__(self, parent):
         
         self.analysis_list = [] 
-        super(TabSimpleButtons,self).__init__()
+        super(TabSimpleButtons, self).__init__()
 
-        self.parent=parent
+        self.parent = parent
         pygame.init()
         # Initialize the joysticks
         pygame.joystick.init()
@@ -34,21 +33,21 @@ class TabSimpleButtons(QWidget):
 
     def init_UI(self):
         # self.item, self.ok = QInputDialog.getItem(self, "select input device", "list of devices", self.modes, 0, False)
-        # print(self.item)
-        # print(self.ok)
                         
         # ============================
         # Get and Initialize Behaviour
         # ============================
+
+        print('===== TabSimpleButtons.init_UI called!')
 
         self.keys            = dict()
         self.behavAssignment = dict()
         self.animal_tabs = self.parent.get_animal_tabs()
         self.selected_device = ""
         self.deviceLayout = ""
-        self.deviceNumber =-2 # -1= not selected | last  = keyboard, after that it is in the recognition order by pygame
+        self.deviceNumber = -2 # -1= not selected | last  = keyboard, after that it is in the recognition order by pygame
         self.initialiseBehavAssignment()
-        self.lastKeyPressed = (71,'G')
+        self.lastKeyPressed = (71, 'G')
 
         # ===========================
         # Joy stick initiation
@@ -122,9 +121,11 @@ class TabSimpleButtons(QWidget):
         #set signals and slots
         self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
         try:
-            self.loadPreset(0,filename = HOME + '/.pyvisor/guidefaults_buttons.pkl',warningFlag=False)
-        except:
+            self.loadPreset(0, filename=HOME + '/.pyvisor/guidefaults_buttons.pkl',
+                            warningFlag=False)
+        except FileNotFoundError:
             print('No preset for button bindings found')
+            
     def makeLoadSavePreset(self):
         loadButton = QPushButton('load preset')
         loadButton.clicked.connect(self.loadPreset)
@@ -137,17 +138,16 @@ class TabSimpleButtons(QWidget):
         self.hboxLoadSavePreset.addWidget(resetButton)
         self.hboxLoadSavePreset.addStretch()
         
-    def loadPreset(self, irrelevant, filename='verboseMode', warningFlag=True):
-        
+    def loadPreset(self, irrelevant, filename=None, warningFlag=True): 
         goOn = 'On you go'
 
-        #get filename in verbose mode if needed
-        if filename == 'verboseMode':
+        if filename is None:
             filename = QFileDialog.getOpenFileName(self, 'Load Button Binding',
                                                    HOME, initialFilter='*.pkl')
             filename = filename[0]
         if len(filename) == 0:
             return
+        
         # read it
         filehandler = open(str(filename), "rb")
         buttonBindingSaveDict = pickle.load(filehandler)
@@ -163,63 +163,75 @@ class TabSimpleButtons(QWidget):
         for key in buttonBindingSaveDict['behavAssignment']:
             if key not in listOfBehaviours:
                 listOfSuperfluousBehav.append(key)
+                
         # if you found any superfluous behaviours set goOn 
         if len(listOfSuperfluousBehav) != 0:
             goOn = 'SuperfluousBehav'
 
         # all is fine we can set the button binding
-        if goOn=='On you go':
+        if goOn == 'On you go':
             self.setButtonPreset(buttonBindingSaveDict)
-        else:
-            # throw warnings if warning flags say so
-            if warningFlag:
-            #the input device was not found throw warning
-                if goOn == 'InputDeviceNotFound':
-                    msg = 'Tried to assign buttons for '
-                    msg += buttonBindingSaveDict['selected_device'] 
-                    msg += '.\n Please connect this device to the computer and restart the program!'
-                    QMessageBox.warning(self,'Wrong Input device',msg)
-                # there are too many behaviours ask if we shopuld still proceed
-                else:
-                    # create dialogue message
-                    msg = 'The following behaviours do not match current behavioural data: \n'
-                    for behav in listOfSuperfluousBehav:
-                        msg = msg + behav + ', '
-                    msg = msg[0:-3]
-                    msg = msg + '\n Do you still want to load this preset?'
-                    msgBox = QMessageBox( self )
-                    msgBox.setIcon( QMessageBox.Information )
-                    msgBox.setText( "Found too many behaviours")
-                    msgBox.setInformativeText( msg )
-                    msgBox.addButton( QMessageBox.Yes )
-                    msgBox.addButton( QMessageBox.No )
+            return
+        if not warningFlag:
+            return
+        # throw warnings if warning flags say so
+        # the input device was not found throw warning
+        if goOn == 'InputDeviceNotFound':
+            msg = 'Tried to assign buttons for '
+            msg += buttonBindingSaveDict['selected_device'] 
+            msg += '.\n Please connect this device to the computer and restart the program!'
+            QMessageBox.warning(self, 'Wrong Input device', msg)
+            return
+        # create dialogue message
+        msg = 'The following behaviours do not match current behavioural data: \n'
+        for behav in listOfSuperfluousBehav:
+            msg = msg + behav + ', '
+        msg = msg[0:-3]
+        msg = msg + '\n Do you still want to load this preset?'
+        msgBox = QMessageBox( self )
+        msgBox.setIcon( QMessageBox.Information )
+        msgBox.setText( "Found too many behaviours")
+        msgBox.setInformativeText( msg )
+        msgBox.addButton( QMessageBox.Yes )
+        msgBox.addButton( QMessageBox.No )
 
-                    msgBox.setDefaultButton( QMessageBox.No ) 
-                    ret = msgBox.exec_()
-                    #handle response
-                    if ret == QMessageBox.Yes:
-                        # delete superfluous behaviours
-                        bAs = buttonBindingSaveDict['behavAssignment']
-                        kAs = buttonBindingSaveDict['keys']
-                        for sfKey in listOfSuperfluousBehav:
-                            kAsKey = bAs[sfKey].keyBinding
-                            del bAs[sfKey]
-                            del kAs[kAsKey]
-                        # and reassign 
-                        buttonBindingSaveDict['behavAssignment'] = bAs
-                        buttonBindingSaveDict['keys']            = kAs
-                        self.setButtonPreset(buttonBindingSaveDict)
+        msgBox.setDefaultButton( QMessageBox.No ) 
+        ret = msgBox.exec_()
+        #handle response
+        if ret == QMessageBox.Yes:
+            # delete superfluous behaviours
+            bAs = buttonBindingSaveDict['behavAssignment']
+            kAs = buttonBindingSaveDict['keys']
+            for sfKey in listOfSuperfluousBehav:
+                kAsKey = bAs[sfKey].keyBinding
+                del bAs[sfKey]
+                del kAs[kAsKey]
+            # and reassign 
+            buttonBindingSaveDict['behavAssignment'] = bAs
+            buttonBindingSaveDict['keys']            = kAs
+            self.setButtonPreset(buttonBindingSaveDict)
 
-    def setButtonPreset(self,buttonBindingSaveDict):
+    def setButtonPreset(self, buttonBindingSaveDict):
         self.selected_device = buttonBindingSaveDict['selected_device'] 
         self.deviceLayout    = buttonBindingSaveDict['deviceLayout'   ]     
         self.keys            = buttonBindingSaveDict['keys'           ]
-        self.behavAssignment = buttonBindingSaveDict['behavAssignment'] 
+        self.behavAssignment = buttonBindingSaveDict['behavAssignment']
+        # update with current icons from animal tab
+        self.update_icons()
         # the device number might change so this has to be set new if not -1
         self.deviceNumber    = self.jsNames.index(buttonBindingSaveDict['selected_device'])       
         
         self.makeJoyStickInfo()
         self.makeBehaviourSummary()
+
+    def update_icons(self):
+        for i in range(len(self.animal_tabs)):
+            behav_dict = self.animal_tabs[i].behaviour_dicts
+            for j in range(len(behav_dict)):
+                icon_path = behav_dict[j]['icon']
+                key = f'A{i}_{behav_dict[j]["name"]}'
+                if key in self.behavAssignment:
+                    self.behavAssignment[key].iconPos = icon_path
 
     def savePreset(self,irrelevant,filename = 'verboseMode',warningFlag = True):
         goOn = "On you go"
@@ -514,16 +526,13 @@ class TabSimpleButtons(QWidget):
             listOfUserBehaviours.append(bd['name']) 
         listOfUserBehaviours.append('delete') 
         listOfAssignments = behavAs.keys()
-        #print listOfAssignments
         
         for key in listOfAssignments:
-           # print key    
             if key[startPoint:] not in listOfUserBehaviours:
                 del behavAs[key]
                 buttonKey = self.behavAssignment[key].keyBinding
                 del self.behavAssignment[key]
 
-               # print buttonKey
                 if buttonKey != 'no button assigned':                
                     self.keys[buttonKey].behaviour = 'None'
                     self.keys[buttonKey].animal = 'None'
@@ -558,7 +567,6 @@ class TabSimpleButtons(QWidget):
                 self.clearLayout(child.layout())
  
     def assignBehav(self,buttonBinding):
-        # print self.selected_device, self.deviceLayout
         goOn = False
 
         # check if device was selected
@@ -848,16 +856,16 @@ class TabSimpleButtons(QWidget):
         self.behavAssignment.clear()
 
         for animalI in range(len(self.animal_tabs)):
-            behavDict = self.animal_tabs[animalI].behaviour_dicts #short hand
+            behavDict = self.animal_tabs[animalI].behaviour_dicts
             
             # add all behaviours
             for i in range(len(behavDict)):
                 temp = BehavBinding(animal = animalI,
-                                                 iconPos = behavDict[i]['icon'],
-                                                 behaviour = behavDict[i]['name'],
-                                                 color = behavDict[i]['color'],
-                                                 keyBinding = 'no button assigned',
-                                                 UICdevice = 'None')
+                                    iconPos = behavDict[i]['icon'],
+                                    behaviour = behavDict[i]['name'],
+                                    color = behavDict[i]['color'],
+                                    keyBinding = 'no button assigned',
+                                    UICdevice = 'None')
 
                 self.behavAssignment.update({'A'+str(animalI)+'_'+behavDict[i]['name']:temp})
                 # self.bindingList.append({animal    : animalI,
@@ -906,9 +914,11 @@ class TabSimpleButtons(QWidget):
         pass
         self.savePreset(0,filename = HOME + '/.pyvisor/guidefaults_buttons.pkl',warningFlag=False)
     def resizeEvent(self, event):
-        self.background_image.resize(event.size())   
+        self.background_image.resize(event.size())
+        
     def getAssignments(self):
-        return (self.keys,self.behavAssignment)
+        return (self.keys, self.behavAssignment)
+    
     def getSelectedLayout(self):
         return self.deviceLayout
     def resetButtons(self):
