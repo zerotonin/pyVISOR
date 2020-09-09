@@ -38,8 +38,6 @@ class TabSimpleButtons(QWidget):
         # Get and Initialize Behaviour
         # ============================
 
-        print('===== TabSimpleButtons.init_UI called!')
-
         self.keys            = dict()
         self.behavAssignment = dict()
         self.animal_tabs = self.parent.get_animal_tabs()
@@ -506,11 +504,11 @@ class TabSimpleButtons(QWidget):
                 buttonLabel.setStyleSheet('color: #ffffff') 
 
             tempBox.addWidget(behavLabel)
-            if binding.iconPos != 'None':
+            if binding.iconPos != 'None' and binding.iconPos is not None and binding.iconPos:
                 imageLabel =  QLabel() 
                 pixmap =  QPixmap(binding.iconPos)
                 pixmap = pixmap.scaledToWidth(20)
-                imageLabel.setStyleSheet('color: '+ binding.color)
+                imageLabel.setStyleSheet('color: ' + binding.color)
                 imageLabel.setPixmap(pixmap)
                 tempBox.addWidget(imageLabel)
             tempBox.addWidget(btn_setUIC)
@@ -721,8 +719,8 @@ class TabSimpleButtons(QWidget):
             # This needs to be questioned before doing
             self.deviceLayout    = str(device)
             self.initializeKeys(device)
-            # 
-            self.pixmap=QPixmap(DEVICES[str(device)])
+            #
+            self.pixmap = QPixmap(DEVICES[str(device)])
             self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(),Qt.KeepAspectRatio))
             self.background_image.setScaledContents(True)
             self.makeJoyStickInfo()

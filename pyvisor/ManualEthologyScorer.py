@@ -395,7 +395,8 @@ class ManualEthologyScorer():
                 temp  = self.animals[0].getEthogram()
                 for i in range(1,len(self.animals)):
                     temp2 = self.animals[i].getEthogram()
-                    temp = np.hstack((temp,temp2))
+                    if temp2 is not None:
+                        temp = np.hstack((temp,temp2))
                 
                 return temp  
         else:

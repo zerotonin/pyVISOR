@@ -93,6 +93,8 @@ class animalEthogram():
             self.behaviours[i].ethogram =  np.zeros((frameLen,1),int)
             
     def getEthogram(self):
+        if len(self.behaviours) == 0:
+            return None
         if (len(self.behaviours) == 1):
             return self.behaviours[0].ethogram
         else:

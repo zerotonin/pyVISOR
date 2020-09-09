@@ -89,8 +89,6 @@ class TabAnalysis(QWidget):
             vbox = self.makeBehavInfoBox(animalI, self.animal_tabs[animalI].name,
                                          self.animal_tabs[animalI].behaviour_dicts,
                                          self.assignment[1]) # 1 is here for the behaviour assigments / zero would be keys
-            print('-------- makeBehaviourSummary')
-            print(self.animal_tabs[animalI].behaviour_dicts)
             self.hboxConciseBehav.addLayout(vbox) 
         
         movieControlBox = self.makeMovieControlInfoBox(self.assignment[1])
@@ -208,7 +206,8 @@ class TabAnalysis(QWidget):
             behavLabel.setStyleSheet('color: '+behavDict[i]['color']) 
             hbox.addWidget(behavLabel)
 
-            if behavDict[i]['icon'] != 'None':
+            icon_path = behavDict[i]['icon']
+            if icon_path != 'None' and icon_path is not None and icon_path:
                 imageLabel = QLabel()
                 pixmap =  QPixmap(behavDict[i]['icon'])
                 pixmap = pixmap.scaledToWidth(20)
@@ -385,7 +384,6 @@ class TabAnalysis(QWidget):
             exts = ("png", "jpeg", "bmp", "tga")
             extension, ok = QInputDialog.getItem(self, "select file format", 
                                                        "list of formats", exts, 0, False)
-            print(type(ok), ok)
             if ok:       
                 goOn = True
             else:
@@ -517,7 +515,6 @@ class TabAnalysis(QWidget):
 
         # make icons and 
         iconObjList = list()
-        print(iconList)
         for i in range(len(iconList)):
             #make color
             colorList = list()                                      
@@ -626,8 +623,6 @@ class TabAnalysis(QWidget):
 
                 behav_binding = self.assignment[1][key]
                 icon_path = behav_binding.iconPos
-                print('------ checkingInputs')
-                print(behav_binding.animal, behav_binding.behaviour, icon_path)
                 if len(icon_path) == 0:
                     no_icons.append((behav_binding.animal, behav_binding.behaviour))
 

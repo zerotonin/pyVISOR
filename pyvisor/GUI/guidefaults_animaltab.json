@@ -1,40 +1,40 @@
 [
     [
-        "animal_1", 
+        "animal_1",
         [
             {
-                "color": "#ff55ff", 
-                "compatible": [], 
-                "name": "agression", 
+                "color": "#cc0000",
+                "compatible": [],
+                "name": "agression",
                 "icon": ""
-            }, 
+            },
             {
-                "color": "#916cff", 
-                "compatible": [], 
-                "name": "mating", 
+                "color": "#916cff",
+                "compatible": [],
+                "name": "mating",
                 "icon": ""
             }
         ]
-    ], 
+    ],
     [
-        "animal_2", 
+        "animal_2",
         [
             {
-                "color": "#000000", 
-                "compatible": [], 
-                "name": "unnamed", 
-                "icon": ""
-            }, 
+                "name": "behaviour_1",
+                "color": "#73d216",
+                "icon": "",
+                "compatible": []
+            },
             {
-                "color": "#000000", 
-                "compatible": [], 
-                "name": "unnamed", 
-                "icon": ""
+                "name": "behaviour_2",
+                "color": "#3465a4",
+                "icon": "",
+                "compatible": []
             }
         ]
-    ], 
+    ],
     [
-        "animal_3", 
+        "animal_3",
         []
     ]
 ]
