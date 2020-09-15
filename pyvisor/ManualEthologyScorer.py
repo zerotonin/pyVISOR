@@ -105,7 +105,7 @@ class ManualEthologyScorer():
                     if (sum(stati) == len(stati)*-1):
                         self.screen.blit(self.deleteIcon,animal.behaviours[i].iconPos[0])
                     
-                # ethogram for behaviour 1
+                # ethogram_length for behaviour 1
                 if (animal.behaviours[i].ethogram[self.movie.get_frameNo()] == 1):
                     self.screen.blit(animal.behaviours[i].iconT,animal.behaviours[i].iconPos[1])
             except IndexError:
@@ -214,16 +214,16 @@ class ManualEthologyScorer():
 ###############################################################################
 #                               Behavioural Setup                           #
 ###############################################################################   
-    def addAnimal(self,animalName,ethogram,behavLabels,status,disjuncList):   
-        self.animals.append(aE.animalEthogram(animalName, # label for the animal
-                                             ethogram, # ethogram length
-                                             behavLabels, # behaviour labels
-                                             status, # beginning status                                                   
-                                             disjuncList)) # disjunction list     
+    def addAnimal(self, animal_name, ethogram_length, behav_labels, status, disjunction_list):
+        self.animals.append(aE.animalEthogram(animal_name,
+                                              ethogram_length,
+                                              behav_labels,
+                                              status,
+                                              disjunction_list))
 
     def setAnimal(self,animalName,ethogram,behavLabels,status,disjuncList,animalID):
         self.animals[animalID] = aE.animalEthogram(animalName, # label for the animal
-                                                   ethogram, # ethogram length
+                                                   ethogram, # ethogram length length
                                                    behavLabels, # behaviour labels
                                                    status, # beginning status                                                   
                                                    disjuncList) # disjunction list
@@ -236,36 +236,36 @@ class ManualEthologyScorer():
 ###############################################################################
 #                               User Input                                    #
 ############################################################################### 
-    def setUIC(self,modus,buttonBindings = 0,keyBindings = 0,axisThresh = 0,freeBindingList=0,UICdevice=0):
+    def setUIC(self, input_device, buttonBindings = 0, keyBindings = 0, axisThresh = 0, freeBindingList=0, UICdevice=0):
         # intialise UIC object
-        self.uic = UserInputControl.UserInputControl(self.animals,self.movie)
-        # use XBox preset
-        if (modus == 'XBox'):
-            pygame.joystick.init()
-            joystick = pygame.joystick.Joystick(0)
-            joystick.init()
+        self.user_input_control = UserInputControl.UserInputControl(self.animals, self.movie)
+        if input_device == 'XBox':
+            ManualEthologyScorer._initialize_joystick()
             if buttonBindings == 0:            
-                self.uic.setStandardXbox()
+                self.user_input_control.setStandardXbox()
             else:
-                self.uic.setStandardXbox(buttonBindings = buttonBindings)
-        # use PS2 like preset        
-        elif (modus == 'PS'):
-            pygame.joystick.init()
-            joystick = pygame.joystick.Joystick(0)
-            joystick.init()
+                self.user_input_control.setStandardXbox(buttonBindings = buttonBindings)
+        elif input_device == 'PS':
+            ManualEthologyScorer._initialize_joystick()
             if buttonBindings == 0:            
-                self.uic.setStandardPS2()
+                self.user_input_control.setStandardPS2()
             else:
-                self.uic.setStandardPS2(buttonBindings = buttonBindings)
-        #use a keyboard preset
-        elif (modus == 'Keyboard'):
+                self.user_input_control.setStandardPS2(buttonBindings = buttonBindings)
+        elif input_device == 'Keyboard':
             if buttonBindings == 0:            
-                self.uic.setStandardKeyB()
+                self.user_input_control.setStandardKeyB()
             else:
-                self.uic.setStandardKeyB(keyBindings = keyBindings)
+                self.user_input_control.setStandardKeyB(keyBindings = keyBindings)
+
         # here you have to define buttons/keys, animals and axis thresholds
-        elif (modus == 'Free'):
+        elif input_device == 'Free':
             self.setUICFree(axisThresh,freeBindingList,UICdevice)
+
+    @staticmethod
+    def _initialize_joystick():
+        pygame.joystick.init()
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
 
     def setUICFree(self,axisThresh,freeBindingList,UICdevice):
         '''
@@ -275,7 +275,7 @@ class ManualEthologyScorer():
         freeBindingList = list of tupels eaach tupel ('bindingString',animalNum (-1) for movie, behaviour num or string 
         '''
         # intialise UIC object
-        self.uic = UserInputControl.UserInputControl(self.animals,self.movie)
+        self.user_input_control = UserInputControl.UserInputControl(self.animals, self.movie)
         #set joypad axis threshold
         if (axisThresh == 0 and UICdevice =='Xbox') or (axisThresh == 0 and UICdevice == 'XBox'):
             axisThresh = {'A0-':-0.6,'A0+':0.6,'A1-':-0.6,'A1+':0.6,
@@ -285,7 +285,7 @@ class ManualEthologyScorer():
             axisThresh = {'A0-':-0.3,'A0+':0.3,'A1-':-0.3,'A1+':0.3,
                           'A3-':-0.3,'A3+':0.3,'A4-':-0.3,'A4+':0.3}
         
-        self.uic.setFreePad(freeBindingList,axisThresh)
+        self.user_input_control.setFreePad(freeBindingList, axisThresh)
         
      
     
@@ -349,7 +349,7 @@ class ManualEthologyScorer():
                      
                 if event.type == pygame.JOYBUTTONDOWN:
                     inputCode ='B' + str(event.button)                    
-                    self.mediafps,self.runMov,self.movBackWards = self.uic.checkPad(event,self.mediafps,self.runMov,self.movBackWards,inputCode)
+                    self.mediafps,self.runMov,self.movBackWards = self.user_input_control.checkPad(event, self.mediafps, self.runMov, self.movBackWards, inputCode)
                     
                 if event.type == pygame.JOYAXISMOTION:
                     value = event.dict['value']
@@ -357,12 +357,12 @@ class ManualEthologyScorer():
                     inputCode = 'A'+str(axis)
                     try:
                         
-                        if value < self.uic.axisThresh[inputCode+'-']:
+                        if value < self.user_input_control.axisThresh[inputCode + '-']:
                             inputCode = inputCode+'-'
-                            self.mediafps,self.runMov,self.movBackWards = self.uic.checkPad(event,self.mediafps,self.runMov,self.movBackWards,inputCode)
-                        elif (value > self.uic.axisThresh[inputCode+'+']):
+                            self.mediafps,self.runMov,self.movBackWards = self.user_input_control.checkPad(event, self.mediafps, self.runMov, self.movBackWards, inputCode)
+                        elif (value > self.user_input_control.axisThresh[inputCode + '+']):
                             inputCode = inputCode+'+'
-                            self.mediafps,self.runMov,self.movBackWards = self.uic.checkPad(event,self.mediafps,self.runMov,self.movBackWards,inputCode)    
+                            self.mediafps,self.runMov,self.movBackWards = self.user_input_control.checkPad(event, self.mediafps, self.runMov, self.movBackWards, inputCode)
                            
                     except KeyError:
                         print('This key was not assigned!: ',inputCode)
@@ -371,14 +371,14 @@ class ManualEthologyScorer():
                     inputCode = 'H'+str(value[0])+str(value[1])
                     
                     if (inputCode != 'H00'):
-                        self.mediafps,self.runMov,self.movBackWards = self.uic.checkPad(event,self.mediafps,self.runMov,self.movBackWards,inputCode)
+                        self.mediafps,self.runMov,self.movBackWards = self.user_input_control.checkPad(event, self.mediafps, self.runMov, self.movBackWards, inputCode)
                     
                 if event.type == pygame.KEYDOWN:
-                    self.mediafps,self.runMov,self.movBackWards = self.uic.checkKeys(event,self.mediafps,self.runMov,self.movBackWards)
+                    self.mediafps,self.runMov,self.movBackWards = self.user_input_control.checkKeys(event, self.mediafps, self.runMov, self.movBackWards)
             
             if self.refreshMediaFlag:
                 self.refreshMedia(clock)
-                #save the current status to the ethogram
+                #save the current status to the ethogram_length
             clock.tick(self.fps)
         
         pygame.quit()

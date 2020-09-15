@@ -332,7 +332,7 @@ class UserInputControl():
         #Behaviour Recall Functions #
     def behavButtonReac(self,animalID,behaviourID,vAll):
         #shorthand
-        #print 'uic.behavButtonReac behavStr', 'Behav'+str(behaviourID), animalID, behaviourID
+        #print 'user_input_control.behavButtonReac behavStr', 'Behav'+str(behaviourID), animalID, behaviourID
         vAll[0][animalID].setBehaviour('Behav'+str(behaviourID),self.movie.get_frameNo(),behaviourID)
 
 
@@ -365,14 +365,14 @@ class UserInputControl():
              
     def checkPad(self,event,mediafps,runMov,movBackWards,inputCode):
         vAll= [self.animals,mediafps,runMov,movBackWards,self.movie]
-        #print 'uic.checkPad',inputCode, self.movie.get_frameNo()
+        #print 'user_input_control.checkPad',inputCode, self.movie.get_frameNo()
         try:
             vAll = self.padSwitch[inputCode](vAll)
         except KeyError:
-            print('uic.checkPad: This key was not assigned: ',inputCode)
+            print('user_input_control.checkPad: This key was not assigned: ',inputCode)
         
                 
-        #print 'uic.checkPad inputcode fps movieRunning backwards',inputCode, vAll[1],vAll[2],vAll[3], self.movie.get_frameNo() 
+        #print 'user_input_control.checkPad inputcode fps movieRunning backwards',inputCode, vAll[1],vAll[2],vAll[3], self.movie.get_frameNo()
         return vAll[1],vAll[2],vAll[3] 
         
     def checkKeys(self,event,mediafps,runMov,movBackWards):

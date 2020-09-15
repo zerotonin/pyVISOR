@@ -44,7 +44,7 @@ class MediaHandler():
             self.size   = (self.width, self.height)
             self.fps    = 25
         else:
-            print('MediaHandler:unknown modus')
+            print('MediaHandler:unknown input_device')
             
     
     def getFrame(self,frameNo):
@@ -70,7 +70,7 @@ class MediaHandler():
             elif(self.modus == 'image'):
                 self.getFrameImage(frameNo)
             else:
-                print('MediaHandler:unknown modus')
+                print('MediaHandler:unknown input_device')
                 
             #delete from buffer if to large
             if (len(self.bufferLog) > self.bufferSize):
