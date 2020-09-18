@@ -39,9 +39,9 @@ sco.addAnimal('male 2', #animal label
 sco.loadNorPixSeq(filename)
 sco.setIconPositions()
 
-sco.animals[0].assignIconPos2UniqueDJB(sco.iconPos[0:1])
+sco.animals[0].assignIconPos2UniqueDJB(sco.icon_path[0:1])
 sco.animals[0].assignIcons( iconList,['simple']*3)
-sco.animals[1].assignIconPos2UniqueDJB(sco.iconPos[7:8])
+sco.animals[1].assignIconPos2UniqueDJB(sco.icon_path[7:8])
 sco.animals[1].assignIcons( iconList,['simple']*3)
 
 sco.setUIC('Keyboad') #PS,XBox

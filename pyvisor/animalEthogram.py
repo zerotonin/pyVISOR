@@ -48,7 +48,7 @@ class animalEthogram():
         for djl in uniqueDJL:
             newPos = iconPosList.pop()            
             for behav in djl:
-                self.behaviours[behav].iconPos = newPos
+                self.behaviours[behav].icon_path = newPos
                 
                 
     def assignIcons(self, iconList,modi):

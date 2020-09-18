@@ -4,7 +4,7 @@ Created on Thu Jun  2 18:26:27 2016
 
 @author: bgeurten
 """
-import copy
+
 class UserInputControl():
     def __init__(self,animals,movie,
                  keyBindings = [113,119,97,115,120,121,111,112,107,108,109,44,
@@ -260,11 +260,11 @@ class UserInputControl():
 
         self.padSwitch = dict()
         for i in range(len(freeBindingList)):
-            button    = copy.deepcopy(freeBindingList[i][0])
-            animal    = copy.deepcopy(freeBindingList[i][1])
-            behaviour = copy.deepcopy(freeBindingList[i][2])
-            #if the animal is -1 this means its a movie command
-            if  freeBindingList[i][1] ==-1:
+            button    = freeBindingList[i][0]
+            animal    = freeBindingList[i][1]
+            behaviour = freeBindingList[i][2]
+
+            if UserInputControl._is_movie_binding(animal):
                 if freeBindingList[i][2]   == 'stopToggle':
                     self.padSwitch.update({button : lambda y: self.stopToggle(y[2],y) })
                 elif freeBindingList[i][2] == 'changeFrameNoHigh1':
@@ -295,7 +295,11 @@ class UserInputControl():
                     self.padSwitch.update({button : (lambda animal,behaviour: lambda y: self.behavButtonReac(animal,behaviour,y))(animal,behaviour)})
         
         self.buttonBindings=self.padSwitch.keys()
-        #print self.buttonBindings
+
+    @staticmethod
+    def _is_movie_binding(animal_index: int) -> bool:
+        return animal_index == -1
+
     def toggleRunMov(self,runMov,vAll):
         vAll[2] = not runMov
         return vAll
@@ -328,23 +332,16 @@ class UserInputControl():
     def toggleMovieDir(self,movBackWards,vAll):
         vAll[3] = not movBackWards
         return vAll
-        
-        #Behaviour Recall Functions #
+
     def behavButtonReac(self,animalID,behaviourID,vAll):
-        #shorthand
-        #print 'user_input_control.behavButtonReac behavStr', 'Behav'+str(behaviourID), animalID, behaviourID
         vAll[0][animalID].setBehaviour('Behav'+str(behaviourID),self.movie.get_frameNo(),behaviourID)
-
-
         return vAll    
              
     def deleteBehav(self,animalID,vAll): 
-        #shorthand
-        #for i in range(len(vAll[0][animalID].behaviours)):
-        vAll[0][animalID].setBehaviour('Del0',self.movie.get_frameNo(),0) 
+        vAll[0][animalID].setBehaviour('Del0',self.movie.get_frameNo(),0)
         return vAll          
               
-    def changeFrameNo(self,step,vAll):
+    def changeFrameNo(self, step, vAll):
         frameNo = self.movie.get_frameNo()+step
         if frameNo>self.movie.length:
             frameNo = self.movie.length
@@ -365,15 +362,13 @@ class UserInputControl():
              
     def checkPad(self,event,mediafps,runMov,movBackWards,inputCode):
         vAll= [self.animals,mediafps,runMov,movBackWards,self.movie]
-        #print 'user_input_control.checkPad',inputCode, self.movie.get_frameNo()
         try:
             vAll = self.padSwitch[inputCode](vAll)
         except KeyError:
             print('user_input_control.checkPad: This key was not assigned: ',inputCode)
         
                 
-        #print 'user_input_control.checkPad inputcode fps movieRunning backwards',inputCode, vAll[1],vAll[2],vAll[3], self.movie.get_frameNo()
-        return vAll[1],vAll[2],vAll[3] 
+        return vAll[1],vAll[2],vAll[3]
         
     def checkKeys(self,event,mediafps,runMov,movBackWards):
         vAll= [self.animals,mediafps,runMov,movBackWards,self.movie];

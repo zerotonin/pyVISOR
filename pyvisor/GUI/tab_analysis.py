@@ -218,7 +218,7 @@ class TabAnalysis(QWidget):
             
             key = 'A'+str(animalNo) + '_' + behavDict[i]['name']
             if key in assignment.keys():
-                deviceLabel = QLabel(assignment[key].UICdevice)
+                deviceLabel = QLabel(assignment[key].device)
                 deviceLabel.setStyleSheet('color: #C0C0C0') 
                 keyLabel = QLabel(assignment[key].keyBinding)
                 keyLabel.setStyleSheet('color: #FFFFFF') 
@@ -253,7 +253,7 @@ class TabAnalysis(QWidget):
                 tempBox = QHBoxLayout()
                 behavLabel = QLabel(binding.behaviour)
                 behavLabel.setStyleSheet('color: '+ binding.color) 
-                deviceLabel = QLabel(binding.UICdevice)
+                deviceLabel = QLabel(binding.device)
                 deviceLabel.setStyleSheet('color: #C0C0C0') 
                 buttonLabel = QLabel(binding.keyBinding)
                 if binding.keyBinding == 'no button assigned':
@@ -459,7 +459,7 @@ class TabAnalysis(QWidget):
         number_of_behaviours, number_of_unique_disjunctive_behaviours = self._get_animal_configurations(button_list,
                                                                                                         icon_list)
 
-        # self._save_animals_and_buttons()
+        self._save_animals_and_button_assignments()
 
         # load media
         if self.MediaType == 'Movie':
@@ -486,8 +486,8 @@ class TabAnalysis(QWidget):
 
         _thread.start_new_thread(self.sco.go, ())
 
-    def _save_animals_and_buttons(self):
-        raise NotImplementedError
+    def _save_animals_and_button_assignments(self):
+        self.parent.tab_buttons.save_button_assignments(HOME + '/.pyvisor/guidefaults_buttons.json')
 
     def _assign_icon_positions(self, behav_NumList, iconObjList, uniqueDJB_NumList):
         # All Icon Positions are set one after the other / this needs to be user definable
@@ -553,7 +553,7 @@ class TabAnalysis(QWidget):
             # fill lists
             buttonList.append(behav_binding.keyBinding)
             behavList.append(str(behav_binding.behaviour))
-            icon_path, icon_color = (behav_binding.iconPos,
+            icon_path, icon_color = (behav_binding.icon_path,
                                      behav_binding.color)
             iconList.append((icon_path, icon_color))
             # disjunction list needs to be updated because it is not implemented yet
@@ -567,6 +567,7 @@ class TabAnalysis(QWidget):
 
         free_binding_list = list()
         for key in self.assignment[0].keys():
+            print('animal:', self.assignment[0][key].animal)
             if self.assignment[0][key].animal == 'movie':
                 animal = -1
             elif self.assignment[0][key].animal == 'None':
@@ -636,7 +637,7 @@ class TabAnalysis(QWidget):
                         listOfUnassignedBehaviour.append(key)
 
                 behav_binding = self.assignment[1][key]
-                icon_path = behav_binding.iconPos
+                icon_path = behav_binding.icon_path
                 if len(icon_path) == 0:
                     no_icons.append((behav_binding.animal, behav_binding.behaviour))
 

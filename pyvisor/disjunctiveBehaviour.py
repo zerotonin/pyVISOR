@@ -6,10 +6,10 @@ Created on Tue May 31 16:24:06 2016
 """
 
 import pygame
-class disjunctiveBehaviour():
+class disjunctiveBehaviour:
     
-    def __init__(self,ethogram, status = 0,label='behaviour A',lastChange = 0,
-                 color = 0, icon = 0, iconPos = 0,  iconSize= 0):
+    def __init__(self, ethogram, status = 0, label='behaviour A', lastChange = 0,
+                 color = 0, icon = 0, icon_path = 0, iconSize= 0):
         self.status = status
         self.lastChange = lastChange
         self.label = label
@@ -17,7 +17,7 @@ class disjunctiveBehaviour():
         self.color = color
         self.icon = icon
         self.iconT = icon
-        self.iconPos = iconPos
+        self.icon_path = icon_path
         self.iconSize = iconSize
         
     def setIcon(self,icon,modus):

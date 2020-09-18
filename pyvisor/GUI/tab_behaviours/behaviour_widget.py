@@ -109,7 +109,7 @@ class BehaviourWidget(QFrame):
             self.param_dict['icon'] = str(icon)
         self.btn_icon.setIcon(QIcon(self.param_dict['icon']))
         # get reference to tab_buttons and call update_icons method
-        self.parent.parent.parent.parent.shortHandButton.update_icons()
+        self.parent.parent.parent.parent.tab_buttons.update_icons()
 
     def set_icon_via_gallery(self):
         color_str = self.param_dict['color']
@@ -126,7 +126,7 @@ class BehaviourWidget(QFrame):
                                       color_tuple)
         self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
         # get reference to tab_buttons and call update_icons method
-        self.parent.parent.parent.parent.shortHandButton.update_icons()
+        self.parent.parent.parent.parent.tab_buttons.update_icons()
 
     def set_color(self):
         color = QColorDialog.getColor()

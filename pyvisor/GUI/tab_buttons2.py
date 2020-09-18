@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QFileDialog, QPushButton, QMessageBox, QComboBox, QInputDialog)
 
 import pygame
-import pickle
+import json
 from pygame.locals import *
 from .behavBinding import BehavBinding
 import os
@@ -58,7 +58,7 @@ class TabSimpleButtons(QWidget):
         self.hatsNum         = [None]*self.joysticNum
         self.buttonsNum      = [None]*self.joysticNum
         self.axesNum         = [None]*self.joysticNum
-        self.jsNames         = [None]*(self.joysticNum+1)
+        self.input_device_names         = [None] * (self.joysticNum + 1)
         
         for i in range(self.joysticNum):
             self.joystick =  pygame.joystick.Joystick(i)
@@ -67,8 +67,8 @@ class TabSimpleButtons(QWidget):
             self.axesNum[i]    = self.joystick.get_numaxes()
             self.buttonsNum[i] = self.joystick.get_numbuttons()
             self.hatsNum[i]    = self.joystick.get_numhats()
-            self.jsNames[i]    = self.joystick.get_name()
-        self.jsNames[-1] = 'Keyboard'
+            self.input_device_names[i]    = self.joystick.get_name()
+        self.input_device_names[-1] = 'Keyboard'
 
         # ===========================
         # background image 
@@ -119,16 +119,15 @@ class TabSimpleButtons(QWidget):
         #set signals and slots
         self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
         try:
-            self.loadPreset(0, filename=HOME + '/.pyvisor/guidefaults_buttons.pkl',
-                            warningFlag=False)
+            self.load_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
         except FileNotFoundError:
             print('No preset for button bindings found')
             
     def makeLoadSavePreset(self):
         loadButton = QPushButton('load preset')
-        loadButton.clicked.connect(self.loadPreset)
+        loadButton.clicked.connect(lambda x: self.load_button_assignments())
         saveButton = QPushButton('save preset')
-        saveButton.clicked.connect(self.savePreset)
+        saveButton.clicked.connect(lambda x: self.save_button_assignments())
         resetButton  = QPushButton('reset buttons')
         resetButton.clicked.connect(self.resetButtons)
         self.hboxLoadSavePreset.addWidget(loadButton)
@@ -136,7 +135,7 @@ class TabSimpleButtons(QWidget):
         self.hboxLoadSavePreset.addWidget(resetButton)
         self.hboxLoadSavePreset.addStretch()
         
-    def loadPreset(self, irrelevant, filename=None, warningFlag=True): 
+    def load_button_assignments(self, filename=None):
         goOn = 'On you go'
 
         if filename is None:
@@ -146,29 +145,23 @@ class TabSimpleButtons(QWidget):
         if len(filename) == 0:
             return
         
-        # read it
-        filehandler = open(str(filename), "rb")
-        buttonBindingSaveDict = pickle.load(filehandler)
-        filehandler.close()
+        with open(str(filename), 'rt') as filehandle:
+            button_bindings = json.load(filehandle)
+            for key in ['keys', 'behavAssignment']:
+                button_bindings[key] = BehavBinding.from_savable_dict_to_dict_of_objects(button_bindings[key])
 
-        #check if input device is present    
-        if buttonBindingSaveDict['selected_device'] not in self.jsNames:
+        if button_bindings['selected_device'] not in self.input_device_names:
             goOn = 'InputDeviceNotFound'
 
-        #check if all behaviours are present
-        listOfBehaviours = self.behavAssignment.keys()
-        listOfSuperfluousBehav = list()
-        for key in buttonBindingSaveDict['behavAssignment']:
-            if key not in listOfBehaviours:
-                listOfSuperfluousBehav.append(key)
-                
+        listOfSuperfluousBehav = self._get_assigned_buttons_of_undefined_behaviours(button_bindings)
+
         # if you found any superfluous behaviours set goOn 
         if len(listOfSuperfluousBehav) != 0:
             goOn = 'SuperfluousBehav'
 
         # all is fine we can set the button binding
         if goOn == 'On you go':
-            self.setButtonPreset(buttonBindingSaveDict)
+            self.setButtonPreset(button_bindings)
             return
         if not warningFlag:
             return
@@ -176,7 +169,7 @@ class TabSimpleButtons(QWidget):
         # the input device was not found throw warning
         if goOn == 'InputDeviceNotFound':
             msg = 'Tried to assign buttons for '
-            msg += buttonBindingSaveDict['selected_device'] 
+            msg += button_bindings['selected_device']
             msg += '.\n Please connect this device to the computer and restart the program!'
             QMessageBox.warning(self, 'Wrong Input device', msg)
             return
@@ -198,26 +191,34 @@ class TabSimpleButtons(QWidget):
         #handle response
         if ret == QMessageBox.Yes:
             # delete superfluous behaviours
-            bAs = buttonBindingSaveDict['behavAssignment']
-            kAs = buttonBindingSaveDict['keys']
+            bAs = button_bindings['behavAssignment']
+            kAs = button_bindings['keys']
             for sfKey in listOfSuperfluousBehav:
                 kAsKey = bAs[sfKey].keyBinding
                 del bAs[sfKey]
                 del kAs[kAsKey]
             # and reassign 
-            buttonBindingSaveDict['behavAssignment'] = bAs
-            buttonBindingSaveDict['keys']            = kAs
-            self.setButtonPreset(buttonBindingSaveDict)
+            button_bindings['behavAssignment'] = bAs
+            button_bindings['keys']            = kAs
+            self.setButtonPreset(button_bindings)
+
+    def _get_assigned_buttons_of_undefined_behaviours(self, button_bindings):
+        listOfBehaviours = self.behavAssignment.keys()
+        listOfSuperfluousBehav = list()
+        for key in button_bindings['behavAssignment']:
+            if key not in listOfBehaviours:
+                listOfSuperfluousBehav.append(key)
+        return listOfSuperfluousBehav
 
     def setButtonPreset(self, buttonBindingSaveDict):
         self.selected_device = buttonBindingSaveDict['selected_device'] 
-        self.deviceLayout    = buttonBindingSaveDict['deviceLayout'   ]     
-        self.keys            = buttonBindingSaveDict['keys'           ]
+        self.deviceLayout    = buttonBindingSaveDict['deviceLayout']
+        self.keys            = buttonBindingSaveDict['keys']
         self.behavAssignment = buttonBindingSaveDict['behavAssignment']
         # update with current icons from animal tab
         self.update_icons()
         # the device number might change so this has to be set new if not -1
-        self.deviceNumber    = self.jsNames.index(buttonBindingSaveDict['selected_device'])       
+        self.deviceNumber    = self.input_device_names.index(buttonBindingSaveDict['selected_device'])
         
         self.makeJoyStickInfo()
         self.makeBehaviourSummary()
@@ -229,59 +230,47 @@ class TabSimpleButtons(QWidget):
                 icon_path = behav_dict[j]['icon']
                 key = f'A{i}_{behav_dict[j]["name"]}'
                 if key in self.behavAssignment:
-                    self.behavAssignment[key].iconPos = icon_path
+                    self.behavAssignment[key].icon_path = icon_path
 
-    def savePreset(self,irrelevant,filename = 'verboseMode',warningFlag = True):
-        goOn = "On you go"
-        
+    def save_button_assignments(self, filename=None):
         for key in self.behavAssignment.keys():
             buttonKey = self.behavAssignment[key].keyBinding
             # check if keyBinding is the same in both dictionaries
             if buttonKey not in self.keys:
-                goOn = 'ButtonMissing'
-                errorMsg = key
-            else:
-                # check if behaviours are identical    
-                bAbehav   = self.behavAssignment[key].behaviour
-                kAbehav   = self.keys[buttonKey].behaviour
-                
-                if (kAbehav != bAbehav):
-                    goOn = 'BehavMissing'
-                    errorMsg = (bAbehav,kAbehav)
-                    
-        if goOn == "On you go":
-            # create button Binding dictionary
-            buttonBindingSaveDict = dict()
-            buttonBindingSaveDict.update({'selected_device' : self.selected_device}) 
-            buttonBindingSaveDict.update({'deviceLayout'    : self.deviceLayout   })          
-            buttonBindingSaveDict.update({'deviceNumber'    : self.deviceNumber   })           
-            buttonBindingSaveDict.update({'keys'            : self.keys           })
-            buttonBindingSaveDict.update({'behavAssignment' : self.behavAssignment}) 
-            
-            #get filename in verbose mode if needed
-            if filename == 'verboseMode':
-                filename = QFileDialog.getSaveFileName(self, 'Save Button Binding', HOME, initialFilter='*.pkl')
-                filename = str(filename[0])
-            if len(filename) == 0:
+                QMessageBox.warning(self, 'Key Assignment failed!',
+                                    key + " is not assigned to a key / button",
+                                    QMessageBox.Ok)
                 return
-            # write it away
-            filehandler = open(filename, "wb")
-            pickle.dump(buttonBindingSaveDict, filehandler)
-            filehandler.close()
-        else:
-            # There was an error show warnings if warning flag says so
-            if warningFlag:
-                    
-                if goOn == 'ButtonMissing':
-                    QMessageBox.warning(self, 'Key Assignment failed!',
-                                        errorMsg + " is not assigned to a key / button",
-                                        QMessageBox.Ok)
-                else:
-                    QMessageBox.warning(self, 'Behaviours Not Synchronized!',
-                                        "There is an internal problem with " + errorMsg[0]+"/" + errorMsg[1],
-                                        QMessageBox.Ok)
 
-        
+            bAbehav = self.behavAssignment[key].behaviour
+            kAbehav = self.keys[buttonKey].behaviour
+
+            if kAbehav != bAbehav:
+                QMessageBox.warning(self, 'Behaviours Not Synchronized!',
+                                    "There is an internal problem with " + bAbehav + "/" + kAbehav,
+                                    QMessageBox.Ok)
+                return
+
+        button_binding_save_dict = self._create_button_binding_dict()
+
+        if filename is None:
+            filename = QFileDialog.getSaveFileName(self, 'Save Button Binding', HOME, initialFilter='*.pkl')
+            filename = str(filename[0])
+        if len(filename) == 0:
+            return
+
+        with open(filename, 'wt') as filehandler:
+            json.dump(button_binding_save_dict, filehandler)
+
+    def _create_button_binding_dict(self):
+        d = {}
+        d.update({'selected_device': self.selected_device})
+        d.update({'deviceLayout': self.deviceLayout})
+        d.update({'deviceNumber': self.deviceNumber})
+        d.update({'keys': BehavBinding.from_object_dict_to_savable_dict(self.keys)})
+        d.update({'behavAssignment': BehavBinding.from_object_dict_to_savable_dict(self.behavAssignment)})
+        return d
+
     def makeJoyStickInfo(self):
         if (self.deviceNumber == -2):
             self.makeJoyStickInfoInitial()
@@ -291,7 +280,7 @@ class TabSimpleButtons(QWidget):
     def makeSelectedJoyStickInfo(self):
         self.clearLayout(self.hboxJoyStickInfo)
         vBoxDevice = QVBoxLayout()
-        joyName  = QLabel(self.jsNames[self.deviceNumber] ,self)
+        joyName  = QLabel(self.input_device_names[self.deviceNumber], self)
         joyName.setStyleSheet(self.labelStyle)
         vBoxDevice.addWidget(joyName)
 
@@ -325,7 +314,7 @@ class TabSimpleButtons(QWidget):
         self.clearLayout(self.hboxJoyStickInfo)
         for joyI in range(self.joysticNum):
             vboxTemp = QVBoxLayout()
-            joyName  = QLabel(self.jsNames[joyI] ,self)
+            joyName  = QLabel(self.input_device_names[joyI], self)
             joyName.setStyleSheet(self.labelStyle)
             vboxTemp.addWidget(joyName)
             for i in range(self.axesNum[joyI]):
@@ -362,7 +351,7 @@ class TabSimpleButtons(QWidget):
         labelsList.append(QLabel('animal No ' + str(bBinding.animal),self))
         labelsList.append(QLabel(bBinding.behaviour,self))
         # test if icon is available and add if so
-        if (bBinding.iconPos != 'None'):
+        if (bBinding.icon_path != 'None'):
             pass
         # set labels to transparent background
         for i in range(3):
@@ -390,7 +379,7 @@ class TabSimpleButtons(QWidget):
         self.lbl_input_assign = QLabel("select device to assign ",self)
         self.lbl_input_assign.setStyleSheet(self.labelStyle)
         self.combo_input_assign = QComboBox(self)
-        for device in self.jsNames:
+        for device in self.input_device_names:
             self.combo_input_assign.addItem(device)
         # add signal slot for assignment change
         self.combo_input_assign.activated[str].connect(self.set_assignDevice)
@@ -504,9 +493,9 @@ class TabSimpleButtons(QWidget):
                 buttonLabel.setStyleSheet('color: #ffffff') 
 
             tempBox.addWidget(behavLabel)
-            if binding.iconPos != 'None' and binding.iconPos is not None and binding.iconPos:
+            if binding.icon_path != 'None' and binding.icon_path is not None and binding.icon_path:
                 imageLabel =  QLabel() 
-                pixmap =  QPixmap(binding.iconPos)
+                pixmap =  QPixmap(binding.icon_path)
                 pixmap = pixmap.scaledToWidth(20)
                 imageLabel.setStyleSheet('color: ' + binding.color)
                 imageLabel.setPixmap(pixmap)
@@ -540,11 +529,11 @@ class TabSimpleButtons(QWidget):
             behav = 'A'+str(animalNo)+'_'+behavDict[i]['name']
             if behav not in listOfAssignments:
                 temp = BehavBinding(animal     = animalNo,
-                                                 iconPos    = behavDict[i]['icon'],
-                                                 behaviour  = behavDict[i]['name'],
-                                                 color      = behavDict[i]['color'],
-                                                 keyBinding = 'no button assigned',
-                                                 UICdevice  = 'None')
+                                    icon_path= behavDict[i]['icon'],
+                                    behaviour  = behavDict[i]['name'],
+                                    color      = behavDict[i]['color'],
+                                    keyBinding = 'no button assigned',
+                                    UICdevice  = 'None')
                 
                 self.behavAssignment.update({behav:temp})
                 behavAs.update({behav:temp})
@@ -630,7 +619,7 @@ class TabSimpleButtons(QWidget):
                 newBinding.color      = buttonBinding.color
                 newBinding.keyBinding = inputCode
                 # icon has to be attached here as well
-                newBinding.UICdevice = self.selected_device
+                newBinding.device = self.selected_device
 
                 #update both lists
                 self.behavAssignment.update({key : newBinding})
@@ -655,7 +644,7 @@ class TabSimpleButtons(QWidget):
                 newBinding.color      = buttonBinding.color
                 newBinding.keyBinding = inputCode
                 # icon has to be attached here as well
-                newBinding.UICdevice = self.selected_device
+                newBinding.device = self.selected_device
             
             #update both lists
             self.behavAssignment.update({key : newBinding})
@@ -704,7 +693,7 @@ class TabSimpleButtons(QWidget):
             self.deviceNumber    = -1
             self.selected_device = device
         else:       
-            self.deviceNumber = self.jsNames.index(device)
+            self.deviceNumber = self.input_device_names.index(device)
             self.joystick =  pygame.joystick.Joystick(self.deviceNumber )
             self.joystick.init()
             self.makeJoyStickInfo()
@@ -750,24 +739,24 @@ class TabSimpleButtons(QWidget):
             
 
 
-            self.keys = {"B0"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0' ), 
-                         "B1"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0' ), 
-                         "B2"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0' ), 
-                         "B3"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0' ), 
-                         "B4"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0' ), 
-                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
-                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ), 
-                         "B6"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0' ), 
-                         "B7"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0' ), 
-                         "B8"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0' ), 
-                         "A2+"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A2+" , color = '#C0C0C0' ), 
-                         "A5+"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A5+" , color = '#C0C0C0' ), 
-                         "A2-"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A2-" , color = '#C0C0C0' ), 
-                         "A5-"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "A5-" , color = '#C0C0C0' ), 
-                         "H01"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0' ), 
-                         "H0-1" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0' ), 
-                         "H-10" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0' ), 
-                         "H10"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0' )}
+            self.keys = {"B0"   : BehavBinding(device = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0' ),
+                         "B1"   : BehavBinding(device = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0' ),
+                         "B2"   : BehavBinding(device = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0' ),
+                         "B3"   : BehavBinding(device = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0' ),
+                         "B4"   : BehavBinding(device = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0' ),
+                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
+                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
+                         "B6"   : BehavBinding(device = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0' ),
+                         "B7"   : BehavBinding(device = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0' ),
+                         "B8"   : BehavBinding(device = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0' ),
+                         "A2+"  : BehavBinding(device = self.selected_device, keyBinding = "A2+" , color = '#C0C0C0' ),
+                         "A5+"  : BehavBinding(device = self.selected_device, keyBinding = "A5+" , color = '#C0C0C0' ),
+                         "A2-"  : BehavBinding(device = self.selected_device, keyBinding = "A2-" , color = '#C0C0C0' ),
+                         "A5-"  : BehavBinding(device = self.selected_device, keyBinding = "A5-" , color = '#C0C0C0' ),
+                         "H01"  : BehavBinding(device = self.selected_device, keyBinding = "H01" , color = '#C0C0C0' ),
+                         "H0-1" : BehavBinding(device = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0' ),
+                         "H-10" : BehavBinding(device = self.selected_device, keyBinding = "H-10", color = '#C0C0C0' ),
+                         "H10"  : BehavBinding(device = self.selected_device, keyBinding = "H10" , color = '#C0C0C0' )}
 
             standardKeys = ["B9", "B10","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
             movieBehavs  = ["toggleRunMov","stopToggle","runMovForward","runMovReverse",
@@ -800,24 +789,22 @@ class TabSimpleButtons(QWidget):
             #   \          /                              \           /
             #    \________/                                \_________/
                                 #  PS2 CONTROLLER
-        
 
-            
-            self.keys = {"B0"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0'), 
-                         "B1"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0'), 
-                         "B2"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0'), 
-                         "B3"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0'), 
-                         "B4"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0'), 
-                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
-                         "B5"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'), 
-                         "B6"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0'), 
-                         "B7"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0'), 
-                         "B8"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0'), 
-                         "B9"   : BehavBinding(UICdevice = self.selected_device, keyBinding = "B9"  , color = '#C0C0C0'), 
-                         "H01"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H01" , color = '#C0C0C0'), 
-                         "H0-1" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0'), 
-                         "H-10" : BehavBinding(UICdevice = self.selected_device, keyBinding = "H-10", color = '#C0C0C0'), 
-                         "H10"  : BehavBinding(UICdevice = self.selected_device, keyBinding = "H10" , color = '#C0C0C0')}
+            self.keys = {"B0"   : BehavBinding(device = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0'),
+                         "B1"   : BehavBinding(device = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0'),
+                         "B2"   : BehavBinding(device = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0'),
+                         "B3"   : BehavBinding(device = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0'),
+                         "B4"   : BehavBinding(device = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
+                         "B6"   : BehavBinding(device = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0'),
+                         "B7"   : BehavBinding(device = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0'),
+                         "B8"   : BehavBinding(device = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0'),
+                         "B9"   : BehavBinding(device = self.selected_device, keyBinding = "B9"  , color = '#C0C0C0'),
+                         "H01"  : BehavBinding(device = self.selected_device, keyBinding = "H01" , color = '#C0C0C0'),
+                         "H0-1" : BehavBinding(device = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0'),
+                         "H-10" : BehavBinding(device = self.selected_device, keyBinding = "H-10", color = '#C0C0C0'),
+                         "H10"  : BehavBinding(device = self.selected_device, keyBinding = "H10" , color = '#C0C0C0')}
 
 
             standardKeys = ["B10", "B11","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
@@ -837,16 +824,16 @@ class TabSimpleButtons(QWidget):
         '''
         
         for i in range(len(standardKeys)):
-            self.behavAssignment['Amovie_'+movieBehavs[i]].UICdevice = self.selected_device
+            self.behavAssignment['Amovie_'+movieBehavs[i]].device = self.selected_device
             self.behavAssignment['Amovie_'+movieBehavs[i]].keyBinding = standardKeys[i]
             temp = copy.deepcopy( self.behavAssignment['Amovie_'+movieBehavs[i]])
-            temp.UICdevice = self.selected_device
+            temp.device = self.selected_device
             temp.keyBinding = standardKeys[i]
             self.keys.update({standardKeys[i]:temp})
 
             # idx = self.IndexOfDictList(self.bindingList,'behaviour',movieBehavs[i])
             # self.bindingList[idx].update('keyBinding':standardKeys[i])
-            # self.bindingList[idx].update('UICdevice': self.selected_device)
+            # self.bindingList[idx].update('device': self.selected_device)
 
     def makeAnimalBehavKey(self,obj):
          return 'A' + str(obj.animal) + '_' + obj.behaviour
@@ -859,33 +846,33 @@ class TabSimpleButtons(QWidget):
             # add all behaviours
             for i in range(len(behavDict)):
                 temp = BehavBinding(animal = animalI,
-                                    iconPos = behavDict[i]['icon'],
+                                    icon_path= behavDict[i]['icon'],
                                     behaviour = behavDict[i]['name'],
                                     color = behavDict[i]['color'],
                                     keyBinding = 'no button assigned',
-                                    UICdevice = 'None')
+                                    device = 'None')
 
                 self.behavAssignment.update({'A'+str(animalI)+'_'+behavDict[i]['name']:temp})
                 # self.bindingList.append({animal    : animalI,
-                #                         iconPos    :'None',
+                #                         icon_path    :'None',
                 #                         behaviour  : behavDict[i]['name'],
                 #                         color      : behavDict[i]['color'],
                 #                         keyBinding : 'no button assigned',
-                #                         UICdevice  : 'None'})
+                #                         device  : 'None'})
             # add delete function
             temp = BehavBinding(animal=animalI,
-                                iconPos='None',
+                                icon_path='None',
                                 behaviour='delete',
                                 color='#ffffff',
                                 keyBinding='no button assigned',
-                                UICdevice='None')
+                                device='None')
             
             # self.bindingList.append({animal    : animalI,
-            #                         iconPos    : 'None',
+            #                         icon_path    : 'None',
             #                         behaviour  : 'delete',
             #                         color      : '#ffffff',
             #                         keyBinding : 'no button assigned',
-            #                         UICdevice  : 'None'})
+            #                         device  : 'None'})
             self.behavAssignment.update({'A'+str(animalI)+'_delete':temp})
             
         # add movie behaviours    
@@ -895,22 +882,21 @@ class TabSimpleButtons(QWidget):
         for behavI in movieBehavs:
             temp = BehavBinding(animal='movie',
                                 color='#ffffff',
-                                iconPos='None',
+                                icon_path='None',
                                 behaviour=behavI,
                                 keyBinding='no button assigned',
-                                UICdevice='None')
+                                device='None')
             # self.bindingList.append({animal    : animalI,
-            #                         iconPos    :'None',
+            #                         icon_path    :'None',
             #                         behaviour  : behavDict[i]['name'],
             #                         color      : behavDict[i]['color'],
             #                         keyBinding : 'no button assigned',
-            #                         UICdevice  : 'None'})
+            #                         device  : 'None'})
             self.behavAssignment.update({"Amovie_"+behavI:temp})
 
-    def close_event(self):        
-        # save stuff for next run
-        pass
-        self.savePreset(0,filename = HOME + '/.pyvisor/guidefaults_buttons.pkl',warningFlag=False)
+    def close_event(self):
+        self.save_button_assignments(filename =HOME + '/.pyvisor/guidefaults_buttons.json')
+
     def resizeEvent(self, event):
         self.background_image.resize(event.size())
         
@@ -944,7 +930,7 @@ class TabSimpleButtons(QWidget):
         self.hatsNum         = [None]*self.joysticNum
         self.buttonsNum      = [None]*self.joysticNum
         self.axesNum         = [None]*self.joysticNum
-        self.jsNames         = [None]*(self.joysticNum+1)
+        self.input_device_names         = [None] * (self.joysticNum + 1)
         
         for i in range(self.joysticNum):
             self.joystick =  pygame.joystick.Joystick(i)
@@ -953,7 +939,7 @@ class TabSimpleButtons(QWidget):
             self.axesNum[i]    = self.joystick.get_numaxes()
             self.buttonsNum[i] = self.joystick.get_numbuttons()
             self.hatsNum[i]    = self.joystick.get_numhats()
-            self.jsNames[i]    = self.joystick.get_name()
-        self.jsNames[-1] = 'Keyboard'
+            self.input_device_names[i]    = self.joystick.get_name()
+        self.input_device_names[-1] = 'Keyboard'
 
         self.makeBehaviourSummary()

@@ -95,7 +95,7 @@ class ManualEthologyScorer():
                 # Status of the animal
                 status = animal.behaviours[i].status
                 if (status == 1):
-                    self.screen.blit(animal.behaviours[i].icon,animal.behaviours[i].iconPos[0])
+                    self.screen.blit(animal.behaviours[i].icon, animal.behaviours[i].icon_path[0])
                 elif(status == -1):
                     #check if all behaviours in this disjunctionlist are -1
                     stati = list()
@@ -103,11 +103,11 @@ class ManualEthologyScorer():
                         stati.append(dBI.status)
                     # if all stati are -1 this is a real deletion
                     if (sum(stati) == len(stati)*-1):
-                        self.screen.blit(self.deleteIcon,animal.behaviours[i].iconPos[0])
+                        self.screen.blit(self.deleteIcon, animal.behaviours[i].icon_path[0])
                     
                 # ethogram_length for behaviour 1
                 if (animal.behaviours[i].ethogram[self.movie.get_frameNo()] == 1):
-                    self.screen.blit(animal.behaviours[i].iconT,animal.behaviours[i].iconPos[1])
+                    self.screen.blit(animal.behaviours[i].iconT, animal.behaviours[i].icon_path[1])
             except IndexError:
                 #print 'overshoot'
                 self.movie.frameNo = self.movie.length
@@ -232,7 +232,7 @@ class ManualEthologyScorer():
         
  
         
-        
+
 ###############################################################################
 #                               User Input                                    #
 ############################################################################### 
@@ -267,12 +267,9 @@ class ManualEthologyScorer():
         joystick = pygame.joystick.Joystick(0)
         joystick.init()
 
-    def setUICFree(self,axisThresh,freeBindingList,UICdevice):
+    def setUICFree(self,axisThresh, freeBindingList, UICdevice):
         '''
-        buttonBindings list of strings
-        keyBindings list of keys
-        axisThreshold dictionary
-        freeBindingList = list of tupels eaach tupel ('bindingString',animalNum (-1) for movie, behaviour num or string 
+        freeBindingList = list of tupels eaach tupel ('bindingString',animalNum (-1) for movie, behaviour num or string
         '''
         # intialise UIC object
         self.user_input_control = UserInputControl.UserInputControl(self.animals, self.movie)
@@ -288,26 +285,23 @@ class ManualEthologyScorer():
         self.user_input_control.setFreePad(freeBindingList, axisThresh)
         
      
-    
+
         
 ###############################################################################
 #                               FLOW  CONTROL                                 #
 ###############################################################################
     def go(self):
-        '''
+        """
         Main loop here the movie is played and the key down events are caught.
-        '''
-        if (np.size(self.movie) == 0):
-            print('Load movie first, please!')
-            return
-            
-        # clock and movie setup
-        clock      = pygame.time.Clock()
-        #movSize = self.movie.get_size()
-        movSize = (self.movie.width,self.movie.height)
+        """
+        if np.size(self.movie) == 0:
+            raise RuntimeError("Movie has to be loaded before scorer can be run!")
+
+        clock = pygame.time.Clock()
+
         #setup icons
         icon = self.image2surf(this_files_directory+"/../resources/MES.png")   
-        self.deleteIcon  =  self.image2surf(this_files_directory+"/../resources/icons/game/del.png")
+        self.deleteIcon  = self.image2surf(this_files_directory+"/../resources/icons/game/del.png")
         self.window.set_icon(icon)
         self.window.set_caption("Manual Ethology Scorer - " + self.movie.fileName)
         
@@ -328,12 +322,8 @@ class ManualEthologyScorer():
         for animal in  self.animals:
             numUDJB = len(animal.uniqueDJList)
             animal.assignIconPos2UniqueDJB(iconPosList[0:numUDJB])
-            for behaviour in animal.behaviours:
-                print(behaviour.iconPos)
             iconPosList = iconPosList[numUDJB:]
-        #movie_screen = pygame.Surface(movSize).convert()
-      
-        
+
         # start movie
         #self.movie.set_display(movie_screen)
         self.movie.activeFrame = -1
@@ -378,7 +368,7 @@ class ManualEthologyScorer():
             
             if self.refreshMediaFlag:
                 self.refreshMedia(clock)
-                #save the current status to the ethogram_length
+
             clock.tick(self.fps)
         
         pygame.quit()

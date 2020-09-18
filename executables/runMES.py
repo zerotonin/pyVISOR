@@ -38,9 +38,9 @@ sco.addAnimal('male 2', #animal label
 sco.loadMovie('test.mpg')#/home/bgeurten/out1.avi')#'/media/bgeurten/TOSHIBA_EXT/Mai/18_05_Mi/Vid-20160518-001.avi')
 sco.setIconPositions()
 sco
-sco.animals[0].assignIconPos2UniqueDJB(sco.iconPos[0:2])
+sco.animals[0].assignIconPos2UniqueDJB(sco.icon_path[0:2])
 sco.animals[0].assignIcons( iconList,['simple']*6)
-sco.animals[1].assignIconPos2UniqueDJB(sco.iconPos[6:8])
+sco.animals[1].assignIconPos2UniqueDJB(sco.icon_path[6:8])
 sco.animals[1].assignIcons( iconList,['simple']*6)
 
 sco.setUIC('Keyboad') #PS,XBox

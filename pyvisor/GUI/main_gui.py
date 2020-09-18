@@ -56,11 +56,11 @@ class MovScoreGUI(QWidget):
         # initiate main tab widget
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
-        self.shortHandBehavTab = TabBehaviours(self)
-        self.shortHandButton = TabSimpleButtons(self)
+        self.tab_behaviours = TabBehaviours(self)
+        self.tab_buttons = TabSimpleButtons(self)
         self.shortHandAnalysis = TabAnalysis(self)
-        self.tab_list = [self.shortHandBehavTab, 
-                         self.shortHandButton,
+        self.tab_list = [self.tab_behaviours,
+                         self.tab_buttons,
                          self.shortHandAnalysis, 
                          TabResults(self)]
 
@@ -73,13 +73,13 @@ class MovScoreGUI(QWidget):
             self.tabs.addTab(self.tab_list[i], self.tab_names[i])
 
     def get_animal_tabs(self):        
-        return self.shortHandBehavTab.tabs.tabs_
+        return self.tab_behaviours.tabs.tabs_
 
     def get_assignments(self):
-        return self.shortHandButton.getAssignments()
+        return self.tab_buttons.getAssignments()
     
     def get_UIC_layout(self):
-        return self.shortHandButton.getSelectedLayout()
+        return self.tab_buttons.getSelectedLayout()
             
     def set_value(self, key, value):
         """
