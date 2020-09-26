@@ -6,15 +6,16 @@
 
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication, QFileDialog)
 
 import os
 import pickle
+import json
 
 from .tab_behaviours.tab_behaviours import TabBehaviours
 from .tab_analysis import TabAnalysis
 from .tab_results import TabResults
-from .tab_buttons2 import TabSimpleButtons
+from .tab_buttons import TabSimpleButtons
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -82,9 +83,35 @@ class MovScoreGUI(QWidget):
         return self.tab_buttons.getSelectedLayout()
             
     def set_value(self, key, value):
-        """
-        """
         self.values[key] = value
+
+    def save_config(self, filename: str=None):
+        if filename is None:
+            filename = QFileDialog.getSaveFileName(self, 'Save Config', HOME, initialFilter='*.json')
+            filename = str(filename[0])
+        if len(filename) == 0:
+            return
+
+        config = {
+            'animals': self.tab_behaviours.values,
+            'button_bindings': self.tab_buttons.create_button_binding_dict()
+        }
+        with open(filename, 'wt') as filehandler:
+            json.dump(config, filehandler, indent=4)
+
+    def load_config(self, filename: str=None):
+        if filename is None:
+            filename = QFileDialog.getOpenFileName(self, 'Load Config',
+                                                   HOME, initialFilter='*.json')
+            filename = filename[0]
+        if len(filename) == 0:
+            return
+
+        with open(str(filename), 'rt') as filehandle:
+            config = json.load(filehandle)
+
+        self.tab_behaviours.set_config(config['animals'])
+        self.tab_buttons.set_config(config['button_bindings'])
 
     def closeEvent(self, event):
         """

@@ -93,6 +93,16 @@ class AnimalTabWidget(QTabWidget):
         self.addTab(tab, name)
         self.tabs_.append(tab)
 
+    def set_config(self, config):
+        for idx in range(1, self.count()):
+            self.remove_tab(idx)
+        if config is None:
+            self.values = {}
+            return
+        self.values = config
+        for item in self.values:
+            self.create_new_tab(*item)
+
     def close_event(self):
         with open(HOME + '/.pyvisor/guidefaults_animaltab.json', 'w') as f:
             json.dump(self.values, f, indent=4)
