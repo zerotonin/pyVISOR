@@ -1,7 +1,7 @@
 """
 USAGE: 
    o install in develop mode: navigate to the folder containing this file,
-                              and type 'python setup.py develop --user'.
+                              and type `pip install -e . --user`
                               (ommit '--user' if you want to install for 
                                all users)                           
 """
@@ -9,9 +9,8 @@ USAGE:
 
 from setuptools import setup
 
-## use setup to install SDF package and executable scripts
 setup(name='pyvisor',
-      version='0.99',
+      version='0.0.1',
       description='',
       url='',
       author='Bart Geurten, Ilyas Kuhlemann',
