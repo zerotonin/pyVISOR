@@ -1,10 +1,10 @@
 from typing import List, Dict, Any, Union
 
 
-ANIMAL_MOVIE = -1
-
-
 class BehavBinding:
+
+    ANIMAL_MOVIE = -1
+
     def __init__(self,
                  animal: int = None,
                  color: str = '#C0C0C0',
@@ -19,6 +19,10 @@ class BehavBinding:
         self.color = color
         self.keyBinding = key_binding
         self.device = device
+
+    @property
+    def is_movie(self) -> bool:
+        return self.animal == BehavBinding.ANIMAL_MOVIE
 
     def __str__(self):
         s = 'BehavBinding:\n'

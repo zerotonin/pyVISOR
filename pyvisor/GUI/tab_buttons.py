@@ -1,531 +1,913 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from typing import Dict, Union, List
 
-from . import styles
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
+                             QFileDialog, QPushButton, QMessageBox, QComboBox, QInputDialog)
+
+import pygame
+import json
+from .behavBinding import BehavBinding
 import os
+import copy
+import collections
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-import numpy as np
-
-## paths to background images
-DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png", 
+HOME = os.path.expanduser("~")
+DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png",
            "Playstation": HERE + "/pictures/gamePad_PS.png",
-           "X-Box": HERE + "/pictures/gamePad_XB.png"}
-
-## temporary polygons, remove before release ...
-_tmp_polygons = [[(0.0, 0.0),   # ----------
-                  (0.1, 0.1),   # central line left/top - right/bottom
-                  (0.2, 0.2),
-                  (0.3, 0.3),
-                  (0.4, 0.4),
-                  (0.99, 0.99)],  # ---------
-                 [(.9999, 0.0001),  # --------- central line left/bottom - right/top
-                  (0.0001, .9999)], ]
-
-## Relative coordinates of polygons 
-POLYGONS = { "Keyboard" : [],
-             "X-Box" : [],  # ---------
-             "Playstation" : [[(0.165, 0.481),    # ---------
-                               (0.185, 0.481),   # cross left
-                               (0.20, 0.461),   
-                               (0.185, 0.441), 
-                               (0.165, 0.441)],
-                              [(0.255, 0.481),    # ---------
-                               (0.235, 0.481),   # cross right
-                               (0.22, 0.461),   
-                               (0.235, 0.441), 
-                               (0.255, 0.441)],
-                              [(0.197, 0.395),    # ---------
-                               (0.197, 0.426),   # cross up
-                               (0.211, 0.441),   
-                               (0.225, 0.426), 
-                               (0.225, 0.395)],
-                              [(0.197, 0.531),    # ---------
-                               (0.197, 0.5),   # cross down
-                               (0.211, 0.485),   
-                               (0.225, 0.5), 
-                               (0.225, 0.531)],
-                              [(0.33, 0.45),              # -----------
-                               (0.338, 0.45),              # select button
-                               (0.338, 0.441),
-                               (0.33, 0.441)], 
-                              [(0.38, 0.439),              # -----------
-                               (0.38, 0.452),              # start button
-                               (0.388, 0.455)], 
-                              [(0.185, 0.2),              # -----------
-                               (0.255, 0.2),              # L1 button
-                               (0.255, 0.185),
-                               (0.185, 0.185)], 
-                              [(0.188, 0.183),              # -----------
-                               (0.258, 0.183),              # L2 button
-                               (0.258, 0.168),
-                               (0.188, 0.168)],
-                              [(0.465, 0.2),              # -----------
-                               (0.535, 0.2),              # R1 button
-                               (0.535, 0.185),
-                               (0.465, 0.185)], 
-                              [(0.462, 0.183),              # -----------
-                               (0.532, 0.183),              # R2 button
-                               (0.532, 0.168),
-                               (0.462, 0.168)], ]}
-
-## Relative Coordinates/sizes of Ellipses
-ELLIPSES = {"Keyboard": [],
-            "X-Box": [],
-            "Playstation": [[0.251, 0.521, 0.075, 0.115],  # left stick
-                            [0.413, 0.521, 0.075, 0.115],  # right stick
-                            [0.455, 0.511, 0.02, 0.025],  # right button element left button
-                            [0.475, 0.53, 0.02, 0.025],  # right button element bottom button
-                            [0.5, 0.511, 0.02, 0.025],  # right button element right button
-                            [0.475, 0.492, 0.02, 0.025]]}
-
-## Pen and brush items for different states
-PEN_NORMAL = QPen( Qt.black )
-
-BRUSH_NORMAL = QBrush( Qt.NoBrush )
-
-PEN_HIGHLIGHT = QPen( Qt.green )
-PEN_HIGHLIGHT.setWidth( 4.5 )
-    
-BRUSH_HIGHLIGHT = QBrush( Qt.Dense3Pattern )
-BRUSH_HIGHLIGHT.setColor( Qt.green )
+           "X-Box": HERE + "/pictures/gamePad_XB.png",
+           "Free": HERE + "/pictures/gamePad_free.png"}
 
 
+# noinspection PyAttributeOutsideInit
 class TabButtons(QWidget):
 
-    def __init__(self,parent):
-        
+    def __init__(self, parent):
 
-        self.analysis_list = [] 
+        self.analysis_list = []
+        super(TabButtons, self).__init__()
 
-        super(TabButtons,self).__init__()
-        self.parent=parent
-        self.selected_device='Playstation'
-        self.init_UI()
+        self._current_keys = {
+            'Keyboard': None,
+            'X-Box': None,
+            'Playstation': None,
+            'Free': None
+        }  # type: Dict[str, Union[BehavBinding, None]]
 
+        self.parent = parent
+        pygame.init()
+        # Initialize the joysticks
+        pygame.joystick.init()
+        self._init_ui()
+        try:
+            self.load_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
+        except FileNotFoundError:
+            print('No preset for button bindings found')
 
+    def make_load_save_preset(self):
+        load_button = QPushButton('load preset')
+        load_button.clicked.connect(lambda x: self.load_button_assignments())
+        save_button = QPushButton('save preset')
+        save_button.clicked.connect(lambda x: self.save_button_assignments())
+        reset_button = QPushButton('reset buttons')
+        reset_button.clicked.connect(self.reset_buttons)
+        self.hboxLoadSavePreset.addWidget(load_button)
+        self.hboxLoadSavePreset.addWidget(save_button)
+        self.hboxLoadSavePreset.addWidget(reset_button)
+        self.hboxLoadSavePreset.addStretch()
 
+    def load_button_assignments(self, filename=None):
+        if filename is None:
+            filename = QFileDialog.getOpenFileName(self, 'Load Button Binding',
+                                                   HOME, initialFilter='*.pkl')
+            filename = filename[0]
+        if len(filename) == 0:
+            return
 
+        with open(str(filename), 'rt') as filehandle:
+            button_bindings = json.load(filehandle)
+            for key in ['keys', 'behavAssignment']:
+                button_bindings[key] = BehavBinding.from_savable_dict_to_dict_of_objects(button_bindings[key])
 
-    def init_UI(self):
-        
-        # ===========================
-        # style sheet 
-        # ===========================
-        self.setStyleSheet(styles.tab_buttons)
-        
-        # ===========================
-        # background image 
-        # ===========================
-        self.background_image = QLabel(self)
-        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
-        self.pixmap=QPixmap(HERE+'/pictures/gamePad.png')
-        self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(),Qt.KeepAspectRatio))
-        self.background_image.setScaledContents(True)
-        
-        self.background_image.resize(self.size())
+        if button_bindings['selected_device'] not in self.input_device_names:
+            msg = 'Tried to assign buttons for '
+            msg += button_bindings['selected_device']
+            msg += '.\n Please connect this device to the computer and restart the program!'
+            QMessageBox.warning(self, 'Wrong Input device', msg)
+            return
 
+        self.set_device(button_bindings['selected_device'])
+        self.set_assignDevice(button_bindings['selected_device'])
 
-        # ===========================
-        # Scene/View to draw on
-        # ===========================
-        
-        self.scenes = {}
+        list_of_superfluous_behav = self._get_assigned_buttons_of_undefined_behaviours(button_bindings)
 
-        for key in POLYGONS.keys():
-            self.scenes[key] = QGraphicsScene(self)
-            
-        self.view = OverlayView( self.scenes[self.selected_device], self )
-        self.view.show()
+        if len(list_of_superfluous_behav) == 0:
+            self.set_button_preset(button_bindings)
+            return
 
-        
-        # ===========================
-        # combo box top
-        # ===========================
+        ret = self._create_dialogue_message(list_of_superfluous_behav)
+        self._handle_response(button_bindings, list_of_superfluous_behav, ret)
 
-        #vbox=QVBoxLayout()
-        #lbl=QLabel('yo')
-        #vbox.addWidget(lbl)
-        #self.setLayout(vbox)
-        #hbox_row_0 = QHBoxLayout()
-        #vbox.addLayout(hbox_row_0)
-        
-        #hbox_row_0.addStretch(0)
-        
-        self.lbl_input_device = QLabel("select device layout ",self)
-        #self.lbl_input_device.setStyleSheet("color: #AA0000")
+    def _handle_response(self, button_bindings, list_of_superfluous_behav, ret):
+        if ret == QMessageBox.Yes:
+            # delete superfluous behaviours
+            behav_assignments = button_bindings['behavAssignment']
+            keys = button_bindings['keys']
+            for sfKey in list_of_superfluous_behav:
+                key_binding = behav_assignments[sfKey].keyBinding
+                del behav_assignments[sfKey]
+                del keys[key_binding]
+            # and reassign
+            button_bindings['behavAssignment'] = behav_assignments
+            button_bindings['keys'] = keys
+            self.set_button_preset(button_bindings)
+
+    def _create_dialogue_message(self, list_of_superfluous_behav):
+        msg = 'The following behaviours do not match current behavioural data: \n'
+        for behav in list_of_superfluous_behav:
+            msg = msg + behav + ', '
+        msg = msg[0:-3]
+        msg = msg + '\n Do you still want to load this preset?'
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setText("Found too many behaviours")
+        msg_box.setInformativeText(msg)
+        msg_box.addButton(QMessageBox.Yes)
+        msg_box.addButton(QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        ret = msg_box.exec_()
+        return ret
+
+    def _get_assigned_buttons_of_undefined_behaviours(self, button_bindings):
+        list_of_behaviours = self.behavAssignment.assignments.keys()
+        list_of_superfluous_behav = list()
+        for key in button_bindings['behavAssignment']:
+            if key not in list_of_behaviours:
+                list_of_superfluous_behav.append(key)
+        return list_of_superfluous_behav
+
+    def set_button_preset(self, button_binding_save_dict):
+        self.selected_device = button_binding_save_dict['selected_device']
+        self.deviceLayout = button_binding_save_dict['deviceLayout']
+        self.keys = button_binding_save_dict['keys']
+        self.behavAssignment = button_binding_save_dict['behavAssignment']
+        # update with current icons from animal tab
+        self.update_icons()
+        # the device number might change so this has to be set new if not -1
+        self.deviceNumber = self.input_device_names.index(button_binding_save_dict['selected_device'])
+
+        self.make_joystick_info()
+        self.makeBehaviourSummary()
+
+    def update_icons(self):
+        for i in range(len(self.animal_tabs)):
+            behav_dict = self.animal_tabs[i].behaviour_dicts
+            for j in range(len(behav_dict)):
+                icon_path = behav_dict[j]['icon']
+                key = f'A{i}_{behav_dict[j]["name"]}'
+                if key in self.behavAssignment:
+                    self.behavAssignment[key].icon_path = icon_path
+
+    def save_button_assignments(self, filename=None):
+        for key in self.behavAssignment.assignments.keys():
+            button_key = self.behavAssignment[key].keyBinding
+            # check if keyBinding is the same in both dictionaries
+            if button_key not in self.keys:
+                import ipdb
+                ipdb.set_trace()
+                QMessageBox.warning(self, 'Key Assignment failed!',
+                                    key + " is not assigned to a key / button",
+                                    QMessageBox.Ok)
+                return
+
+            ba_behav = self.behavAssignment[key].behaviour
+            key_behav = self.keys[button_key].behaviour
+
+            if key_behav != ba_behav:
+                QMessageBox.warning(self, 'Behaviours Not Synchronized!',
+                                    "There is an internal problem with " + ba_behav + "/" + key_behav,
+                                    QMessageBox.Ok)
+                return
+
+        button_binding_save_dict = self._create_button_binding_dict()
+
+        if filename is None:
+            filename = QFileDialog.getSaveFileName(self, 'Save Button Binding', HOME, initialFilter='*.pkl')
+            filename = str(filename[0])
+        if len(filename) == 0:
+            return
+
+        with open(filename, 'wt') as filehandler:
+            json.dump(button_binding_save_dict, filehandler)
+
+    def _create_button_binding_dict(self):
+        d = {}
+        d.update({'selected_device': self.selected_device})
+        d.update({'deviceLayout': self.deviceLayout})
+        d.update({'deviceNumber': self.deviceNumber})
+        d.update({'keys': BehavBinding.from_object_dict_to_savable_dict(self.keys)})
+        d.update({'behavAssignment': BehavBinding.from_object_dict_to_savable_dict(self.behavAssignment)})
+        return d
+
+    def make_joystick_info(self):
+        if self.deviceNumber == -2:
+            self.make_joystick_info_initial()
+        else:
+            self.make_selected_joystick_info()
+
+    def make_selected_joystick_info(self):
+        self.clearLayout(self.hboxJoyStickInfo)
+        v_box_device = QVBoxLayout()
+        joy_name = QLabel(self.input_device_names[self.deviceNumber], self)
+        joy_name.setStyleSheet(self.labelStyle)
+        v_box_device.addWidget(joy_name)
+
+        od_keys = collections.OrderedDict(sorted(self.keys.items()))
+        try:
+            for key, bBinding in od_keys.iteritems():
+                hbox = self.make_behav_binding_info(key, bBinding)
+                v_box_device.addLayout(hbox)
+        except AttributeError:
+            for key, bBinding in od_keys.items():
+                hbox = self.make_behav_binding_info(key, bBinding)
+                v_box_device.addLayout(hbox)
+        v_box_device.addStretch()
+        self.hboxJoyStickInfo.addLayout(v_box_device)
+        self.hboxJoyStickInfo.addStretch()
+
+    def make_keyboard_info(self):
+        vbox_temp = QVBoxLayout()
+        joy_name = QLabel('Keyboard', self)
+        joy_name.setStyleSheet(self.labelStyle)
+        vbox_temp.addWidget(joy_name)
+        if bool(self.keys):
+            pass
+        else:
+            key_message = QLabel('no keys defined', self)
+            vbox_temp.addWidget(key_message)
+        vbox_temp.addStretch()
+        return vbox_temp
+
+    def make_joystick_info_initial(self):
+        self.clearLayout(self.hboxJoyStickInfo)
+        for joyI in range(self.n_joysticks):
+            vbox_temp = QVBoxLayout()
+            joy_name = QLabel(self.input_device_names[joyI], self)
+            joy_name.setStyleSheet(self.labelStyle)
+            vbox_temp.addWidget(joy_name)
+            for i in range(self.axesNum[joyI]):
+                widget = self.make_device_feature_info('axis + ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+                widget = self.make_device_feature_info('axis - ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+            for i in range(self.buttonsNum[joyI]):
+                widget = self.make_device_feature_info('button', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+            for i in range(self.hatsNum[joyI]):
+                widget = self.make_device_feature_info('hat h+ ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+                widget = self.make_device_feature_info('hat h- ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+                widget = self.make_device_feature_info('hat v+ ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+                widget = self.make_device_feature_info('hat v- ', i, 'None', 'None')
+                vbox_temp.addLayout(widget)
+            vbox_temp.addStretch()
+            self.hboxJoyStickInfo.addLayout(vbox_temp)
+        key_board_widget = self.make_keyboard_info()
+        self.hboxJoyStickInfo.addLayout(key_board_widget)
+        self.hboxJoyStickInfo.addStretch()
+
+    def make_behav_binding_info(self, key, behav_binding: BehavBinding):
+        # initialise return value
+        hbox_temp = QHBoxLayout()
+        # make text labels
+        if key != behav_binding.keyBinding:
+            print('Error key is not binding : ' + key + ' ' + behav_binding.keyBinding)
+        labels_list = list()
+        labels_list.append(QLabel(key + ' :', self))
+        if behav_binding.is_movie:
+            animal_no_str = 'movie command'
+        else:
+            animal_no_str = 'animal No {}'.format(behav_binding.animal)
+        labels_list.append(QLabel(animal_no_str, self))
+        labels_list.append(QLabel(behav_binding.behaviour, self))
+        # set labels to transparent background
+        for i in range(3):
+            labels_list[i].setStyleSheet(self.labelStyle)
+        # adjust behaviour color
+        labels_list[2].setStyleSheet('color: ' + behav_binding.color)
+        # add widgets to layout !!! need to add icon when implemented
+        for i in range(3):
+            hbox_temp.addWidget(labels_list[i])
+        return hbox_temp
+
+    def make_device_feature_info(self, device_feature, number, animal, behaviour):
+        hbox = QHBoxLayout()
+        device_text = device_feature + ' ' + str(number)
+        device_label = QLabel(device_text, self)
+        animal_label = QLabel(animal, self)
+        behav_label = QLabel(behaviour, self)
+        hbox.addWidget(device_label)
+        hbox.addWidget(animal_label)
+        hbox.addWidget(behav_label)
+        return hbox
+
+    def make_device_choice(self):
+        self.lbl_input_assign = QLabel("select device to assign ", self)
+        self.lbl_input_assign.setStyleSheet(self.labelStyle)
+        self.combo_input_assign = QComboBox(self)
+        for device in self.input_device_names:
+            self.combo_input_assign.addItem(device)
+        # add signal slot for assignment change
+        self.combo_input_assign.activated[str].connect(self.set_assignDevice)
+        self.hboxDeviceChoice.addWidget(self.lbl_input_assign)
+        self.hboxDeviceChoice.addWidget(self.combo_input_assign)
+
+        # layout
+        self.lbl_input_device = QLabel("select device layout ", self)
+        self.lbl_input_device.setStyleSheet(self.labelStyle)
         self.combo_input_device = QComboBox(self)
         for device in DEVICES.keys():
             self.combo_input_device.addItem(device)
+        # add signal slot for background change
         self.combo_input_device.activated[str].connect(self.set_device)
-        
-        s=self.size()
+        self.hboxDeviceChoice.addWidget(self.lbl_input_device)
+        self.hboxDeviceChoice.addWidget(self.combo_input_device)
+        self.hboxDeviceChoice.addStretch()
+        initial_device = self.input_device_names[0]
+        self.set_assignDevice(initial_device)
+        self.set_device(initial_device)
 
-        self.lbl_input_device.move(int(s.width()*0.25),int(s.height()*0.15))
-        self.combo_input_device.move(int(s.width()*0.5),int(s.height()*0.15))
+    def make_movie_info_box(self):
+        # top label
+        movie_box = QVBoxLayout()
+        name_label = QLabel('movie actions')
+        name_label.setStyleSheet(self.labelStyle)
+        movie_box.addWidget(name_label)
+        behaviour_assignments = collections.OrderedDict(sorted(self.behavAssignment.items()))
+        try:
+            item_iterator = behaviour_assignments.iteritems()
+        except AttributeError:
+            item_iterator = behaviour_assignments.items()
+        for key, binding in item_iterator:
+            if binding.animal == 'movie':
+                self._make_movie_label_box(binding, movie_box)
 
-        #hbox_row_0.addWidget(lbl_input_device)
-        #hbox_row_0.addWidget(combo_input_device)
+        return movie_box
 
-        #vbox.addStretch(1)
+    def _make_movie_label_box(self, binding, movie_box):
+        box, btn_set_uic, button_label = self._create_layout_of_movie_label_box(binding)
+        box.addWidget(btn_set_uic)
+        box.addWidget(button_label)
+        movie_box.addLayout(box)
 
+    def _create_layout_of_movie_label_box(self, binding):
+        box = QHBoxLayout()
+        behav_label = QLabel(binding.behaviour)
+        behav_label.setStyleSheet('color: ' + binding.color)
+        btn_set_uic = QPushButton('assign button/key')
+        button_now = binding
+        # double lambda to get the variable out of the general scope and let each button call assignBehav
+        # with its own behaviour
+        btn_set_uic.clicked.connect((lambda buttonNow: lambda: self.assignBehav(buttonNow))(button_now))
+        # now check if the behaviour is allready in behavAssignments
+        button_label = QLabel(binding.keyBinding)
+        if binding.keyBinding == 'no button assigned':
+            button_label.setStyleSheet('color: #C0C0C0')
+        else:
+            button_label.setStyleSheet('color: #ffffff')
+        box.addWidget(behav_label)
+        return box, btn_set_uic, button_label
 
-        ## create points for polygons:
-        
-        self.points = {}
-        self.polygons = {}
+    def makeBehaviourSummary(self):
+        self.clearLayout(self.hboxConciseBehav)
 
-        for key in POLYGONS.keys():
+        self._create_step_label()
+        vbox = self.make_movie_info_box()
+        self.hboxConciseBehav.addLayout(vbox)
+        self.hboxConciseBehav.addStretch()
 
+        self.make_joystick_info()
 
-            self.points[key] = [ [QPointF() for xy in POLYGONS[key][i]] for i in range(len(POLYGONS[key]))]
+    def _create_step_label(self):
+        self.behav_stepLabel = QLabel('Behaviours: ')
+        self.behav_stepLabel.resize(20, 40)
+        self.behav_stepLabel.setStyleSheet(self.labelStyle)
+        self.hboxConciseBehav.addWidget(self.behav_stepLabel)
+        self.animal_tabs = self.parent.get_animal_tabs()
+        for animalI in range(len(self.animal_tabs)):
+            self._create_info_label(animalI)
 
-            self.points[key] = self.points[key] + [[QPointF() for xy in _tmp_polygons[i]] for i in range(len(_tmp_polygons))]
+    def _create_info_label(self, animal):
+        vbox = self.makeBehavInfoBox(animal, self.animal_tabs[animal].name,
+                                     self.animal_tabs[animal].behaviour_dicts)
+        self.hboxConciseBehav.addLayout(vbox)
 
-            #self.polygons[key] = [Polygon( scene = self.scenes[key] ) for i in range( len(POLYGONS[key]))]
-            self.polygons[key] = [Polygon() for i in range( len(POLYGONS[key]))]
-            #self.polygons[key] = self.polygons[key] + [QGraphicsPolygonItem( scene = self.scenes[key] ) for i in _tmp_polygons]
-            self.polygons[key] = self.polygons[key] + [QGraphicsPolygonItem() for i in _tmp_polygons]
+    def makeBehavInfoBox(self, animal_number, animal_name, behaviors: Dict[str, str]):
+        # top label
+        behavBox = QVBoxLayout()
+        nameLabel = QLabel(animal_name + ' (A' + str(animal_number) + ')')
+        nameLabel.setStyleSheet(self.labelStyle)
+        behavBox.addWidget(nameLabel)
+        behavAs = self.slicedict(self.behavAssignment, 'A' + str(animal_number) + '_')
+        behavAs = self.synchronizeBehaviourTabAndBindings(animal_number, behaviors, behavAs)
+        behavAs = collections.OrderedDict(sorted(behavAs.items()))
 
-            for item in self.polygons[key]:
-                self.scenes[key].addItem(item)
+        try:
+            item_iterator = behavAs.iteritems()
+        except AttributeError:
+            item_iterator = behavAs.items()
 
-        ## add ellipses
+        for key, binding in item_iterator:
+            box, btn_setUIC, buttonLabel = self._create_layout_of_movie_label_box(binding)
+            if binding.icon_path is not None and binding.icon_path is not None and binding.icon_path:
+                imageLabel = QLabel()
+                pixmap = QPixmap(binding.icon_path)
+                pixmap = pixmap.scaledToWidth(20)
+                imageLabel.setStyleSheet('color: ' + binding.color)
+                imageLabel.setPixmap(pixmap)
+                box.addWidget(imageLabel)
+            box.addWidget(btn_setUIC)
+            box.addWidget(buttonLabel)
+            behavBox.addLayout(box)
 
-        self.ellipses = {}
+        return behavBox
 
-        for key in ELLIPSES.keys():
-            
-            E = [Ellipse(*(item+[self])) for item in ELLIPSES[key]]
+    def synchronizeBehaviourTabAndBindings(self, animal_number, behaviour_dict: Dict[str, str],
+                                           behaviour_assignments):
+        startPoint = len('A' + str(animal_number) + '_')
+        listOfUserBehaviours = list()
+        for bd in behaviour_dict:
+            listOfUserBehaviours.append(bd['name'])
+        listOfUserBehaviours.append('delete')
+        listOfAssignments = behaviour_assignments.keys()
 
-            self.ellipses[key] = E
+        for key in listOfAssignments:
+            if key[startPoint:] not in listOfUserBehaviours:
+                del behaviour_assignments[key]
+                buttonKey = self.behavAssignment[key].keyBinding
+                del self.behavAssignment[key]
 
-            for e in E:
+                if buttonKey != 'no button assigned':
+                    self.keys[buttonKey].behaviour = None
+                    self.keys[buttonKey].animal = None
+                    self.keys[buttonKey].color = '#C0C0C0'
 
-                self.scenes[key].addItem(e)
+        for i in range(len(behaviour_dict)):
+            behav = 'A' + str(animal_number) + '_' + behaviour_dict[i]['name']
+            if behav not in listOfAssignments:
+                temp = BehavBinding(animal=animal_number,
+                                    icon_path=behaviour_dict[i]['icon'],
+                                    behaviour=behaviour_dict[i]['name'],
+                                    color=behaviour_dict[i]['color'],
+                                    key_binding=None,
+                                    device=None)
 
-        ## first try: left joy-stick ellipse playstation
-        #self.scenes['Playstation'].addEllipse(QRectF(200,200,100,100))
+                self.behavAssignment.update({behav: temp})
+                behaviour_assignments.update({behav: temp})
+        return behaviour_assignments
 
+    @staticmethod
+    def slicedict(d, s):
+        try:
+            return {k: v for k, v in d.iteritems() if k.startswith(s)}
+        except AttributeError:
+            return {k: v for k, v in d.items() if k.startswith(s)}
 
-        self.update_polygons(self.background_image.size())
+    def clearLayout(self, layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clearLayout(child.layout())
 
-        self.view.show()
+    def assignBehav(self, buttonBinding):
+        # check if device was selected
+        if self.selected_device is None:
+            QMessageBox.warning(self, 'Set device first!',
+                                "You need to choose an input device first",
+                                QMessageBox.Ok)
+            return
 
+        # check if layout was selected
+        if self.deviceLayout is None:
+            QMessageBox.warning(self, 'Set layout first!',
+                                "You need to choose an input device layout first",
+                                QMessageBox.Ok)
+            return
+        # Check if this is a keyboard assignment
+        if self._device_is_keyboard():
+            text, ok = QInputDialog.getText(self, 'Press', 'Key Entry:')
+            if not ok:
+                return
+            inputCode = str(text)
+            # No this is a gamepad assignment
+        else:
+            inputCode = self.waitOnUICpress()
 
-        # ---------------------------
-        # Right column: button editor
-        # ---------------------------
+        if self._key_already_existing(inputCode):
+            key, newBinding = self._handle_already_existing(buttonBinding, inputCode)
+        else:
+            key, newBinding = self._handle_not_existing(buttonBinding, inputCode)
+        self.behavAssignment.update({key: newBinding})
+        self.keys.update({inputCode: copy.deepcopy(newBinding)})
+        self.make_joystick_info()
+        self.makeBehaviourSummary()
 
-        self.button_editor = ButtonEditor(self)
-        s = self.size()
-        self.button_editor.setGeometry(int(s.width()*0.8),0, int(s.width()*0.199),s.height())
+    def _device_is_keyboard(self) -> bool:
+        return self.deviceNumber == self.input_device_names.index('Keyboard')
 
-    def _print_msg(self, msg):
-        print(str(msg))
+    def _key_already_existing(self, inputCode) -> bool:
+        return inputCode in self.keys.keys()
+
+    def _handle_not_existing(self, buttonBinding, inputCode):
+        # check if a button was assigned to that behaviour
+        key, newBinding = self._make_behaviour_key_and_set_binding(buttonBinding, inputCode)
+        return key, newBinding
+
+    def _make_behaviour_key_and_set_binding(self, buttonBinding, inputCode):
+        key = self.makeAnimalBehavKey(buttonBinding)
+        oldBehaviourBinding = self.behavAssignment[key]
+        if oldBehaviourBinding.keyBinding != 'no button assigned':
+            self._delete_old_behaviour_info(oldBehaviourBinding)
+        key, newBinding = self._get_behaviour_and_set_new_binding(buttonBinding, inputCode, key)
+        # icon has to be attached here as well
+        newBinding.device = self.selected_device
+        return key, newBinding
+
+    def _get_behaviour_and_set_new_binding(self, buttonBinding, inputCode, key):
+        key = 'A' + str(buttonBinding.animal) + '_' + buttonBinding.behaviour
+        newBinding = copy.deepcopy(self.behavAssignment[key])
+        newBinding.animal = buttonBinding.animal
+        newBinding.behaviour = buttonBinding.behaviour
+        newBinding.color = buttonBinding.color
+        newBinding.keyBinding = inputCode
+        return key, newBinding
+
+    def _delete_old_behaviour_info(self, oldBehaviourBinding):
+        oldButtonBinding = self.keys[oldBehaviourBinding.keyBinding]
+        oldButtonBinding.color = '#C0C0C0'
+        oldButtonBinding.animal = None
+        oldButtonBinding.behaviour = None
+        self.keys.update({oldBehaviourBinding.keyBinding: oldButtonBinding})
+
+    def _handle_already_existing(self, buttonBinding, inputCode):
+        # get old button binding object
+        oldButtonBinding = self.keys[inputCode]
+        # we check if there was already a behaviour attached to this button
+        if oldButtonBinding.behaviour is not None:
+            # the button binding also in the behavAssignment
+            key = self.makeAnimalBehavKey(oldButtonBinding)
+            oldBehaviourBinding = self.behavAssignment[key]
+            oldBehaviourBinding.keyBinding = 'no button assigned'
+            self.behavAssignment.update({key: oldBehaviourBinding})
+        key, newBinding = self._make_behaviour_key_and_set_binding(buttonBinding, inputCode)
+        # update both lists
+        self.behavAssignment.update({key: newBinding})
+        self.keys.update({inputCode: copy.deepcopy(newBinding)})
+        return key, newBinding
+
+    def waitOnUICpress(self):
+        pygame.event.clear()
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.JOYBUTTONDOWN:
+                    inputCode = 'B' + str(event.button)
+                    return inputCode
+                if event.type == pygame.JOYAXISMOTION:
+                    value = event.dict['value']
+                    axis = event.dict['axis']
+                    if abs(value) > 0.75:
+                        if value > 0:
+                            inputCode = 'A' + str(axis) + '+'
+                        else:
+                            inputCode = 'A' + str(axis) + '-'
+                        return inputCode
+                if event.type == pygame.JOYHATMOTION:
+                    value = event.dict['value']
+                    inputCode = 'H' + str(value[0]) + str(value[1])
+                    return inputCode
+
+    def set_assignDevice(self, device):
+        device = str(device)
+        if self.selected_device == device:
+            return
+        self.selected_device = device
+        self.deviceNumber = self.input_device_names.index(device)
+        self.selected_device = device
+        if not self._device_is_keyboard():
+            self.joystick = pygame.joystick.Joystick(self.deviceNumber)
+            self.joystick.init()
+            self.make_joystick_info()
+        self.makeBehaviourSummary()
+
+    def set_device(self, device: str):
+        if self.selected_device is None:
+            QMessageBox.warning(self, 'Set device first!',
+                                "You need to choose an input device first",
+                                QMessageBox.Ok)
+            return
+        self._set_device(device)
+
+    def _set_device(self, device):
+        device = str(device)
+        if self.deviceLayout == device:
+            return
+        self._current_keys[self.deviceLayout] = self.keys.copy()
+        self.deviceLayout = device
+        self.initializeKeys(device)
+        self.pixmap = QPixmap(DEVICES[str(device)])
+        self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(), Qt.KeepAspectRatio))
+        self.background_image.setScaledContents(True)
+        self.make_joystick_info()
+        self.makeBehaviourSummary()
+
+    def initializeKeys(self, device):
+        self.keys.clear()
+        if device == "X-Box":
+            if self._current_keys['X-Box'] is None:
+                self._set_up_xbox_keys()
+            else:
+                self.keys = self._current_keys['X-Box']
+        elif device == "Playstation":
+            if self._current_keys['Playstation'] is None:
+                self._set_up_playstation_keys()
+            else:
+                self.keys = self._current_keys['Playstation']
+        elif device == "Keyboard":
+            if self._current_keys['Keyboard'] is None:
+                self._set_up_keyboard_keys()
+            else:
+                self.keys = self._current_keys['Keyboard']
+
+    def _set_up_playstation_keys(self):
+        #           B6                                   B7
+        #           B4                                   B5
+        #        _=====_                               _=====_
+        #       / _____ \                             / _____ \
+        #     +.-'_____'-.---------------------------.-'_____'-.+
+        #    /   |     |  '.                       .'  |     |   \
+        #   / ___| H2+ |___ \                     / ___| B0  |___ \
+        #  / |             | ;  __           _   ; |             | ;
+        #  | | H1-      H1+|   |__|B8     B9|_:> | | B3       B1 | |
+        #  | |___       ___| ;SELECT       START ; |___       ___| ;
+        #  |\    | H2- |    /  _     ___      _   \    | B2  |    /|
+        #  | \   |_____|  .','" "', |___|  ,'" "', '.  |_____|  .' |
+        #  |  '-.______.-' /  A1-  \ANALOG/  A4-  \  '-._____.-'   |
+        #  |               |A0- A0+|------|A3- A3+|                |
+        #  |              /\  A1+  /      \  A4+  /\               |
+        #  |             /  '.___.'        '.___.'  \              |
+        #  |            /     B10            B11     \             |
+        #   \          /                              \           /
+        #    \________/                                \_________/
+        #  PS2 CONTROLLER
+        self.keys = {"B0": BehavBinding(device=self.selected_device, key_binding="B0", color='#C0C0C0'),
+                     "B1": BehavBinding(device=self.selected_device, key_binding="B1", color='#C0C0C0'),
+                     "B2": BehavBinding(device=self.selected_device, key_binding="B2", color='#C0C0C0'),
+                     "B3": BehavBinding(device=self.selected_device, key_binding="B3", color='#C0C0C0'),
+                     "B4": BehavBinding(device=self.selected_device, key_binding="B4", color='#C0C0C0'),
+                     "B5": BehavBinding(device=self.selected_device, key_binding="B5", color='#C0C0C0'),
+                     "B6": BehavBinding(device=self.selected_device, key_binding="B6", color='#C0C0C0'),
+                     "B7": BehavBinding(device=self.selected_device, key_binding="B7", color='#C0C0C0'),
+                     "B8": BehavBinding(device=self.selected_device, key_binding="B8", color='#C0C0C0'),
+                     "B9": BehavBinding(device=self.selected_device, key_binding="B9", color='#C0C0C0'),
+                     "H01": BehavBinding(device=self.selected_device, key_binding="H01", color='#C0C0C0'),
+                     "H0-1": BehavBinding(device=self.selected_device, key_binding="H0-1", color='#C0C0C0'),
+                     "H-10": BehavBinding(device=self.selected_device, key_binding="H-10", color='#C0C0C0'),
+                     "H10": BehavBinding(device=self.selected_device, key_binding="H10", color='#C0C0C0')}
+        standardKeys = ["B10", "B11", "A0+", "A0-", "A1-", "A1+", "A3+", "A3-", "A4-", "A4+"]
+        movieBehavs = ["toggleRunMov", "stopToggle", "runMovForward", "runMovReverse",
+                       "changeFPShigh", "changeFPSlow", "changeFrameNoHigh1", "changeFrameNoLow1",
+                       "changeFrameNoHigh10", "changeFrameNoLow10"]
+        self.fillStandardKeys(standardKeys, movieBehavs)
+
+    def _set_up_xbox_keys(self):
+        #                 AT2+                                         AT5+
+        #                  B4                                           B5
+        #            ,,,,---------,_                               _,--------,,,,
+        #          /-----```````---/`'*-,_____________________,-*'`\---``````-----\
+        #         /     A1-                      B8                   ,---,        \
+        #        /   , -===-- ,          B6     ( X )    B7     ,---, '-B3' ,---,   \
+        #       /A0-||'( : )'||A0+     (<)-|           |-(>)   'B2-' ,---, 'B1-'    \
+        #      /    \\ ,__, //           H01                      A4- '-B0'           \
+        #     /         A1+         ,--'`!`!`'--,              ,--===--,               \
+        #    /  B9              H-10||  ==O==  ||H10       A3-||'( : )'||A3+            \
+        #   /                       '--, !,!, --'             \\  ,__, //                \
+        #  |                          ,--------------------------, A4+     B10            |
+        #  |                      ,-'`  H0-1                     `'-,                     |
+        #  \                   ,-'`                                  `'-,                 /
+        #   `'----- ,,,, -----'`                                       `'----- ,,,, -----'`
+        self.keys = {"B0": BehavBinding(device=self.selected_device, key_binding="B0", color='#C0C0C0'),
+                     "B1": BehavBinding(device=self.selected_device, key_binding="B1", color='#C0C0C0'),
+                     "B2": BehavBinding(device=self.selected_device, key_binding="B2", color='#C0C0C0'),
+                     "B3": BehavBinding(device=self.selected_device, key_binding="B3", color='#C0C0C0'),
+                     "B4": BehavBinding(device=self.selected_device, key_binding="B4", color='#C0C0C0'),
+                     "B5": BehavBinding(device=self.selected_device, key_binding="B5", color='#C0C0C0'),
+                     "B6": BehavBinding(device=self.selected_device, key_binding="B6", color='#C0C0C0'),
+                     "B7": BehavBinding(device=self.selected_device, key_binding="B7", color='#C0C0C0'),
+                     "B8": BehavBinding(device=self.selected_device, key_binding="B8", color='#C0C0C0'),
+                     "A2+": BehavBinding(device=self.selected_device, key_binding="A2+", color='#C0C0C0'),
+                     "A5+": BehavBinding(device=self.selected_device, key_binding="A5+", color='#C0C0C0'),
+                     "A2-": BehavBinding(device=self.selected_device, key_binding="A2-", color='#C0C0C0'),
+                     "A5-": BehavBinding(device=self.selected_device, key_binding="A5-", color='#C0C0C0'),
+                     "H01": BehavBinding(device=self.selected_device, key_binding="H01", color='#C0C0C0'),
+                     "H0-1": BehavBinding(device=self.selected_device, key_binding="H0-1", color='#C0C0C0'),
+                     "H-10": BehavBinding(device=self.selected_device, key_binding="H-10", color='#C0C0C0'),
+                     "H10": BehavBinding(device=self.selected_device, key_binding="H10", color='#C0C0C0')}
+        standardKeys = ["B9", "B10", "A0+", "A0-", "A1-", "A1+", "A3+", "A3-", "A4-", "A4+"]
+        movieBehavs = ["toggleRunMov", "stopToggle", "runMovForward", "runMovReverse",
+                       "changeFPShigh", "changeFPSlow", "changeFrameNoHigh1", "changeFrameNoLow1",
+                       "changeFrameNoHigh10", "changeFrameNoLow10"]
+        self.fillStandardKeys(standardKeys, movieBehavs)
+
+    def _set_up_keyboard_keys(self):
+        movie_keys = {
+            'k': "toggleRunMov",
+            'l': "runMovForward",
+            'j': "runMovReverse",
+            '.': "changeFPShigh",
+            ',': "changeFPSlow",
+            'i': "stopToggle",
+            'o': "changeFrameNoHigh1",
+            'u': "changeFrameNoLow1",
+            '[': "changeFrameNoLow10",
+            ']': "changeFrameNoHigh10"
+        }
+        self.fillStandardKeys(list(movie_keys.keys()), list(movie_keys.values()))
+
+    def fillStandardKeys(self, standardKeys, movieBehavs):
+        """
+        This function adds the standard movie behaviour functions to the self.keys dict,
+        using preset keys
+        """
+
+        for i in range(len(standardKeys)):
+            self.behavAssignment['Amovie_' + movieBehavs[i]].device = self.selected_device
+            self.behavAssignment['Amovie_' + movieBehavs[i]].keyBinding = standardKeys[i]
+            temp = copy.deepcopy(self.behavAssignment['Amovie_' + movieBehavs[i]])
+            temp.device = self.selected_device
+            temp.keyBinding = standardKeys[i]
+            self.keys.update({standardKeys[i]: temp})
+
+            # idx = self.IndexOfDictList(self.bindingList,'behaviour',movieBehavs[i])
+            # self.bindingList[idx].update('keyBinding':standardKeys[i])
+            # self.bindingList[idx].update('device': self.selected_device)
+
+    @staticmethod
+    def makeAnimalBehavKey(obj):
+        return 'A' + str(obj.animal) + '_' + obj.behaviour
+
+    def initialiseBehavAssignment(self):
+        self.behavAssignment.clear()
+
+        for animalI in range(len(self.animal_tabs)):
+            behavDict = self.animal_tabs[animalI].behaviour_dicts
+
+            # add all behaviours
+            for i in range(len(behavDict)):
+                temp = BehavBinding(animal=animalI,
+                                    icon_path=behavDict[i]['icon'],
+                                    behaviour=behavDict[i]['name'],
+                                    color=behavDict[i]['color'],
+                                    key_binding='no button assigned',
+                                    device=None)
+
+                self.behavAssignment.update({'A' + str(animalI) + '_' + behavDict[i]['name']: temp})
+
+            # add delete function
+            temp = BehavBinding(animal=animalI,
+                                icon_path=None,
+                                behaviour='delete',
+                                color='#ffffff',
+                                key_binding='no button assigned',
+                                device=None)
+
+            self.behavAssignment.update({'A' + str(animalI) + '_delete': temp})
+
+        # add movie behaviours    
+        movieBehavs = ['toggleRunMov', 'stopToggle', 'runMovReverse', 'runMovForward',
+                       'changeFPSlow', 'changeFPShigh', 'changeFrameNoLow1',
+                       'changeFrameNoHigh1', 'changeFrameNoLow10', 'changeFrameNoHigh10']
+        for behavI in movieBehavs:
+            temp = BehavBinding(animal=BehavBinding.ANIMAL_MOVIE,
+                                color='#ffffff',
+                                icon_path=None,
+                                behaviour=behavI,
+                                key_binding=None,
+                                device=None)
+            self.behavAssignment.update({"Amovie_" + behavI: temp})
+
+    def close_event(self):
+        self.save_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
 
     def resizeEvent(self, event):
         self.background_image.resize(event.size())
-        #self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(),Qt.KeepAspectRatio))
-        self.view.resize(event.size())
-    
-        self.update_polygons(self.background_image.size())
 
-        s = self.background_image.size()
-
-        self.lbl_input_device.move(int(s.width()*0.2),int(s.height()*0.06))
-        self.combo_input_device.move(int(s.width()*0.39),int(s.height()*0.06))
-
-        self.button_editor.resize(event.size())
-
-    def update_polygons( self, size ):
-
-        ind = 0
-        for j in range(len(POLYGONS[self.selected_device])):
-        #for j in range(POLYGONS[self.selected_device])):
-
-            for i in range(len(POLYGONS[self.selected_device][j])):
-                v = POLYGONS[self.selected_device][j][i]
-                p = self.points[self.selected_device][j][i]
-                p.setX( size.width() * v[0] )
-                p.setY( size.height() * v[1] )
-
-            #self.analysis_list.append([(size.width(),size.height()), v, (p.x(),p.y())]) 
-
-            #print p.x(), p.y()
-            self.polygons[self.selected_device][j].setPolygon( QPolygonF(self.points[self.selected_device][j]) )
-            ind += 1
-
-
-        for k in range(len(_tmp_polygons)):
-            
-            for i in range(len(_tmp_polygons[k])):
-
-                v = _tmp_polygons[k][i]
-
-                p = self.points[self.selected_device][ind+k][i]
-                p.setX( size.width() * v[0] )
-                p.setY( size.height() * v[1] )
-
-            self.polygons[self.selected_device][ind+k].setPolygon( QPolygonF(self.points[self.selected_device][ind+k]) )
-            self.polygons[self.selected_device][ind+k].setAcceptHoverEvents(True)
-
-
-        for e in range(len(self.ellipses[self.selected_device])):
-            rel = ELLIPSES[self.selected_device][e] # relative ellipse coordinates
-            self.ellipses[self.selected_device][e].setRect(size.width()*rel[0],size.height()*rel[1],size.width()*rel[2],size.height()*rel[3])
-            
-        self.scenes[self.selected_device].setSceneRect(0,0, self.background_image.size().width()*0.98,self.background_image.size().height()*0.98)
-        self.view.setScene( self.scenes[self.selected_device] )
-        self.view.show()            
-
-    def set_device(self, device):
-        
-        self.pixmap=QPixmap(DEVICES[str(device)])
-        self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(),Qt.KeepAspectRatio))
-        self.background_image.setScaledContents(True)
-
-        self.selected_device = str(device)
-
-        self.update_polygons(self.background_image.size())
-
-    def close_event(self):
-
-        a = np.zeros( (len(self.analysis_list),6) )
-
-        for i in range(a.shape[0]):
-            
-            for j in range(6):
-                
-                a[i,j] = self.analysis_list[i][j/2][j%2]
-
-        np.save("ana.npy",a)
-
-
-    '''
-    def paintEvent(self, event):
-
-        print self.view
-
-        
-        for item in self.scenes[self.selected_device].items():
-            if isinstance( item, Ellipse):
-                item.paint( self.view)
-
-        
-        super(TabButtons, self).paintEvent(event)
-        ## Problem: this seems to call paint() for all items again, 
-        ##          and now it passes too few arguments to Ellipse.paint() ...
-    '''
-
-class OverlayView(QGraphicsView):
-
-    def __init__(self, scene, parent):
-
-        super(OverlayView,self).__init__( scene, parent )
-
-
-
-class Polygon(QGraphicsPolygonItem):
-
-    def __init__(self, scene = None):
-        
-        #super(Polygon, self).__init__() #scene = scene )
-
-        QGraphicsPolygonItem.__init__(self, scene = scene)
-
-        self.pen_normal = self.pen()
-        self.brush_normal = self.brush()
-
-        self.pen_highlight = QPen( Qt.green )
-        self.pen_highlight.setWidth( 4.5 )
-
-        self.brush_highlight = QBrush( Qt.Dense3Pattern )
-        self.brush_highlight.setColor( Qt.green )
-
-        self.pen_selected = QPen( Qt.white )
-        self.pen_selected.setWidth( 4.5 )
-
-        self.brush_selected = QBrush( Qt.Dense1Pattern )
-        self.brush_selected.setColor( Qt.white )
-
-        self.setAcceptHoverEvents(True)
-
-        self.selected = False
-        self.hovered = False
-
-
-    def update_pen_and_brush(self):
-
-        if self.hovered:
-            self.setPen( self.pen_highlight )
-            self.setBrush( self.brush_highlight )
-
-        else:
-            if self.selected:
-                self.setPen( self.pen_selected )
-                self.setBrush( self.brush_selected )
-
-            else:
-                self.setPen( self.pen_normal )
-                self.setBrush( self.brush_normal )
-
-                
-
-    def hoverEnterEvent(self, event):
-
-        self.hovered = True
-        self.update_pen_and_brush()
-
-    def hoverLeaveEvent(self, event):
-
-        self.hovered = False
-        self.update_pen_and_brush()
-
-    def mousePressEvent(self, event):
-    
-        if self.selected:
-            self.selected = False
-        else:
-            self.selected = True
-        self.update_pen_and_brush()
-
-
-class Ellipse(QGraphicsEllipseItem):
-
-    def __init__(self, x, y , width, height, parent = None):
-
-        QGraphicsEllipseItem.__init__(self)
-        
-        self.parent = parent # should be a reference to a TabButtons object
-
-        self.relative_rect = [x, y, width, height]
-
-        #self.setFlag(QGraphicsItem.ItemIsSelectable, True)
-
-        self.setAcceptHoverEvents(True)
-
-        self.pen_normal = self.pen()
-        self.brush_normal = self.brush()
-
-        self.pen_highlight = QPen( Qt.green )
-        self.pen_highlight.setWidth( 4.5 )
-    
-        self.brush_highlight = QBrush( Qt.Dense3Pattern )
-        self.brush_highlight.setColor( Qt.green )
-
-        self.pen_selected = QPen( Qt.white )
-        self.pen_selected.setWidth( 4.5 )
-
-        self.brush_selected = QBrush( Qt.Dense1Pattern )
-        self.brush_selected.setColor( Qt.white )
-
-        self.selected = False
-        self.hovered = False
-
-
-    def set_position(self, size):
-
-        w = size.width()
-        h = size.height()
-
-        x = self.relative_rect[0] * w
-        y = self.relative_rect[1] * h
-        width = self.relative_rect[2] * w
-        height = self.relative_rect[3] * h
-
-        self.setRect( QRectF(x, y, width, height) )
-
-
-    def hoverEnterEvent(self, event):
-        
-        #print "yeah HOVER HOVER!!"
-
-        self.hovered = True
-        self.update_pen_and_brush()
-
-    def hoverLeaveEvent(self, event):
-
-        #print "no HOVER for you!"
-
-        self.hovered = False
-        self.update_pen_and_brush()
-
-    def mousePressEvent(self, event):
-    
-        if self.selected:
-            self.selected = False
-        else:
-            self.selected = True
-        self.update_pen_and_brush()
-
-
-    def update_pen_and_brush(self):
-
-        if self.hovered:
-            self.setPen( self.pen_highlight )
-            self.setBrush( self.brush_highlight )
-
-        else:
-            if self.selected:
-                self.setPen( self.pen_selected )
-                self.setBrush( self.brush_selected )
-
-            else:
-                self.setPen( self.pen_normal )
-                self.setBrush( self.brush_normal )
-
-
-
-class ButtonEditor(QWidget):
-
-    def __init__(self, parent):
-        
-        self.parent = parent
-        super(ButtonEditor,self).__init__(parent)
-
-        print(self.parent)
-
-        self.init_UI()
-
-    def init_UI(self):
-
-        self.setStyleSheet("background-color: #AA0000;")
-
-        self.vbox = QVBoxLayout()
+    def getAssignments(self):
+        return self.keys, self.behavAssignment
+
+    def getSelectedLayout(self):
+        return self.deviceLayout
+
+    def reset_buttons(self):
+        self._get_and_initialize_behaviour()
+        self._initialize_joystick()
+        self.makeBehaviourSummary()
+
+    def _initialize_joystick(self):
+        # Get count of joysticks
+        self.n_joysticks = pygame.joystick.get_count()
+        # variables
+        self.hatsNum = []
+        self.buttonsNum = []
+        self.axesNum = []
+        self.input_device_names = []
+        for i in range(self.n_joysticks):
+            self.joystick = pygame.joystick.Joystick(i)
+            self.joystick.init()
+            # count the axes
+            self.axesNum.append(self.joystick.get_numaxes())
+            self.buttonsNum.append(self.joystick.get_numbuttons())
+            self.hatsNum.append(self.joystick.get_numhats())
+            self.input_device_names.append(self.joystick.get_name())
+        self.input_device_names.append('Keyboard')
+
+    def _init_ui(self):
+        self._get_and_initialize_behaviour()
+        self._initialize_joystick()
+        self._set_background_image()
+        self._initialize_layout()
+
+    def _initialize_layout(self):
+        self._make_major_boxes()
+        self._add_layouts_to_central_vertical_box()
+        self.labelStyle = """
+        color: white;
+        background-color: rgba(255, 255, 255, 125);
+        margin-top: 2px;
+        font-weight: bold;
+        """
+        # fill major boxes with infos
+        self._fill_major_boxes_with_infos()
         self.setLayout(self.vbox)
+        self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
+
+    def _fill_major_boxes_with_infos(self):
+        self.make_joystick_info()
+        self.makeBehaviourSummary()
+        self.make_device_choice()
+        self.make_load_save_preset()
+
+    def _add_layouts_to_central_vertical_box(self):
+        self.vbox.addStretch()
+        self.vbox.addLayout(self.hboxDeviceChoice)
+        self.vbox.addLayout(self.hboxConciseBehav)
+        self.vbox.addLayout(self.hboxLoadSavePreset)
+        self.vbox.addLayout(self.hboxJoyStickInfo)
+        self.vbox.addStretch()
+
+    def _make_major_boxes(self):
+        self.vbox = QVBoxLayout()
+        self.hboxDeviceChoice = QHBoxLayout()
+        self.hboxConciseBehav = QHBoxLayout()
+        self.hboxJoyStickInfo = QHBoxLayout()
+        self.hboxLoadSavePreset = QHBoxLayout()
+
+    def _set_background_image(self):
+        self.background_image = QLabel(self)
+        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
+        self.pixmap = QPixmap(HERE + '/pictures/gamePad.png')
+        self.background_image.setPixmap(self.pixmap.scaled(
+            self.background_image.size(),
+            Qt.KeepAspectRatio))
+        self.background_image.setScaledContents(True)
+        self.background_image.resize(self.size())
+
+    def _get_and_initialize_behaviour(self):
+        self.behavAssignment = BehaviourAssignments()
+        self.animal_tabs = self.parent.get_animal_tabs()
+        self.selected_device = None
+        self.deviceLayout = None
+        self.deviceNumber = -2
+        self.initialiseBehavAssignment()
+        self.lastKeyPressed = (71, 'G')
 
 
-    def add_edit_line(self, initial = None):
-        pass
-        #new_edit_line = ButtonEditLine(self.parent.parent.tab_list[0].)
+class BehaviourAssignments:
 
+    def __init__(self):
+        self.assignments = dict()
 
-class ButtonEditLine(QWidget):
+    def get_button_assignments(self) -> Dict[str, BehavBinding]:
+        button_assignments = {}
+        for label in self.assignments:
+            binding = self.assignments[label]
+            button = binding.keyBinding
+            button_assignments[button] = binding
+        return button_assignments
 
-    def __init__(self, animals_and_behaviuors, init_tuple = None):
+    def all_actions_have_buttons_assigned(self, animal_behaviours: List[str], movie_commands: List[str]) -> bool:
+        for ab in animal_behaviours:
+            if ab not in self:
+                return False
+        for mc in movie_commands:
+            if mc not in self:
+                return False
+        return True
 
-        super(ButtonEditLine,self).__init__()
+    def __contains__(self, item: str):
+        for key in self.assignments.keys():
+            if key == item:
+                return True
+        return False
 
-        self.animals_and_behaviuors = animals_and_behaviuors
+    def __setitem__(self, key: str, value: BehavBinding):
+        if key != value.keyBinding:
+            raise ValueError("key {} does not match key binding {}".format(key, value.keyBinding))
+        self.assignments[key] = value
 
-        self.init_UI(init_tuple)
-
-
-
-
-    def init_UI(self, init_tuple):
-
-        hbox = QHBoxLayout()
-        self.setLayout(hbox)
-
-        self.combo_animal = QComboBox()
-
-        for animal in animals_and_behaviuors:
-            self.combo_animal.addItem(animal)
-
-        self.combo_behaviour = QComboBox()
-
-        hbox.addWidget(self.combo_animal)
-        hbox.addWidget(self.combo_behaviour)
+    def __getitem__(self, item: str) -> BehavBinding:
+        return self.assignments[item]

@@ -14,7 +14,7 @@ import pickle
 from .tab_behaviours.tab_behaviours import TabBehaviours
 from .tab_analysis import TabAnalysis
 from .tab_results import TabResults
-from .tab_buttons2 import TabSimpleButtons
+from .tab_buttons import TabButtons
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -57,7 +57,7 @@ class MovScoreGUI(QWidget):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
         self.tab_behaviours = TabBehaviours(self)
-        self.tab_buttons = TabSimpleButtons(self)
+        self.tab_buttons = TabButtons(self)
         self.shortHandAnalysis = TabAnalysis(self)
         self.tab_list = [self.tab_behaviours,
                          self.tab_buttons,
