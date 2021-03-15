@@ -8,7 +8,7 @@ def test_to_dict():
         color='#FFAA50',
         icon_path='/home/icons/are/nice.png',
         behaviour='aggression',
-        keyBinding='B1',
+        key_binding='B1',
         device='XBox'
     )
 

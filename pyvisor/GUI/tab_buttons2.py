@@ -532,7 +532,7 @@ class TabSimpleButtons(QWidget):
                                     icon_path= behavDict[i]['icon'],
                                     behaviour  = behavDict[i]['name'],
                                     color      = behavDict[i]['color'],
-                                    keyBinding = 'no button assigned',
+                                    key_binding='no button assigned',
                                     UICdevice  = 'None')
                 
                 self.behavAssignment.update({behav:temp})
@@ -739,24 +739,24 @@ class TabSimpleButtons(QWidget):
             
 
 
-            self.keys = {"B0"   : BehavBinding(device = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0' ),
-                         "B1"   : BehavBinding(device = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0' ),
-                         "B2"   : BehavBinding(device = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0' ),
-                         "B3"   : BehavBinding(device = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0' ),
-                         "B4"   : BehavBinding(device = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0' ),
-                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
-                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0' ),
-                         "B6"   : BehavBinding(device = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0' ),
-                         "B7"   : BehavBinding(device = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0' ),
-                         "B8"   : BehavBinding(device = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0' ),
-                         "A2+"  : BehavBinding(device = self.selected_device, keyBinding = "A2+" , color = '#C0C0C0' ),
-                         "A5+"  : BehavBinding(device = self.selected_device, keyBinding = "A5+" , color = '#C0C0C0' ),
-                         "A2-"  : BehavBinding(device = self.selected_device, keyBinding = "A2-" , color = '#C0C0C0' ),
-                         "A5-"  : BehavBinding(device = self.selected_device, keyBinding = "A5-" , color = '#C0C0C0' ),
-                         "H01"  : BehavBinding(device = self.selected_device, keyBinding = "H01" , color = '#C0C0C0' ),
-                         "H0-1" : BehavBinding(device = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0' ),
-                         "H-10" : BehavBinding(device = self.selected_device, keyBinding = "H-10", color = '#C0C0C0' ),
-                         "H10"  : BehavBinding(device = self.selected_device, keyBinding = "H10" , color = '#C0C0C0' )}
+            self.keys = {"B0"   : BehavBinding(device = self.selected_device, key_binding="B0", color ='#C0C0C0'),
+                         "B1"   : BehavBinding(device = self.selected_device, key_binding="B1", color ='#C0C0C0'),
+                         "B2"   : BehavBinding(device = self.selected_device, key_binding="B2", color ='#C0C0C0'),
+                         "B3"   : BehavBinding(device = self.selected_device, key_binding="B3", color ='#C0C0C0'),
+                         "B4"   : BehavBinding(device = self.selected_device, key_binding="B4", color ='#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, key_binding="B5", color ='#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, key_binding="B5", color ='#C0C0C0'),
+                         "B6"   : BehavBinding(device = self.selected_device, key_binding="B6", color ='#C0C0C0'),
+                         "B7"   : BehavBinding(device = self.selected_device, key_binding="B7", color ='#C0C0C0'),
+                         "B8"   : BehavBinding(device = self.selected_device, key_binding="B8", color ='#C0C0C0'),
+                         "A2+"  : BehavBinding(device = self.selected_device, key_binding="A2+", color ='#C0C0C0'),
+                         "A5+"  : BehavBinding(device = self.selected_device, key_binding="A5+", color ='#C0C0C0'),
+                         "A2-"  : BehavBinding(device = self.selected_device, key_binding="A2-", color ='#C0C0C0'),
+                         "A5-"  : BehavBinding(device = self.selected_device, key_binding="A5-", color ='#C0C0C0'),
+                         "H01"  : BehavBinding(device = self.selected_device, key_binding="H01", color ='#C0C0C0'),
+                         "H0-1" : BehavBinding(device = self.selected_device, key_binding="H0-1", color ='#C0C0C0'),
+                         "H-10" : BehavBinding(device = self.selected_device, key_binding="H-10", color ='#C0C0C0'),
+                         "H10"  : BehavBinding(device = self.selected_device, key_binding="H10", color ='#C0C0C0')}
 
             standardKeys = ["B9", "B10","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
             movieBehavs  = ["toggleRunMov","stopToggle","runMovForward","runMovReverse",
@@ -790,21 +790,21 @@ class TabSimpleButtons(QWidget):
             #    \________/                                \_________/
                                 #  PS2 CONTROLLER
 
-            self.keys = {"B0"   : BehavBinding(device = self.selected_device, keyBinding = "B0"  , color = '#C0C0C0'),
-                         "B1"   : BehavBinding(device = self.selected_device, keyBinding = "B1"  , color = '#C0C0C0'),
-                         "B2"   : BehavBinding(device = self.selected_device, keyBinding = "B2"  , color = '#C0C0C0'),
-                         "B3"   : BehavBinding(device = self.selected_device, keyBinding = "B3"  , color = '#C0C0C0'),
-                         "B4"   : BehavBinding(device = self.selected_device, keyBinding = "B4"  , color = '#C0C0C0'),
-                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
-                         "B5"   : BehavBinding(device = self.selected_device, keyBinding = "B5"  , color = '#C0C0C0'),
-                         "B6"   : BehavBinding(device = self.selected_device, keyBinding = "B6"  , color = '#C0C0C0'),
-                         "B7"   : BehavBinding(device = self.selected_device, keyBinding = "B7"  , color = '#C0C0C0'),
-                         "B8"   : BehavBinding(device = self.selected_device, keyBinding = "B8"  , color = '#C0C0C0'),
-                         "B9"   : BehavBinding(device = self.selected_device, keyBinding = "B9"  , color = '#C0C0C0'),
-                         "H01"  : BehavBinding(device = self.selected_device, keyBinding = "H01" , color = '#C0C0C0'),
-                         "H0-1" : BehavBinding(device = self.selected_device, keyBinding = "H0-1", color = '#C0C0C0'),
-                         "H-10" : BehavBinding(device = self.selected_device, keyBinding = "H-10", color = '#C0C0C0'),
-                         "H10"  : BehavBinding(device = self.selected_device, keyBinding = "H10" , color = '#C0C0C0')}
+            self.keys = {"B0"   : BehavBinding(device = self.selected_device, key_binding="B0", color ='#C0C0C0'),
+                         "B1"   : BehavBinding(device = self.selected_device, key_binding="B1", color ='#C0C0C0'),
+                         "B2"   : BehavBinding(device = self.selected_device, key_binding="B2", color ='#C0C0C0'),
+                         "B3"   : BehavBinding(device = self.selected_device, key_binding="B3", color ='#C0C0C0'),
+                         "B4"   : BehavBinding(device = self.selected_device, key_binding="B4", color ='#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, key_binding="B5", color ='#C0C0C0'),
+                         "B5"   : BehavBinding(device = self.selected_device, key_binding="B5", color ='#C0C0C0'),
+                         "B6"   : BehavBinding(device = self.selected_device, key_binding="B6", color ='#C0C0C0'),
+                         "B7"   : BehavBinding(device = self.selected_device, key_binding="B7", color ='#C0C0C0'),
+                         "B8"   : BehavBinding(device = self.selected_device, key_binding="B8", color ='#C0C0C0'),
+                         "B9"   : BehavBinding(device = self.selected_device, key_binding="B9", color ='#C0C0C0'),
+                         "H01"  : BehavBinding(device = self.selected_device, key_binding="H01", color ='#C0C0C0'),
+                         "H0-1" : BehavBinding(device = self.selected_device, key_binding="H0-1", color ='#C0C0C0'),
+                         "H-10" : BehavBinding(device = self.selected_device, key_binding="H-10", color ='#C0C0C0'),
+                         "H10"  : BehavBinding(device = self.selected_device, key_binding="H10", color ='#C0C0C0')}
 
 
             standardKeys = ["B10", "B11","A0+", "A0-","A1-", "A1+","A3+","A3-","A4-","A4+"]  
@@ -849,7 +849,7 @@ class TabSimpleButtons(QWidget):
                                     icon_path= behavDict[i]['icon'],
                                     behaviour = behavDict[i]['name'],
                                     color = behavDict[i]['color'],
-                                    keyBinding = 'no button assigned',
+                                    key_binding='no button assigned',
                                     device = 'None')
 
                 self.behavAssignment.update({'A'+str(animalI)+'_'+behavDict[i]['name']:temp})
@@ -864,7 +864,7 @@ class TabSimpleButtons(QWidget):
                                 icon_path='None',
                                 behaviour='delete',
                                 color='#ffffff',
-                                keyBinding='no button assigned',
+                                key_binding='no button assigned',
                                 device='None')
             
             # self.bindingList.append({animal    : animalI,
@@ -884,7 +884,7 @@ class TabSimpleButtons(QWidget):
                                 color='#ffffff',
                                 icon_path='None',
                                 behaviour=behavI,
-                                keyBinding='no button assigned',
+                                key_binding='no button assigned',
                                 device='None')
             # self.bindingList.append({animal    : animalI,
             #                         icon_path    :'None',

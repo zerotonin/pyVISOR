@@ -482,7 +482,7 @@ class TabAnalysis(QWidget):
         self._assign_icon_positions(number_of_behaviours, icon_obj_list, number_of_unique_disjunctive_behaviours)
 
         self.gui_device_name_to_scorer_device_name()
-        self.UIC_switchWriter()
+        self.UIC_switch_writer()
 
         _thread.start_new_thread(self.sco.go, ())
 
@@ -562,7 +562,7 @@ class TabAnalysis(QWidget):
         disjuncList = self.compatabilityList2disjunctionList(disjuncList)
         return behavList, disjuncList
 
-    def UIC_switchWriter(self):
+    def UIC_switch_writer(self):
         animal_behaviours_as_strings = self._get_animal_behaviours_as_strings()
 
         free_binding_list = list()

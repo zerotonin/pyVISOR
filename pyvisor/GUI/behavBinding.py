@@ -1,21 +1,24 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
+
+
+ANIMAL_MOVIE = -1
 
 
 class BehavBinding:
     def __init__(self,
-                 animal     ='None',
-                 color      = '#C0C0C0',
-                 icon_path  ='None',
-                 behaviour  = 'None',
-                 keyBinding = 'None',
-                 device  ='None'):
+                 animal: int = None,
+                 color: str = '#C0C0C0',
+                 icon_path: str = None,
+                 behaviour: str = None,
+                 key_binding: str = None,
+                 device: str = None):
                       
-        self.animal     = animal
-        self.icon_path    = icon_path
-        self.behaviour  = behaviour
-        self.color      = color
-        self.keyBinding = keyBinding
-        self.device  = device
+        self.animal = animal
+        self.icon_path = icon_path
+        self.behaviour = behaviour
+        self.color = color
+        self.keyBinding = key_binding
+        self.device = device
 
     def __str__(self):
         s = 'BehavBinding:\n'
