@@ -1,9 +1,9 @@
-from pyvisor.GUI.behavBinding import BehavBinding
+from pyvisor.GUI.model.behaviours import Behaviour
 
 
 def test_to_dict():
 
-    binding = BehavBinding(
+    binding = Behaviour(
         animal='fly1',
         color='#FFAA50',
         icon_path='/home/icons/are/nice.png',
@@ -34,7 +34,7 @@ def test_from_dict():
         'device': 'Playstation'
     }
 
-    binding = BehavBinding.from_dict(d)
+    binding = Behaviour.from_dict(d)
 
     assert 'seal' == binding.animal
     assert 'chill' == binding.behaviour

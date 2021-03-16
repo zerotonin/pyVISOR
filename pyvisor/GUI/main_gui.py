@@ -3,6 +3,8 @@
 @mail ilyasp.ku@gmail.com
 @date 15.06.16
 """
+import json
+from typing import List
 
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
@@ -11,6 +13,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApp
 import os
 import pickle
 
+from pyvisor.GUI.model.animal import Animal
 from .tab_behaviours.tab_behaviours import TabBehaviours
 from .tab_analysis import TabAnalysis
 from .tab_results import TabResults
@@ -26,51 +29,68 @@ class MovScoreGUI(QWidget):
         """
         """    
         super(MovScoreGUI, self).__init__()
+        self.animals = []  # type: List[Animal]
+        self._load_defaults()
 
+        self.initUI()
+
+    def _load_defaults(self):
+        self._load_animals()
+        self._load_display_values()
+
+    def _load_display_values(self):
         try:
             with open(HOME + "/.pyvisor/guidefaults_movscoregui.pkl", 'rb') as f:
                 self.values = pickle.load(f)
         except FileNotFoundError:
             try:
                 with open(HERE + "/guidefaults_movscoregui.pkl", 'rb') as f:
-                    self.values = pickle.load(f)           
+                    self.values = pickle.load(f)
             except FileNotFoundError:
                 self.values = dict()
                 self.values['display'] = dict()
                 self.values['display']['geometry'] = QRect(0, 0, 640, 480)
 
-        self.initUI()
+    def _load_animals(self):
+        try:
+            with open(HOME + "/.pyvisor/guidefaults_animals.json", 'r') as f:
+                animals = json.load(f)
+        except FileNotFoundError:
+            with open(HERE + "/../guidefaults_animals.json", 'r') as f:
+                animals = json.load(f)
+
+        for a in animals:
+            self.animals.append(Animal.from_json(a))
 
     def initUI(self):
         """
         """        
-        # load size and position of last usage
-        self.setGeometry(self.values['display']['geometry'])
-        self.move(self.values['display']['geometry'].topLeft())
-        # set title bar
+        self._load_size_and_position_of_last_usage()
         self.setWindowTitle('Pyvisor')
         self.setWindowIcon(QIcon(HERE + '/../resources/icons/game/MES_trans.png'))
         vbox = QVBoxLayout()
         self.setLayout(vbox)
 
-        # initiate main tab widget
+        self._initiate_tabs(vbox)
+
+    def _initiate_tabs(self, vbox):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
         self.tab_behaviours = TabBehaviours(self)
         self.tab_buttons = TabButtons(self)
-        self.shortHandAnalysis = TabAnalysis(self)
-        self.tab_list = [self.tab_behaviours,
-                         self.tab_buttons,
-                         self.shortHandAnalysis, 
-                         TabResults(self)]
-
+        self.tab_analysis = TabAnalysis(self)
+        self.tab_results = TabResults(self)
         self.tab_names = ['Behaviours',
                           'Button Assignment',
                           'Analysis',
-                          'Results Overview']        
+                          'Results Overview']
+        tab_list = [self.tab_behaviours, self.tab_buttons, self.tab_analysis, self.tab_results]
+        for tab, name in zip(tab_list, self.tab_names):
+            self.tabs.addTab(tab, name)
 
-        for i in range(0, len(self.tab_list)):
-            self.tabs.addTab(self.tab_list[i], self.tab_names[i])
+    def _load_size_and_position_of_last_usage(self):
+        self.setGeometry(self.values['display']['geometry'])
+        self.move(self.values['display']['geometry'].topLeft())
 
     def get_animal_tabs(self):        
         return self.tab_behaviours.tabs.tabs_
@@ -90,13 +110,10 @@ class MovScoreGUI(QWidget):
         """
         Pops up a dialog-window when the user wants to close the GUI's window.
         """
-        self.values['display']['geometry'] = self.frameGeometry()
-        with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
-            pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
-        
-        ## list of close events of child processes/widgets to call
-        self.tab_list[0].close_event()  # tab_list[0] is a TabBehaviours object
-        self.tab_list[1].close_event()  # tab_list[1] is a TabButtons object        
+        self._save_display_values()
+        self._save_animals()
+
+        self.tab_buttons.close_event()  # tab_list[1] is a TabButtons object
 
         reply = QMessageBox.question(self,
                                      'Message',
@@ -106,6 +123,18 @@ class MovScoreGUI(QWidget):
             event.accept()
         else:
             event.ignore()
+
+    def _save_display_values(self):
+        self.values['display']['geometry'] = self.frameGeometry()
+        with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
+            pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
+
+    def _save_animals(self):
+        savable_list = [
+            animal.to_savable_dict() for animal in self.animals
+        ]
+        with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
+            json.dump(savable_list, fh)
 
 
 if __name__ == "__main__":

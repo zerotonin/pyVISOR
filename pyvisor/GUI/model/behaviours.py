@@ -1,9 +1,9 @@
-from typing import List, Dict, Any, Union
+from typing import Dict, Any
+
+from pyvisor.GUI.model.animal import Animal
 
 
-class BehavBinding:
-
-    ANIMAL_MOVIE = -1
+class Behaviour:
 
     def __init__(self,
                  animal: int = None,
@@ -12,7 +12,7 @@ class BehavBinding:
                  behaviour: str = None,
                  key_binding: str = None,
                  device: str = None):
-                      
+
         self.animal = animal
         self.icon_path = icon_path
         self.behaviour = behaviour
@@ -22,13 +22,13 @@ class BehavBinding:
 
     @property
     def label(self) -> str:
-        if self.animal == BehavBinding.ANIMAL_MOVIE:
+        if self.animal == Animal.ANIMAL_MOVIE:
             return "movie_{}".format(self.behaviour)
         return "A{}_{}".format(self.animal, self.behaviour)
 
     @property
     def is_movie(self) -> bool:
-        return self.animal == BehavBinding.ANIMAL_MOVIE
+        return self.animal == Animal.ANIMAL_MOVIE
 
     def __str__(self):
         s = 'BehavBinding:\n'
@@ -54,14 +54,14 @@ class BehavBinding:
         return d
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "BehavBinding":
+    def from_dict(d: Dict[str, Any]) -> "Behaviour":
         if len(d) != 6:
             msg = "Can't generate BehavBinding from dict. Dict needs to have exactly 6 keys: 'animal', 'color', "
             msg += "'icon_path', 'behaviour', 'key', 'device'.\n"
             msg += "Your dictionary:\n"
             msg += str(d)
             raise ValueError(msg)
-        return BehavBinding(
+        return Behaviour(
             d['animal'],
             d['color'],
             d['icon_path'],
@@ -71,7 +71,7 @@ class BehavBinding:
         )
 
     @staticmethod
-    def from_object_dict_to_savable_dict(bindings: Dict[str, "BehavBinding"]) -> Dict[str, Any]:
+    def from_object_dict_to_savable_dict(bindings: Dict[str, "Behaviour"]) -> Dict[str, Any]:
         d = {}
         for key in bindings:
             if key in d:
@@ -80,11 +80,11 @@ class BehavBinding:
         return d
 
     @staticmethod
-    def from_savable_dict_to_dict_of_objects(plain_dict: Dict[str, Dict[str, Any]]) -> Dict[str, 'BehavBinding']:
+    def from_savable_dict_to_dict_of_objects(plain_dict: Dict[str, Dict[str, Any]]) -> Dict[str, 'Behaviour']:
         d = {}
         for key in plain_dict:
             if key in d:
                 raise ValueError(f"Button '{key}' is already in dict. Make sure buttons are uniquely assigned!")
-            binding = BehavBinding.from_dict(plain_dict[key])
+            binding = Behaviour.from_dict(plain_dict[key])
             d[binding.label] = binding
         return d

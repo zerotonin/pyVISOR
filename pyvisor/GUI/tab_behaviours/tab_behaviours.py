@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 import os
+
+from ..main_gui import MovScoreGUI
 from ..styles import style_tab_behaviours
 from .animal_tab import AnimalTabWidget
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -10,9 +12,9 @@ HOME = os.path.expanduser("~")
 
 class TabBehaviours(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, parent: MovScoreGUI):
         super(TabBehaviours, self).__init__(parent)
-        self.parent = parent  # parent should be MovScoreGUI object
+        self.parent = parent  # type: MovScoreGUI
         self.init_UI()
 
     def init_UI(self):
@@ -42,9 +44,6 @@ class TabBehaviours(QWidget):
         QTabWidget>QWidget{background: rgba(255, 255, 255, 100);}
         """        
         self.setStyleSheet(stylesheetTab)
-
-    def close_event(self):        
-        self.tabs.close_event()
 
     def resizeEvent(self, event):
         self.background_image.resize(event.size())

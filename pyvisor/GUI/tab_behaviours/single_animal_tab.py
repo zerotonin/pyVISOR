@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import (QWidget, QGridLayout,
                              QVBoxLayout, QHBoxLayout,
                              QPushButton, QLineEdit)
+
+from .animal_tab import AnimalTabWidget
 from .behaviour_widget import BehaviourWidget
 
 
 class SingleAnimalTab(QWidget):
 
-    def __init__(self, parent,
+    def __init__(self, parent: AnimalTabWidget,
                  name, behaviour_dicts,
                  index_in_parent_tab_widget):
 
@@ -14,39 +16,16 @@ class SingleAnimalTab(QWidget):
 
         self.index = index_in_parent_tab_widget
         self.behaviour_dicts = behaviour_dicts
-        self.parent = parent  # parent should be AnimalTabWidget object
+        self.parent = parent
         self.current_pos = 0
         self.behav_widgets = []
         self.name = name
         self.init_UI()
 
     def init_UI(self):        
-        vbox = QVBoxLayout()
-        hbox = QHBoxLayout()
-        self.grid = QGridLayout()
+        hbox = self._init_main_layout()
 
-        hbox.addLayout(self.grid)
-        hbox.addStretch(1)
-        vbox.addLayout(hbox)
-        vbox.addStretch(1)
-
-        self.setLayout(vbox)
-        # This adds transparency
-        # self.setAutoFillBackground(True)
-        # palette = self.palette()
-        # self.setAttribute(Qt.WA_TranslucentBackground, True)
-        # palette.setColor(self.backgroundRole(), Qt.white)
-        # self.setPalette(palette)
-        # print self.palette
-
-        # -----------------
-        #   add button
-        # -----------------
-        self.button_add = QPushButton('add behaviour')
-        self.button_add.clicked.connect(lambda: self.add_behaviour_widget(
-            {'name': self._generate_new_name(), 'color': None,
-             'icon': '', 'compatible': []}, initial=False))
-        self.grid.addWidget(self.button_add, *self.get_current_pos())
+        self._init_add_button()
         # -----------------------
         #   initial behaviours
         # -----------------------        
@@ -77,6 +56,24 @@ class SingleAnimalTab(QWidget):
         btn_remove_animal.setObjectName("removeAnimal")
         self.vbox_buttons_left.addWidget(btn_remove_animal)
         self.vbox_buttons_left.addStretch(1)
+
+    def _init_add_button(self):
+        self.button_add = QPushButton('add behaviour')
+        self.button_add.clicked.connect(lambda: self.add_behaviour_widget(
+            {'name': self._generate_new_name(), 'color': None,
+             'icon': '', 'compatible': []}, initial=False))
+        self.grid.addWidget(self.button_add, *self.get_current_pos())
+
+    def _init_main_layout(self):
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        self.grid = QGridLayout()
+        hbox.addLayout(self.grid)
+        hbox.addStretch(1)
+        vbox.addLayout(hbox)
+        vbox.addStretch(1)
+        self.setLayout(vbox)
+        return hbox
 
     def _generate_new_name(self):
         return self._generate_unique_name(1)
@@ -120,7 +117,8 @@ class SingleAnimalTab(QWidget):
     def get_current_pos(self):
         return self.get_grid_pos(self.current_pos)
 
-    def get_grid_pos(self, i):
+    @staticmethod
+    def get_grid_pos(i):
         return [i / 3, i % 3]
 
     def remove_widget(self, i):

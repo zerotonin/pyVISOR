@@ -7,17 +7,12 @@ from .single_animal_tab import SingleAnimalTab
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
+
 class AnimalTabWidget(QTabWidget):
 
     def __init__(self, parent):        
         super(AnimalTabWidget, self).__init__(parent)
         self.parent = parent  # parent should be TabBehaviours object
-        try:
-            with open(HOME + "/.pyvisor/guidefaults_animaltab.json", 'r') as f:
-                self.values = json.load(f)
-        except FileNotFoundError:
-            with open(HERE + "/../guidefaults_animaltab.json", 'r') as f:
-                self.values = json.load(f)
         self.tabs_ = []
         self._block_add = False
         self.init_UI()
@@ -92,7 +87,3 @@ class AnimalTabWidget(QTabWidget):
         tab = SingleAnimalTab(self, name, behaviour_dicts, len(self.tabs_))
         self.addTab(tab, name)
         self.tabs_.append(tab)
-
-    def close_event(self):
-        with open(HOME + '/.pyvisor/guidefaults_animaltab.json', 'w') as f:
-            json.dump(self.values, f, indent=4)
