@@ -21,6 +21,12 @@ class BehavBinding:
         self.device = device
 
     @property
+    def label(self) -> str:
+        if self.animal == BehavBinding.ANIMAL_MOVIE:
+            return "movie_{}".format(self.behaviour)
+        return "A{}_{}".format(self.animal, self.behaviour)
+
+    @property
     def is_movie(self) -> bool:
         return self.animal == BehavBinding.ANIMAL_MOVIE
 
@@ -79,5 +85,6 @@ class BehavBinding:
         for key in plain_dict:
             if key in d:
                 raise ValueError(f"Button '{key}' is already in dict. Make sure buttons are uniquely assigned!")
-            d[key] = BehavBinding.from_dict(plain_dict[key])
+            binding = BehavBinding.from_dict(plain_dict[key])
+            d[binding.label] = binding
         return d

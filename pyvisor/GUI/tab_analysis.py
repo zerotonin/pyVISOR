@@ -7,6 +7,9 @@ import pyvisor.icon as ic
 import pyvisor.ManualEthologyScorer as MES
 import os
 import collections
+
+from pyvisor.GUI.model.buttons import BehaviourAssignments
+
 try:
     import thread as _thread
 except ImportError:
@@ -195,7 +198,7 @@ class TabAnalysis(QWidget):
     def close_event(self):        
         self.tabs.close_event()
         
-    def makeBehavInfoBox(self,animalNo,animalName,behavDict,assignment):
+    def makeBehavInfoBox(self,animalNo,animalName,behavDict,assignment: BehaviourAssignments):
         behavBox = QVBoxLayout()
         nameLabel = QLabel(animalName+ ' (A' +str(animalNo)+')')
         nameLabel.setStyleSheet(self.labelStyle)
