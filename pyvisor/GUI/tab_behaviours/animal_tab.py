@@ -48,7 +48,8 @@ class AnimalTab(QTabWidget):
     def _create_animal_tab_and_insert(self, animal, index):
         tab = SingleAnimalTab(self,
                               animal,
-                              len(self.tabs_))
+                              len(self.tabs_),
+                              self.animals_handler)
         self.insertTab(index, tab, animal.name)
         self.tabs_.append(tab)
         self.setCurrentIndex(index)
@@ -97,6 +98,7 @@ class AnimalTab(QTabWidget):
         self._create_animal_tab_and_insert(copied_animal, len(self.tabs_) - 1)
 
     def create_new_tab(self, animal: Animal):
-        tab = SingleAnimalTab(self, animal, len(self.tabs_))
+        tab = SingleAnimalTab(self, animal, len(self.tabs_),
+                              self.animals_handler)
         self.addTab(tab, animal.name)
         self.tabs_.append(tab)

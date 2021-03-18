@@ -1,19 +1,16 @@
+import copy
+import os
 from typing import Dict, Union, List, Any, Tuple
 
+import pygame
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
-                             QFileDialog, QPushButton, QMessageBox, QComboBox, QInputDialog)
+                             QPushButton, QMessageBox, QComboBox, QInputDialog)
 
-import pygame
-import json
-import os
-import copy
-import collections
-
+from .model.animal import Animal
 from .model.animal_handler import AnimalHandler
 from .model.behaviour import Behaviour
-from .model.animal import Animal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -49,27 +46,6 @@ class TabButtons(QWidget):
         self._initialize_device_members()
         self._init_ui()
 
-    def update_icons(self):
-        for i in range(len(self.animal_tabs)):
-            behav_dict = self.animal_tabs[i].behaviour_dicts
-            for j in range(len(behav_dict)):
-                icon_path = behav_dict[j]['icon']
-                key = f'A{i}_{behav_dict[j]["name"]}'
-                if key in self.behavAssignment:
-                    self.behavAssignment[key].icon_path = icon_path
-
-    def save_button_assignments(self, filename=None):
-        button_binding_save_dict = self._create_button_binding_dict()
-
-        if filename is None:
-            filename = QFileDialog.getSaveFileName(self, 'Save Button Binding', HOME, initialFilter='*.pkl')
-            filename = str(filename[0])
-        if len(filename) == 0:
-            return
-
-        with open(filename, 'wt') as filehandler:
-            json.dump(button_binding_save_dict, filehandler)
-
     def _create_button_binding_dict(self):
         d = {}
         d.update({'selected_device': self.selected_device})
@@ -87,18 +63,21 @@ class TabButtons(QWidget):
     def make_selected_joystick_info(self):
         self.clearLayout(self.hboxJoyStickInfo)
         v_box_device = QVBoxLayout()
-        joy_name = QLabel(self.input_device_names[self.deviceNumber], self)
+        joy_name = QLabel(self.input_device_names[self.deviceNumber],
+                          self)
         joy_name.setStyleSheet(self.labelStyle)
         v_box_device.addWidget(joy_name)
 
-        button_assignments = self.behavAssignment.get_button_assignments()
-        od_keys = collections.OrderedDict(sorted(button_assignments.items()))
-        for key, bBinding in od_keys.items():
-            hbox = self.make_behav_binding_info(key, bBinding)
-            if hbox is None:
-                continue
-            v_box_device.addLayout(hbox)
-        v_box_device.addStretch()
+        for animal_number in sorted(self.animal_handler.animals.keys()):
+            animal = self.animal_handler.animals[animal_number]
+            button_assignments = animal.get_button_assignments(self.selected_device)
+            for key in sorted(button_assignments.keys()):
+                behaviour = button_assignments[key]
+                hbox = self.make_behav_binding_info(key, behaviour)
+                if hbox is None:
+                    continue
+                v_box_device.addLayout(hbox)
+            v_box_device.addStretch()
         self.hboxJoyStickInfo.addLayout(v_box_device)
         self.hboxJoyStickInfo.addStretch()
 
@@ -239,10 +218,12 @@ class TabButtons(QWidget):
         box.addWidget(behav_label)
         return box, btn_set_uic, button_label
 
-    def _create_button_label(self, binding):
-        label = 'no button assigned' if binding.key_bindings is None else binding.key_bindings
+    def _create_button_label(self, behaviour: Behaviour):
+        key_bindings = behaviour.key_bindings
+        key = key_bindings[self.selected_device]
+        label = 'no button assigned' if key is None else key
         button_label = QLabel(label)
-        if binding.key_bindings is None:
+        if key is None:
             button_label.setStyleSheet('color: #C0C0C0')
         else:
             button_label.setStyleSheet('color: #ffffff')
@@ -321,31 +302,6 @@ class TabButtons(QWidget):
 
         self._add_missing_behaviour_bindings(animal_number, behaviour_assignments, behaviour_dict, listOfAssignments)
         return behaviour_assignments
-
-    def _add_missing_behaviour_bindings(self, animal_number, behaviour_assignments, behaviour_dict, listOfAssignments):
-        for i in range(len(behaviour_dict)):
-            behav = 'A' + str(animal_number) + '_' + behaviour_dict[i]['name']
-            if behav not in listOfAssignments:
-                temp = Behaviour(animal=animal_number,
-                                 icon_path=behaviour_dict[i]['icon'],
-                                 name=behaviour_dict[i]['name'],
-                                 color=behaviour_dict[i]['color'],
-                                 key_binding=None,
-                                 device=None)
-
-                self.behavAssignment[temp.label] = temp
-                behaviour_assignments.update({behav: temp})
-
-    def _check_for_removed_behaviour_and_delete_bindings(self, behaviour_assignments, listOfAssignments,
-                                                         listOfUserBehaviours):
-        for key in listOfAssignments:
-            if key not in listOfUserBehaviours:
-                self._delete_removed_behaviour_binding(behaviour_assignments, key)
-
-    def _delete_removed_behaviour_binding(self, behaviour_assignments, key):
-        print("in _delete_behavior_not_in_both_lists")
-        del behaviour_assignments[key]
-        del self.behavAssignment.behaviours[key]
 
     def clearLayout(self, layout):
         while layout.count():
@@ -436,7 +392,8 @@ class TabButtons(QWidget):
         self.behavAssignment[key] = newBinding
         return key, newBinding
 
-    def waitOnUICpress(self):
+    @staticmethod
+    def waitOnUICpress():
         pygame.event.clear()
         while True:
             for event in pygame.event.get():
@@ -490,25 +447,6 @@ class TabButtons(QWidget):
         self.background_image.setScaledContents(True)
         self.make_joystick_info()
         self.make_animals_box()
-
-    def initializeKeys(self, device):
-        if device == "X-Box":
-            if self._current_keys['X-Box'] is None:
-                keys = TabButtons._get_default_xbox_keys()
-            else:
-                keys = self._current_keys['X-Box']
-        elif device == "Playstation":
-            if self._current_keys['Playstation'] is None:
-                keys = TabButtons._get_default_playstation_keys()
-            else:
-                keys = self._current_keys['Playstation']
-        elif device == "Keyboard":
-            if self._current_keys['Keyboard'] is None:
-                keys = TabButtons._get_default_keyboard_keys()
-            else:
-                keys = self._current_keys['Keyboard']
-        newBehavAssignments = Animal.from_key_assignment_dictionary(keys)
-        self.behavAssignment = newBehavAssignments
 
     @staticmethod
     def _get_default_playstation_keys() -> Dict[str, str]:
@@ -690,5 +628,3 @@ class TabButtons(QWidget):
         self.deviceLayout = None
         self.deviceNumber = -2
         self.lastKeyPressed = (71, 'G')
-
-

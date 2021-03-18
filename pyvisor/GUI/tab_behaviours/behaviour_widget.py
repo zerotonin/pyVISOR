@@ -3,10 +3,11 @@ from PyQt5.QtWidgets import (QFrame, QGridLayout,
                              QVBoxLayout, QHBoxLayout,
                              QPushButton, QLabel,
                              QFileDialog, QLineEdit,
-                             QCheckBox, QColorDialog)
+                             QColorDialog)
 import os
 from .compatible_behaviour_widget import CompatibleBehaviourWidget
 from ..icon_gallery.icon_selection_widget import IconSelectionWidget
+from ..model.animal_handler import AnimalHandler
 from ..model.behaviour import Behaviour
 from ...icon import write_tmp_icon
 
@@ -17,8 +18,10 @@ HOME = os.path.expanduser("~")
 class BehaviourWidget(QFrame):
 
     def __init__(self, parent, behaviour: Behaviour,
-                 index_in_parent_list):
-        super().__init__()        
+                 index_in_parent_list,
+                 animal_handler: AnimalHandler):
+        super().__init__()
+        self.animal_handler = animal_handler
         self.behaviour = behaviour
         self.parent = parent
         self.index = index_in_parent_list
@@ -37,7 +40,7 @@ class BehaviourWidget(QFrame):
         # ------------------------
         #       button name 
         # ------------------------
-        self.btn_name = QPushButton(self.param_dict['name'])
+        self.btn_name = QPushButton(self.behaviour.name)
         self.btn_name.clicked.connect(self.rename)
         self.grid.addWidget(self.btn_name,
                             0, 0, 1, 2)
@@ -49,9 +52,10 @@ class BehaviourWidget(QFrame):
                             1, 1, 1, 1)        
         self.btn_color = QPushButton('  ')
         self.btn_color.clicked.connect(self.set_color)
-        if not self.param_dict['color']:
-            self.param_dict['color'] = '#000000'
-        self.btn_color.setStyleSheet("QWidget { background-color: %s}" % self.param_dict['color'])
+        if self.behaviour.color is None:
+            self.behaviour.color = '#000000'
+        self.btn_color.setStyleSheet(
+            "QWidget { background-color: %s}" % self.behaviour.color)
         self.grid.addWidget(self.btn_color,
                             1, 0)
 
@@ -62,15 +66,9 @@ class BehaviourWidget(QFrame):
         self.grid.addWidget(lbl_icon,
                             2, 1, 1, 1)
         self.btn_icon = QPushButton('')
-        self.current_icon = self.param_dict['icon']
+        self.current_icon = self.behaviour.icon_path
         if self.current_icon:
-            color_str = self.param_dict['color']
-            color_tuple = (int(color_str[1: 3], 16),
-                           int(color_str[3: 5], 16),
-                           int(color_str[5: 7], 16))
-            tmp_icon_str = write_tmp_icon(self.current_icon,
-                                          color_tuple)
-            self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))        
+            self._set_icon_from_tmp_file()
         self.btn_icon.clicked.connect(self.set_icon_via_gallery)
         self.grid.addWidget(self.btn_icon,
                             2, 0)        
@@ -105,15 +103,16 @@ class BehaviourWidget(QFrame):
     def set_icon(self):
         icon = QFileDialog.getOpenFileName(self,
                                            'select icon',
-                                           self.param_dict['icon'])        
-        if icon:
-            self.param_dict['icon'] = str(icon)
-        self.btn_icon.setIcon(QIcon(self.param_dict['icon']))
-        # get reference to tab_buttons and call update_icons method
-        self.parent.parent.parent.parent.tab_buttons.update_icons()
+                                           self.behaviour.icon_path)
+        if not icon:
+            return
+        self.animal_handler.set_icon(
+            self.behaviour, str(icon)
+        )
+        self.btn_icon.setIcon(QIcon(self.behaviour.icon_path))
 
     def set_icon_via_gallery(self):
-        color_str = self.param_dict['color']
+        color_str = self.behaviour.color
         color_tuple = (int(color_str[1: 3], 16),
                        int(color_str[3: 5], 16),
                        int(color_str[5: 7], 16))
@@ -121,19 +120,20 @@ class BehaviourWidget(QFrame):
         gallery.exec_()
         if not gallery.accept:
             return
-        self.current_icon = gallery.get_current_icon()
-        self.param_dict['icon'] = self.current_icon        
-        tmp_icon_str = write_tmp_icon(self.current_icon,
+        current_icon = gallery.get_current_icon()
+        self.animal_handler.set_icon(self.behaviour, current_icon)
+        tmp_icon_str = write_tmp_icon(self.behaviour.icon_path,
                                       color_tuple)
         self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
-        # get reference to tab_buttons and call update_icons method
-        self.parent.parent.parent.parent.tab_buttons.update_icons()
 
     def set_color(self):
         color = QColorDialog.getColor()
         self.btn_color.setStyleSheet("QWidget { background-color: %s}" % color.name())
-        self.param_dict['color'] = str(color.name())
-        color_str = self.param_dict['color']
+        self.animal_handler.set_icon_color(self.behaviour, str(color.name()))
+        self._set_icon_from_tmp_file()
+
+    def _set_icon_from_tmp_file(self):
+        color_str = self.behaviour.color
         color_tuple = (int(color_str[1: 3], 16),
                        int(color_str[3: 5], 16),
                        int(color_str[5: 7], 16))
@@ -149,13 +149,8 @@ class BehaviourWidget(QFrame):
 
     def rename_finished(self):
         self.btn_name.setText(self.name_edit.text())
-        self.param_dict['name'] = str(self.name_edit.text())
+        name = str(self.name_edit.text())
+        num = self.behaviour.animal
+        animal = self.animal_handler.animals[num]
+        self.animal_handler.change_animal_name(animal, name)
         self.name_edit.hide()
-
-    def makeDisjunctionCheckbox(self, behavName):    
-        b1 = QCheckBox(behavName)
-        b1.setChecked(False)
-        b1.stateChanged.connect(lambda: self.buttonStateChange(b1))
-    
-    def buttonStateChange(self, b1):
-        pass

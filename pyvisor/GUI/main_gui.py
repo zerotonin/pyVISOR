@@ -76,8 +76,8 @@ class MovScoreGUI(QWidget):
     def _initiate_tabs(self, vbox):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
-        self.tab_behaviours = BehavioursTab(self)
-        self.tab_buttons = TabButtons(self)
+        self.tab_behaviours = BehavioursTab(self, self.animal_handler)
+        self.tab_buttons = TabButtons(self, self.animal_handler)
         self.tab_analysis = TabAnalysis(self)
         self.tab_results = TabResults(self)
         self.tab_names = ['Behaviours',

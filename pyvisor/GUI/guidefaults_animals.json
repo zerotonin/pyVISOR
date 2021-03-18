@@ -1,1 +1,31 @@
-[{"animal_number": 0, "animal_name": "animal_0", "behaviours": [{"key": null, "animal": 0, "behaviour": "agression", "icon_path": null, "color": "#C0C0C0", "device": null}, {"key": null, "animal": 0, "behaviour": "courtship", "icon_path": null, "color": "#C0C0C0", "device": null}]}, {"animal_number": 1, "animal_name": "animal_1", "behaviours": [{"key": null, "animal": 1, "behaviour": "schmooze", "icon_path": null, "color": "#C0C0C0", "device": null}, {"key": null, "animal": 1, "behaviour": "some-behaviour", "icon_path": null, "color": "#C0C0C0", "device": null}]}]
+[
+  {"animal_number": 0,
+    "animal_name": "animal_0",
+    "behaviours": [{
+      "key_bindings": {},
+      "animal": 0,
+      "name": "aggression",
+      "icon_path": null,
+      "color": "#C0C0C0"
+    }, {
+      "key_bindings": {},
+      "animal": 0,
+      "name": "courtship",
+      "icon_path": null,
+      "color": "#C0C0C0"
+    }]}, {
+  "animal_number": 1,
+  "animal_name": "animal_1",
+  "behaviours": [{
+    "key_bindings": {},
+    "animal": 1,
+    "name": "schmooze",
+    "icon_path": null,
+    "color": "#C0C0C0"
+  }, {
+    "key_bindings": {},
+    "animal": 1,
+    "name": "some-behaviour",
+    "icon_path": null,
+    "color": "#C0C0C0"
+  }]}]

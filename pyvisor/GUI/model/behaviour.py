@@ -57,31 +57,24 @@ class Behaviour:
 
     def to_dict(self) -> Dict[str, Any]:
         d = {
-            'key': self.key_bindings,
+            'key_bindings': self.key_bindings.to_dict(),
             'animal': self.animal,
-            'behaviour': self.name,
+            'name': self.name,
             'icon_path': self.icon_path,
             'color': self.color,
-            'device': self.device,
         }
         return d
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "Behaviour":
-        if len(d) != 6:
-            msg = "Can't generate BehavBinding from dict. Dict needs to have exactly 6 keys: 'animal', 'color', "
-            msg += "'icon_path', 'behaviour', 'key', 'device'.\n"
-            msg += "Your dictionary:\n"
-            msg += str(d)
-            raise ValueError(msg)
-        return Behaviour(
+        behav = Behaviour(
             d['animal'],
             d['color'],
             d['icon_path'],
-            d['behaviour'],
-            d['key'],
-            d['device']
+            d['name'],
         )
+        behav.key_bindings = KeyBindings.from_dict(d['key_bindings'])
+        return behav
 
     @staticmethod
     def from_object_dict_to_savable_dict(bindings: Dict[str, "Behaviour"]) -> Dict[str, Any]:

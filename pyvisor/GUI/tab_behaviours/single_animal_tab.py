@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout,
 
 from .behaviour_widget import BehaviourWidget
 from ..model.animal import Animal
+from ..model.animal_handler import AnimalHandler
 from ..model.behaviour import Behaviour
 
 
@@ -11,12 +12,14 @@ class SingleAnimalTab(QWidget):
 
     def __init__(self, parent,
                  animal: Animal,
-                 index_in_parent_tab_widget):
+                 index_in_parent_tab_widget,
+                 animal_handler: AnimalHandler):
 
         super(SingleAnimalTab, self).__init__()
 
         self.index = index_in_parent_tab_widget
         self.animal = animal
+        self.animal_handler = animal_handler
         self.parent = parent
         self.main_widget = self.parent.main_widget
         self.current_pos = 0
@@ -60,7 +63,7 @@ class SingleAnimalTab(QWidget):
     def _initialize_behaviours(self):
         for key in self.animal.behaviours:
             behav = self.animal[key]
-            self.add_behaviour_widget(behav, initial=True)
+            self.add_behaviour_widget(behav)
 
     def _init_add_button(self):
         self.button_add = QPushButton('add behaviour')
@@ -109,7 +112,8 @@ class SingleAnimalTab(QWidget):
     def add_behaviour_widget(self, behaviour: Behaviour):
         for bw in self.behav_widgets:
             bw.compatible_behaviour_widget.add_checkbox(behaviour.name, state=False)
-        behav_widget = BehaviourWidget(self, behaviour, self.current_pos)
+        behav_widget = BehaviourWidget(self, behaviour, self.current_pos,
+                                       self.animal_handler)
         self.behav_widgets.append(behav_widget)
         self.grid.addWidget(behav_widget, *self.get_current_pos())
         self.current_pos += 1

@@ -10,14 +10,17 @@ class Animal:
         self.name = name
         self.behaviours = dict()  # type: Dict[str, Behaviour]
 
-    def get_button_assignments(self) -> Dict[str, Behaviour]:
+    def get_button_assignments(
+            self,
+            selected_device: str
+    ) -> Dict[str, Behaviour]:
         button_assignments = {}
         for label in self.behaviours:
-            binding = self.behaviours[label]
-            button = binding.key_bindings
-            if button is None:
+            behaviour = self.behaviours[label]
+            binding = behaviour.key_bindings[selected_device]
+            if binding is None:
                 continue
-            button_assignments[button] = binding
+            button_assignments[binding] = behaviour
         return button_assignments
 
     def all_actions_have_buttons_assigned(self, animal_behaviours: List[str], movie_commands: List[str]) -> bool:
