@@ -1,26 +1,33 @@
+from typing import Tuple
+
 from PyQt5.QtWidgets import QTabWidget, QWidget
 
 import os
-import json
 from .single_animal_tab import SingleAnimalTab
+from ..model.animal import Animal
+from ..model.animal_handler import AnimalHandler
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
 
-class AnimalTabWidget(QTabWidget):
+class AnimalTab(QTabWidget):
 
-    def __init__(self, parent):        
-        super(AnimalTabWidget, self).__init__(parent)
-        self.parent = parent  # parent should be TabBehaviours object
+    def __init__(self, parent: QWidget, animal_handler: AnimalHandler):
+        super(AnimalTab, self).__init__(parent)
+        self.parent = parent
+        self.animals_handler = animal_handler
+        self.animals = animal_handler.animals
+        self.main_widget = self.parent.parent
         self.tabs_ = []
         self._block_add = False
         self.init_UI()
 
     def init_UI(self):
-        if self.values:
-            for item in self.values:                
-                self.create_new_tab(*item)
+        if self.animals:
+            for number in sorted(self.animals.keys()):
+                animal = self.animals[number]
+                self.create_new_tab(animal)
         else:
             self.add_tab(-1)
 
@@ -32,27 +39,35 @@ class AnimalTabWidget(QTabWidget):
 
     def add_tab(self, index):
         # if last tab was clicked
-        if index == self.count() - 1 and not self._block_add:            
-            name = self._generate_unique_name(1)
-            self.values.append((name, []))
-            tab = SingleAnimalTab(self,
-                                  self.values[index][0],
-                                  self.values[index][1],
-                                  len(self.tabs_))
-            self.insertTab(index, tab, name)
-            self.tabs_.append(tab)
-            self.setCurrentIndex(index)
+        if self._last_tab_was_clicked(index):
+            name, number = self._generate_unique_name(0)
+            animal = self.animals_handler.add_animal(name, number)
+            self._create_animal_tab_and_insert(animal, index)
         self._block_add = False
 
-    def _generate_unique_name(self, subscript):
+    def _create_animal_tab_and_insert(self, animal, index):
+        tab = SingleAnimalTab(self,
+                              animal,
+                              len(self.tabs_))
+        self.insertTab(index, tab, animal.name)
+        self.tabs_.append(tab)
+        self.setCurrentIndex(index)
+
+    def _last_tab_was_clicked(self, index: int) -> bool:
+        return index == self.count() - 1 and not self._block_add
+
+    def _generate_unique_name(self, subscript) -> Tuple[str, int]:
         name = "animal_" + str(subscript)
-        if self._is_unique(name):
-            return name
+        if self._is_unique(name, subscript):
+            return name, subscript
         return self._generate_unique_name(subscript + 1)
 
-    def _is_unique(self, name):
-        for item in self.values:
-            if item[0] == name:
+    def _is_unique(self, name, subscript: int) -> bool:
+        for number in self.animals:
+            animal = self.animals[number]
+            if animal.name == name:
+                return False
+            if animal.number == subscript:
                 return False
         return True
 
@@ -66,7 +81,6 @@ class AnimalTabWidget(QTabWidget):
         self.tabs_.pop(index)
         self._block_add = True
         self.removeTab(index)
-        self.values.pop(index)
         for t in range(index, len(self.tabs_)):
             self.tabs_[t].index = t
         self.setCurrentIndex(max(index - 1, 0))
@@ -74,16 +88,15 @@ class AnimalTabWidget(QTabWidget):
             return        
         self.add_tab(0)
 
-    def copy_tab(self, index):
-        src_tuple = self.values[index]
-        new_tuple = ('copy_of_' + src_tuple[0], [item.copy() for item in src_tuple[1]])
-        self.values.append(new_tuple)
-        tab = SingleAnimalTab(self, self.values[-1][0], self.values[-1][1], len(self.tabs_))
-        self.insertTab(len(self.tabs_), tab, new_tuple[0])
-        self.tabs_.append(tab)
-        self.setCurrentIndex(len(self.tabs_) - 1)
+    def copy_tab(self, tab: SingleAnimalTab):
+        animal = tab.animal
+        name = 'copy_of_' + animal.name
+        uname, number = self._generate_unique_name(0)
+        copied_animal = self.main_widget.add_animal(name, number)
+        copied_animal.behaviours = animal.behaviours.copy()
+        self._create_animal_tab_and_insert(copied_animal, len(self.tabs_) - 1)
 
-    def create_new_tab(self, name, behaviour_dicts):
-        tab = SingleAnimalTab(self, name, behaviour_dicts, len(self.tabs_))
-        self.addTab(tab, name)
+    def create_new_tab(self, animal: Animal):
+        tab = SingleAnimalTab(self, animal, len(self.tabs_))
+        self.addTab(tab, animal.name)
         self.tabs_.append(tab)

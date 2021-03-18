@@ -223,7 +223,7 @@ class TabAnalysis(QWidget):
             if key in assignment.keys():
                 deviceLabel = QLabel(assignment[key].device)
                 deviceLabel.setStyleSheet('color: #C0C0C0') 
-                keyLabel = QLabel(assignment[key].keyBinding)
+                keyLabel = QLabel(assignment[key].key_bindings)
                 keyLabel.setStyleSheet('color: #FFFFFF') 
                 
             else:
@@ -254,12 +254,12 @@ class TabAnalysis(QWidget):
         for key, binding in item_iterator:
             if binding.animal == 'movie':
                 tempBox = QHBoxLayout()
-                behavLabel = QLabel(binding.behaviour)
+                behavLabel = QLabel(binding.name)
                 behavLabel.setStyleSheet('color: '+ binding.color) 
                 deviceLabel = QLabel(binding.device)
                 deviceLabel.setStyleSheet('color: #C0C0C0') 
-                buttonLabel = QLabel(binding.keyBinding)
-                if binding.keyBinding == 'no button assigned':
+                buttonLabel = QLabel(binding.key_bindings)
+                if binding.key_bindings == 'no button assigned':
                     buttonLabel.setStyleSheet('color: #C0C0C0') 
                 else:
                     buttonLabel.setStyleSheet('color: #ffffff') 
@@ -462,7 +462,7 @@ class TabAnalysis(QWidget):
         number_of_behaviours, number_of_unique_disjunctive_behaviours = self._get_animal_configurations(button_list,
                                                                                                         icon_list)
 
-        self._save_animals_and_button_assignments()
+        self.animal_handler.save_state()
 
         # load media
         if self.MediaType == 'Movie':
@@ -488,9 +488,6 @@ class TabAnalysis(QWidget):
         self.UIC_switch_writer()
 
         _thread.start_new_thread(self.sco.go, ())
-
-    def _save_animals_and_button_assignments(self):
-        self.parent.tab_buttons.save_button_assignments(HOME + '/.pyvisor/guidefaults_buttons.json')
 
     def _assign_icon_positions(self, behav_NumList, iconObjList, uniqueDJB_NumList):
         # All Icon Positions are set one after the other / this needs to be user definable
@@ -554,8 +551,8 @@ class TabAnalysis(QWidget):
 
             behav_binding = self.assignment[1][key]
             # fill lists
-            buttonList.append(behav_binding.keyBinding)
-            behavList.append(str(behav_binding.behaviour))
+            buttonList.append(behav_binding.key_bindings)
+            behavList.append(str(behav_binding.name))
             icon_path, icon_color = (behav_binding.icon_path,
                                      behav_binding.color)
             iconList.append((icon_path, icon_color))
@@ -578,19 +575,19 @@ class TabAnalysis(QWidget):
             else:
                 animal = self.assignment[0][key].animal
 
-            behav = self.assignment[0][key].behaviour  # is a str
+            behav = self.assignment[0][key].name  # is a str
             if self._is_animal_behaviour(key, animal_behaviours_as_strings):
                 # is an int
                 behav = animal_behaviours_as_strings[self.assignment[0][key].animal].index(behav)
 
-            free_binding_list.append((self.assignment[0][key].keyBinding, animal, behav))
+            free_binding_list.append((self.assignment[0][key].key_bindings, animal, behav))
 
         self.sco.setUIC('Free', buttonBindings=self.assignment[0].keys(),
                         freeBindingList=free_binding_list,
                         UICdevice=self.UIC_layout)
 
     def _is_animal_behaviour(self, key: str, animal_behaviours_as_strings: List[List[str]]) -> bool:
-        return self.assignment[0][key].behaviour in chain.from_iterable(animal_behaviours_as_strings)
+        return self.assignment[0][key].name in chain.from_iterable(animal_behaviours_as_strings)
 
     def _get_animal_behaviours_as_strings(self):
         behavStrListList = list()
@@ -636,13 +633,13 @@ class TabAnalysis(QWidget):
                 if key not in self.assignment[1].keys():
                     listOfUnassignedBehaviour.append(key)
                 else:
-                    if self.assignment[1][key].keyBinding == 'no button assigned':
+                    if self.assignment[1][key].key_bindings == 'no button assigned':
                         listOfUnassignedBehaviour.append(key)
 
                 behav_binding = self.assignment[1][key]
                 icon_path = behav_binding.icon_path
                 if len(icon_path) == 0:
-                    no_icons.append((behav_binding.animal, behav_binding.behaviour))
+                    no_icons.append((behav_binding.animal, behav_binding.name))
 
         if len(no_icons) > 0:            
             warnmsg = "You have to assign an icon before the analysis "
@@ -674,8 +671,8 @@ class TabAnalysis(QWidget):
         
         for key, binding in item_iterator:
             if binding.animal == 'movie':
-                if binding.keyBinding == 'no button assigned':
-                    listOfUnassignedBehaviour.append(binding.behaviour)
+                if binding.key_bindings == 'no button assigned':
+                    listOfUnassignedBehaviour.append(binding.name)
 
         if len(listOfUnassignedBehaviour) > 0:
             msg = 'There are unassigned movie controls:\n'

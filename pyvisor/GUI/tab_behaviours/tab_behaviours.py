@@ -3,18 +3,19 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 import os
 
-from ..main_gui import MovScoreGUI
+from ..model.animal_handler import AnimalHandler
 from ..styles import style_tab_behaviours
-from .animal_tab import AnimalTabWidget
+from .animal_tab import AnimalTab
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
 
-class TabBehaviours(QWidget):
+class BehavioursTab(QWidget):
 
-    def __init__(self, parent: MovScoreGUI):
-        super(TabBehaviours, self).__init__(parent)
-        self.parent = parent  # type: MovScoreGUI
+    def __init__(self, parent: QWidget, animal_handler: AnimalHandler):
+        super(BehavioursTab, self).__init__(parent)
+        self.parent = parent
+        self.animal_handler = animal_handler
         self.init_UI()
 
     def init_UI(self):
@@ -34,7 +35,7 @@ class TabBehaviours(QWidget):
 
         vbox = QVBoxLayout()
         self.setLayout(vbox)
-        self.tabs = AnimalTabWidget(self)
+        self.tabs = AnimalTab(self, self.animal_handler)
         self.setStyleSheet(style_tab_behaviours)
         vbox.addStretch()
         vbox.addWidget(self.tabs)

@@ -11,7 +11,8 @@ import os
 import copy
 import collections
 
-from .model.behaviours import Behaviour
+from .model.animal_handler import AnimalHandler
+from .model.behaviour import Behaviour
 from .model.animal import Animal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -25,7 +26,7 @@ DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png",
 # noinspection PyAttributeOutsideInit
 class TabButtons(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QWidget, animal_handler: AnimalHandler):
 
         self.analysis_list = []
         super(TabButtons, self).__init__()
@@ -38,112 +39,15 @@ class TabButtons(QWidget):
         }  # type: Dict[str, Union[Dict[str, Behaviour], None]]
 
         self.parent = parent
+        self.animal_handler = animal_handler
+        self.animal_handler.register_callback_animal_added(
+            lambda x: self.make_animals_box()
+        )
         pygame.init()
         # Initialize the joysticks
         pygame.joystick.init()
-        self._get_and_initialize_behaviour()
+        self._initialize_device_members()
         self._init_ui()
-        try:
-            self.load_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
-        except FileNotFoundError:
-            print('No preset for button bindings found')
-
-    def make_load_save_preset(self):
-        load_button = QPushButton('load preset')
-        load_button.clicked.connect(lambda x: self.load_button_assignments())
-        save_button = QPushButton('save preset')
-        save_button.clicked.connect(lambda x: self.save_button_assignments())
-        reset_button = QPushButton('reset buttons')
-        reset_button.clicked.connect(self.reset_buttons)
-        self.hboxLoadSavePreset.addWidget(load_button)
-        self.hboxLoadSavePreset.addWidget(save_button)
-        self.hboxLoadSavePreset.addWidget(reset_button)
-        self.hboxLoadSavePreset.addStretch()
-
-    def load_button_assignments(self, filename=None):
-        if filename is None:
-            filename = QFileDialog.getOpenFileName(self, 'Load Button Binding',
-                                                   HOME, initialFilter='*.pkl')
-            filename = filename[0]
-        if len(filename) == 0:
-            return
-
-        with open(str(filename), 'rt') as filehandle:
-            button_bindings = json.load(filehandle)
-            button_bindings['behavAssignment'] = Behaviour.from_savable_dict_to_dict_of_objects(
-                button_bindings['behavAssignment'])
-
-        if button_bindings['selected_device'] not in self.input_device_names:
-            msg = 'Tried to assign buttons for '
-            msg += button_bindings['selected_device']
-            msg += '.\n Please connect this device to the computer and restart the program!'
-            QMessageBox.warning(self, 'Wrong Input device', msg)
-            return
-
-        self.set_device(button_bindings['selected_device'])
-        self.set_assignDevice(button_bindings['selected_device'])
-
-        list_of_superfluous_behav = self._get_assigned_buttons_of_undefined_behaviours(button_bindings)
-
-        if len(list_of_superfluous_behav) == 0:
-            self.set_button_preset(button_bindings)
-            return
-
-        ret = self._create_dialogue_message(list_of_superfluous_behav)
-        self._handle_response(button_bindings, list_of_superfluous_behav, ret)
-
-    def _handle_response(self, button_bindings, list_of_superfluous_behav, ret):
-        if ret == QMessageBox.Yes:
-            # delete superfluous behaviours
-            behav_assignments = button_bindings['behavAssignment']
-            keys = button_bindings['keys']
-            for sfKey in list_of_superfluous_behav:
-                key_binding = behav_assignments[sfKey].keyBinding
-                del behav_assignments[sfKey]
-                del keys[key_binding]
-            # and reassign
-            button_bindings['behavAssignment'] = behav_assignments
-            button_bindings['keys'] = keys
-            self.set_button_preset(button_bindings)
-
-    def _create_dialogue_message(self, list_of_superfluous_behav):
-        msg = 'The following behaviours do not match current behavioural data: \n'
-        for behav in list_of_superfluous_behav:
-            msg = msg + behav + ', '
-        msg = msg[0:-3]
-        msg = msg + '\n Do you still want to load this preset?'
-        msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setText("Found too many behaviours")
-        msg_box.setInformativeText(msg)
-        msg_box.addButton(QMessageBox.Yes)
-        msg_box.addButton(QMessageBox.No)
-        msg_box.setDefaultButton(QMessageBox.No)
-        ret = msg_box.exec_()
-        return ret
-
-    def _get_assigned_buttons_of_undefined_behaviours(self, button_bindings):
-        list_of_behaviours = self.behavAssignment.behaviours.keys()
-        list_of_superfluous_behav = list()
-        for key in button_bindings['behavAssignment']:
-            if key not in list_of_behaviours:
-                list_of_superfluous_behav.append(key)
-        return list_of_superfluous_behav
-
-    def set_button_preset(self, button_binding_save_dict):
-        self.selected_device = button_binding_save_dict['selected_device']
-        self.deviceLayout = button_binding_save_dict['deviceLayout']
-        assignments = button_binding_save_dict['behavAssignment']
-        self.behavAssignment = Animal()
-        for label in assignments:
-            self.behavAssignment[label] = assignments[label]
-        # update with current icons from animal tab
-        self.update_icons()
-        # the device number might change so this has to be set new if not -1
-        self.deviceNumber = self.input_device_names.index(button_binding_save_dict['selected_device'])
-
-        self.make_joystick_info()
-        self.make_behaviour_box()
 
     def update_icons(self):
         for i in range(len(self.animal_tabs)):
@@ -245,8 +149,8 @@ class TabButtons(QWidget):
         # initialise return value
         hbox_temp = QHBoxLayout()
         # make text labels
-        if key != behav_binding.keyBinding:
-            print('Error key is not binding : ' + key + ' ' + behav_binding.keyBinding)
+        if key != behav_binding.key_bindings:
+            print('Error key is not binding : ' + key + ' ' + behav_binding.key_bindings)
         labels_list = list()
         labels_list.append(QLabel(key + ' :', self))
         if behav_binding.is_movie:
@@ -254,7 +158,7 @@ class TabButtons(QWidget):
         else:
             animal_no_str = 'animal No {}'.format(behav_binding.animal)
         labels_list.append(QLabel(animal_no_str, self))
-        labels_list.append(QLabel(behav_binding.behaviour, self))
+        labels_list.append(QLabel(behav_binding.name, self))
         # set labels to transparent background
         for i in range(3):
             labels_list[i].setStyleSheet(self.labelStyle)
@@ -322,77 +226,73 @@ class TabButtons(QWidget):
         box.addWidget(button_label)
         movie_box.addLayout(box)
 
-    def _create_assign_button_box(self, binding: Behaviour):
+    def _create_assign_button_box(self, behaviour: Behaviour):
         box = QHBoxLayout()
-        behav_label = QLabel(binding.behaviour)
-        behav_label.setStyleSheet('color: ' + binding.color)
+        behav_label = QLabel(behaviour.name)
+        behav_label.setStyleSheet('color: ' + behaviour.color)
         btn_set_uic = QPushButton('assign button/key')
-        button_now = binding
+        button_now = behaviour
         # double lambda to get the variable out of the general scope and let each button call assignBehav
         # with its own behaviour
         btn_set_uic.clicked.connect((lambda buttonNow: lambda: self.assign_button(buttonNow))(button_now))
-        button_label = self._create_button_label(binding)
+        button_label = self._create_button_label(behaviour)
         box.addWidget(behav_label)
         return box, btn_set_uic, button_label
 
     def _create_button_label(self, binding):
-        label = 'no button assigned' if binding.keyBinding is None else binding.keyBinding
+        label = 'no button assigned' if binding.key_bindings is None else binding.key_bindings
         button_label = QLabel(label)
-        if binding.keyBinding is None:
+        if binding.key_bindings is None:
             button_label.setStyleSheet('color: #C0C0C0')
         else:
             button_label.setStyleSheet('color: #ffffff')
         return button_label
 
-    def make_behaviour_box(self):
+    def make_animals_box(self):
         self.clearLayout(self.hbox_behaviour_buttons)
 
-        self._create_step_label()
+        self._create_behaviours_box()
         vbox = self.make_movie_actions_box()
         self.hbox_behaviour_buttons.addLayout(vbox)
         self.hbox_behaviour_buttons.addStretch()
-
         self.make_joystick_info()
 
-    def _create_step_label(self):
+    def _create_behaviours_box(self):
         self.behav_stepLabel = QLabel('Behaviours: ')
         self.behav_stepLabel.resize(20, 40)
         self.behav_stepLabel.setStyleSheet(self.labelStyle)
         self.hbox_behaviour_buttons.addWidget(self.behav_stepLabel)
-        self.animal_tabs = self.parent.get_animal_tabs()
-        for animalI in range(len(self.animal_tabs)):
-            self._create_info_label(animalI)
+        for animal_number in sorted(self.animal_handler.animals):
+            animal = self.animal_handler.animals[animal_number]
+            self._create_info_label(animal)
 
-    def _create_info_label(self, animal):
-        vbox = self.make_behaviour_info_box(animal, self.animal_tabs[animal].name,
-                                            self.animal_tabs[animal].behaviour_dicts)
+    def _create_info_label(self, animal: Animal):
+        vbox = self.make_behaviour_info_box(animal)
         self.hbox_behaviour_buttons.addLayout(vbox)
 
-    def make_behaviour_info_box(self, animal_number, animal_name, behaviors: List[Dict[str, Any]]):
+    def make_behaviour_info_box(self, animal: Animal):
         # top label
         behavBox = QVBoxLayout()
-        nameLabel = QLabel(animal_name + ' (A' + str(animal_number) + ')')
+        nameLabel = QLabel(animal.name + ' (A' + str(animal.number) + ')')
         nameLabel.setStyleSheet(self.labelStyle)
         behavBox.addWidget(nameLabel)
-        behaviours_of_animal = self._get_behaviour_assignments_of_animal(self.behavAssignment.behaviours,
-                                                                         animal_number)
-        self.synchronizeBehaviourTabAndBindings(animal_number, behaviors, behaviours_of_animal)
 
-        binding_for_delete = Behaviour(animal=animal_number, behaviour="delete", device=self.deviceLayout)
-        behaviours_of_animal[binding_for_delete.label] = binding_for_delete
-        self.behavAssignment[binding_for_delete.label] = binding_for_delete
+        if not animal.has_behaviour('delete'):
+            behav_delete = Behaviour(animal=animal.number,
+                                     name="delete")
+            animal[behav_delete.label] = behav_delete
 
-        for key in sorted(behaviours_of_animal.keys()):
-            binding = behaviours_of_animal[key]
-            box = self._create_box_single_behaviour(binding)
+        for key in sorted(animal.behaviours.keys()):
+            behav = animal.behaviours[key]
+            box = self._create_box_single_behaviour(behav)
             behavBox.addLayout(box)
 
         return behavBox
 
-    def _create_box_single_behaviour(self, binding):
-        box, btn_assign, buttonLabel = self._create_assign_button_box(binding)
-        if binding.icon_path is not None:
-            icon_label = self._create_icon(binding)
+    def _create_box_single_behaviour(self, behaviour: Behaviour):
+        box, btn_assign, buttonLabel = self._create_assign_button_box(behaviour)
+        if behaviour.icon_path is not None:
+            icon_label = self._create_icon(behaviour)
             box.addWidget(icon_label)
         box.addWidget(btn_assign)
         box.addWidget(buttonLabel)
@@ -428,7 +328,7 @@ class TabButtons(QWidget):
             if behav not in listOfAssignments:
                 temp = Behaviour(animal=animal_number,
                                  icon_path=behaviour_dict[i]['icon'],
-                                 behaviour=behaviour_dict[i]['name'],
+                                 name=behaviour_dict[i]['name'],
                                  color=behaviour_dict[i]['color'],
                                  key_binding=None,
                                  device=None)
@@ -446,12 +346,6 @@ class TabButtons(QWidget):
         print("in _delete_behavior_not_in_both_lists")
         del behaviour_assignments[key]
         del self.behavAssignment.behaviours[key]
-
-    @staticmethod
-    def _get_behaviour_assignments_of_animal(all_assignments: Dict[str, Behaviour],
-                                             animal_number: int) -> Dict[str, Behaviour]:
-        behavs_of_animal = {k: v for k, v in all_assignments.items() if v.animal == animal_number}
-        return behavs_of_animal
 
     def clearLayout(self, layout):
         while layout.count():
@@ -489,7 +383,7 @@ class TabButtons(QWidget):
             key, newBinding = self._handle_not_existing(buttonBinding, button_identifier)
         self.behavAssignment[key] = newBinding
         self.make_joystick_info()
-        self.make_behaviour_box()
+        self.make_animals_box()
 
     def _device_is_keyboard(self) -> bool:
         return self.deviceNumber == self.input_device_names.index('Keyboard')
@@ -502,7 +396,7 @@ class TabButtons(QWidget):
     def _make_behaviour_key_and_set_binding(self, buttonBinding: Behaviour, inputCode):
         label = buttonBinding.label
         oldBehaviourBinding = self.behavAssignment[label]
-        if oldBehaviourBinding.keyBinding is not None:
+        if oldBehaviourBinding.key_bindings is not None:
             self._delete_old_behaviour_info(oldBehaviourBinding)
         label, newBinding = self._get_behaviour_and_set_new_binding(buttonBinding, inputCode)
         # icon has to be attached here as well
@@ -515,27 +409,27 @@ class TabButtons(QWidget):
         label = buttonBinding.label
         newBinding = copy.deepcopy(self.behavAssignment[label])
         newBinding.animal = buttonBinding.animal
-        newBinding.behaviour = buttonBinding.behaviour
+        newBinding.name = buttonBinding.name
         newBinding.color = buttonBinding.color
-        newBinding.keyBinding = button_identifier
+        newBinding.key_bindings = button_identifier
         return label, newBinding
 
     def _delete_old_behaviour_info(self, oldBehaviourBinding):
         oldButtonBinding = self.behavAssignment[oldBehaviourBinding.label]
         oldButtonBinding.color = '#C0C0C0'
         oldButtonBinding.animal = None
-        oldButtonBinding.behaviour = None
+        oldButtonBinding.name = None
         self.behavAssignment[oldBehaviourBinding.label] = oldButtonBinding
 
     def _handle_already_existing(self, buttonBinding, inputCode):
         # get old button binding object
         oldButtonBinding = self.behavAssignment[inputCode]
         # we check if there was already a behaviour attached to this button
-        if oldButtonBinding.behaviour is not None:
+        if oldButtonBinding.name is not None:
             # the button binding also in the behavAssignment
             key = oldButtonBinding.label
             oldBehaviourBinding = self.behavAssignment[key]
-            oldBehaviourBinding.keyBinding = None
+            oldBehaviourBinding.key_bindings = None
             self.behavAssignment[key] = oldBehaviourBinding
         key, newBinding = self._make_behaviour_key_and_set_binding(buttonBinding, inputCode)
         # update both lists
@@ -574,7 +468,7 @@ class TabButtons(QWidget):
             self.joystick = pygame.joystick.Joystick(self.deviceNumber)
             self.joystick.init()
             self.make_joystick_info()
-        self.make_behaviour_box()
+        self.make_animals_box()
 
     def set_device(self, device: str):
         if self.selected_device is None:
@@ -595,7 +489,7 @@ class TabButtons(QWidget):
         self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(), Qt.KeepAspectRatio))
         self.background_image.setScaledContents(True)
         self.make_joystick_info()
-        self.make_behaviour_box()
+        self.make_animals_box()
 
     def initializeKeys(self, device):
         if device == "X-Box":
@@ -617,7 +511,7 @@ class TabButtons(QWidget):
         self.behavAssignment = newBehavAssignments
 
     @staticmethod
-    def _get_default_playstation_keys() -> Dict[str, Behaviour]:
+    def _get_default_playstation_keys() -> Dict[str, str]:
         #           B6                                   B7
         #           B4                                   B5
         #        _=====_                               _=====_
@@ -638,47 +532,28 @@ class TabButtons(QWidget):
         #   \          /                              \           /
         #    \________/                                \_________/
         #  PS2 CONTROLLER
-        keys = {"B0": Behaviour(device="Playstation", key_binding="B0", color='#C0C0C0'),
-                "B1": Behaviour(device="Playstation", key_binding="B1", color='#C0C0C0'),
-                "B2": Behaviour(device="Playstation", key_binding="B2", color='#C0C0C0'),
-                "B3": Behaviour(device="Playstation", key_binding="B3", color='#C0C0C0'),
-                "B4": Behaviour(device="Playstation", key_binding="B4", color='#C0C0C0'),
-                "B5": Behaviour(device="Playstation", key_binding="B5", color='#C0C0C0'),
-                "B6": Behaviour(device="Playstation", key_binding="B6", color='#C0C0C0'),
-                "B7": Behaviour(device="Playstation", key_binding="B7", color='#C0C0C0'),
-                "B8": Behaviour(device="Playstation", key_binding="B8", color='#C0C0C0'),
-                "B9": Behaviour(device="Playstation", key_binding="B9", color='#C0C0C0'),
-                "H01": Behaviour(device="Playstation", key_binding="H01", color='#C0C0C0'),
-                "H0-1": Behaviour(device="Playstation", key_binding="H0-1", color='#C0C0C0'),
-                "H-10": Behaviour(device="Playstation", key_binding="H-10", color='#C0C0C0'),
-                "H10": Behaviour(device="Playstation", key_binding="H10", color='#C0C0C0')}
+        keys = {"B0": None, "B1": None, "B2": None,
+                "B3": None, "B4": None, "B5": None,
+                "B6": None, "B7": None, "B8": None,
+                "B9": None, "H01": None, "H0-1": None,
+                "H-10": None, "H10": None}
         movie_keys = {
-            "B10": Behaviour(behaviour="toggleRunMov", key_binding="B9", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "B11": Behaviour(behaviour="stopToggle", key_binding="B10", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A0+": Behaviour(behaviour="runMovForward", key_binding="A0+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A0-": Behaviour(behaviour="runMovReverse", key_binding="A0-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A1+": Behaviour(behaviour="changeFPShigh", key_binding="A1+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A1-": Behaviour(behaviour="changeFPSlow", key_binding="A1-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A3+": Behaviour(behaviour="changeFrameNoHigh1", key_binding="A3+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A3-": Behaviour(behaviour="changeFrameNoLow1", key_binding="A3-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A4+": Behaviour(behaviour="changeFrameNoHigh10", key_binding="A4+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A4-": Behaviour(behaviour="changeFrameNoLow10", key_binding="A4-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE)
+            "B10": "toggleRunMov",
+            "B11": "stopToggle",
+            "A0+": "runMovForward",
+            "A0-": "runMovReverse",
+            "A1+": "changeFPShigh",
+            "A1-": "changeFPSlow",
+            "A3+": "changeFrameNoHigh1",
+            "A3-": "changeFrameNoLow1",
+            "A4+": "changeFrameNoHigh10",
+            "A4-": "changeFrameNoLow10"
         }
         keys.update(movie_keys)
         return keys
 
     @staticmethod
-    def _get_default_xbox_keys() -> Dict[str, Behaviour]:
+    def _get_default_xbox_keys() -> Dict[str, str]:
         #                 AT2+                                         AT5+
         #                  B4                                           B5
         #            ,,,,---------,_                               _,--------,,,,
@@ -694,115 +569,33 @@ class TabButtons(QWidget):
         #  |                      ,-'`  H0-1                     `'-,                     |
         #  \                   ,-'`                                  `'-,                 /
         #   `'----- ,,,, -----'`                                       `'----- ,,,, -----'`
-        keys = {"B0": Behaviour(device="X-Box", key_binding="B0", color='#C0C0C0'),
-                "B1": Behaviour(device="X-Box", key_binding="B1", color='#C0C0C0'),
-                "B2": Behaviour(device="X-Box", key_binding="B2", color='#C0C0C0'),
-                "B3": Behaviour(device="X-Box", key_binding="B3", color='#C0C0C0'),
-                "B4": Behaviour(device="X-Box", key_binding="B4", color='#C0C0C0'),
-                "B5": Behaviour(device="X-Box", key_binding="B5", color='#C0C0C0'),
-                "B6": Behaviour(device="X-Box", key_binding="B6", color='#C0C0C0'),
-                "B7": Behaviour(device="X-Box", key_binding="B7", color='#C0C0C0'),
-                "B8": Behaviour(device="X-Box", key_binding="B8", color='#C0C0C0'),
-                "A2+": Behaviour(device="X-Box", key_binding="A2+", color='#C0C0C0'),
-                "A5+": Behaviour(device="X-Box", key_binding="A5+", color='#C0C0C0'),
-                "A2-": Behaviour(device="X-Box", key_binding="A2-", color='#C0C0C0'),
-                "A5-": Behaviour(device="X-Box", key_binding="A5-", color='#C0C0C0'),
-                "H01": Behaviour(device="X-Box", key_binding="H01", color='#C0C0C0'),
-                "H0-1": Behaviour(device="X-Box", key_binding="H0-1", color='#C0C0C0'),
-                "H-10": Behaviour(device="X-Box", key_binding="H-10", color='#C0C0C0'),
-                "H10": Behaviour(device="X-Box", key_binding="H10", color='#C0C0C0')}
+        keys = {"B0": None, "B1": None, "B2": None,
+                "B3": None, "B4": None, "B5": None, "B6": None, "B7": None,
+                "B8": None, "A2+": None, "A5+": None, "A2-": None,
+                "A5-": None, "H01": None, "H0-1": None,
+                "H-10": None, "H10": None}
 
         movie_keys = {
-            "B9": Behaviour(behaviour="toggleRunMov", key_binding="B9", device="X-Box",
-                            color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "B10": Behaviour(behaviour="stopToggle", key_binding="B10", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A0+": Behaviour(behaviour="runMovForward", key_binding="A0+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A0-": Behaviour(behaviour="runMovReverse", key_binding="A0-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A1+": Behaviour(behaviour="changeFPShigh", key_binding="A1+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A1-": Behaviour(behaviour="changeFPSlow", key_binding="A1-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A3+": Behaviour(behaviour="changeFrameNoHigh1", key_binding="A3+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A3-": Behaviour(behaviour="changeFrameNoLow1", key_binding="A3-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A4+": Behaviour(behaviour="changeFrameNoHigh10", key_binding="A4+", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            "A4-": Behaviour(behaviour="changeFrameNoLow10", key_binding="A4-", device="X-Box",
-                             color='#ffffff', animal=Behaviour.ANIMAL_MOVIE)
+            "B9": "toggleRunMov", "B10": "stopToggle",
+            "A0+": "runMovForward", "A0-": "runMovReverse",
+            "A1+": "changeFPShigh", "A1-": "changeFPSlow",
+            "A3+": "changeFrameNoHigh1", "A3-": "changeFrameNoLow1",
+            "A4+": "changeFrameNoHigh10", "A4-": "changeFrameNoLow10"
         }
         keys.update(movie_keys)
         return keys
 
     @staticmethod
-    def _get_default_keyboard_keys():
+    def _get_default_keyboard_keys() -> Dict[str, str]:
         movie_keys = {
-            'k': Behaviour(behaviour="toggleRunMov", device="Keyboard", key_binding='k',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            'l': Behaviour(behaviour="runMovForward", device="Keyboard", key_binding='l',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            'j': Behaviour(behaviour="runMovReverse", device="Keyboard", key_binding='j',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            '.': Behaviour(behaviour="changeFPShigh", device="Keyboard", key_binding='.',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            ',': Behaviour(behaviour="changeFPSlow", device="Keyboard", key_binding=',',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            'i': Behaviour(behaviour="stopToggle", device="Keyboard", key_binding='i',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            'o': Behaviour(behaviour="changeFrameNoHigh1", device="Keyboard", key_binding='o',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            'u': Behaviour(behaviour="changeFrameNoLow1", device="Keyboard", key_binding='u',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            '[': Behaviour(behaviour="changeFrameNoLow10", device="Keyboard", key_binding='[',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
-            ']': Behaviour(behaviour="changeFrameNoHigh10", device="Keyboard", key_binding=']',
-                           color='#ffffff', animal=Behaviour.ANIMAL_MOVIE),
+            'k': "toggleRunMov", 'l': "runMovForward",
+            'j': "runMovReverse",
+            '.': "changeFPShigh", ',': "changeFPSlow",
+            'i': "stopToggle", 'o': "changeFrameNoHigh1",
+            'u': "changeFrameNoLow1", '[': "changeFrameNoLow10",
+            ']': "changeFrameNoHigh10"
         }
         return movie_keys
-
-    def initialise_behaviour_assignment(self):
-        self.behavAssignment = Animal()
-
-        for animalI in range(len(self.animal_tabs)):
-            behavDict = self.animal_tabs[animalI].behaviour_dicts
-
-            # add all behaviours
-            for i in range(len(behavDict)):
-                temp = Behaviour(animal=animalI,
-                                 icon_path=behavDict[i]['icon'],
-                                 behaviour=behavDict[i]['name'],
-                                 color=behavDict[i]['color'],
-                                 key_binding=None,
-                                 device=None)
-                label = temp.label
-                self.behavAssignment[label] = temp
-
-            # add delete function
-            temp = Behaviour(animal=animalI,
-                             icon_path=None,
-                             behaviour='delete',
-                             color='#ffffff',
-                             key_binding=None,
-                             device=None)
-
-            self.behavAssignment[temp.label] = temp
-
-        movie_actions = ["toggleRunMov", "stopToggle", "runMovForward", "runMovReverse",
-                         "changeFPShigh", "changeFPSlow",
-                         "changeFrameNoHigh1",
-                         "changeFrameNoLow1",
-                         "changeFrameNoHigh10",
-                         "changeFrameNoLow10",]
-
-        for ma in movie_actions:
-            binding = Behaviour(animal=Behaviour.ANIMAL_MOVIE, behaviour=ma,
-                                color="#ffffff")
-            self.behavAssignment[binding.label] = binding
-
-        print("behavAssignment: ", self.behavAssignment)
 
     def close_event(self):
         self.save_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
@@ -817,9 +610,9 @@ class TabButtons(QWidget):
         return self.deviceLayout
 
     def reset_buttons(self):
-        self._get_and_initialize_behaviour()
+        self._initialize_device_members()
         self._initialize_joystick()
-        self.make_behaviour_box()
+        self.make_animals_box()
 
     def _initialize_joystick(self):
         # Get count of joysticks
@@ -859,11 +652,11 @@ class TabButtons(QWidget):
         # fill major boxes with infos
         self._fill_major_boxes_with_infos()
         self.setLayout(self.vbox)
-        self.parent.tabs.currentChanged.connect(self.make_behaviour_box)
+        self.parent.tabs.currentChanged.connect(self.make_animals_box)
 
     def _fill_major_boxes_with_infos(self):
         self.make_joystick_info()
-        self.make_behaviour_box()
+        self.make_animals_box()
         self.make_device_choice()
         self.make_load_save_preset()
 
@@ -892,12 +685,10 @@ class TabButtons(QWidget):
         self.background_image.setScaledContents(True)
         self.background_image.resize(self.size())
 
-    def _get_and_initialize_behaviour(self):
-        self.animal_tabs = self.parent.get_animal_tabs()
+    def _initialize_device_members(self):
         self.selected_device = None
         self.deviceLayout = None
         self.deviceNumber = -2
-        self.initialise_behaviour_assignment()
         self.lastKeyPressed = (71, 'G')
 
 

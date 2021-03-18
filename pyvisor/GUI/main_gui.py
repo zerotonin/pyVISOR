@@ -4,20 +4,19 @@
 @date 15.06.16
 """
 import json
-from typing import List
+import os
+import pickle
 
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication)
 
-import os
-import pickle
-
-from pyvisor.GUI.model.animal import Animal
-from .tab_behaviours.tab_behaviours import TabBehaviours
+from .model.animal import Animal
+from .model.animal_handler import AnimalHandler
 from .tab_analysis import TabAnalysis
-from .tab_results import TabResults
+from .tab_behaviours.tab_behaviours import BehavioursTab
 from .tab_buttons import TabButtons
+from .tab_results import TabResults
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -29,7 +28,7 @@ class MovScoreGUI(QWidget):
         """
         """    
         super(MovScoreGUI, self).__init__()
-        self.animals = []  # type: List[Animal]
+        self.animal_handler = AnimalHandler()
         self._load_defaults()
 
         self.initUI()
@@ -56,11 +55,12 @@ class MovScoreGUI(QWidget):
             with open(HOME + "/.pyvisor/guidefaults_animals.json", 'r') as f:
                 animals = json.load(f)
         except FileNotFoundError:
-            with open(HERE + "/../guidefaults_animals.json", 'r') as f:
+            with open(HERE + "/guidefaults_animals.json", 'r') as f:
                 animals = json.load(f)
 
         for a in animals:
-            self.animals.append(Animal.from_json(a))
+            ani = Animal.from_json_dict(a)
+            self.animal_handler.animals[ani.number] = ani
 
     def initUI(self):
         """
@@ -76,7 +76,7 @@ class MovScoreGUI(QWidget):
     def _initiate_tabs(self, vbox):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
-        self.tab_behaviours = TabBehaviours(self)
+        self.tab_behaviours = BehavioursTab(self)
         self.tab_buttons = TabButtons(self)
         self.tab_analysis = TabAnalysis(self)
         self.tab_results = TabResults(self)
@@ -130,9 +130,7 @@ class MovScoreGUI(QWidget):
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
 
     def _save_animals(self):
-        savable_list = [
-            animal.to_savable_dict() for animal in self.animals
-        ]
+        savable_list = self.animal_handler.get_savable_list()
         with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
             json.dump(savable_list, fh)
 

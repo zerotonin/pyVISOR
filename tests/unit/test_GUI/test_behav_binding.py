@@ -1,4 +1,4 @@
-from pyvisor.GUI.model.behaviours import Behaviour
+from pyvisor.GUI.model.behaviour import Behaviour
 
 
 def test_to_dict():
@@ -7,7 +7,7 @@ def test_to_dict():
         animal='fly1',
         color='#FFAA50',
         icon_path='/home/icons/are/nice.png',
-        behaviour='aggression',
+        name='aggression',
         key_binding='B1',
         device='XBox'
     )
@@ -37,8 +37,8 @@ def test_from_dict():
     binding = Behaviour.from_dict(d)
 
     assert 'seal' == binding.animal
-    assert 'chill' == binding.behaviour
+    assert 'chill' == binding.name
     assert binding.color is None
     assert '/home/icons/are/quite/okay.png' == binding.icon_path
-    assert 'B0' == binding.keyBinding
+    assert 'B0' == binding.key_bindings
     assert 'Playstation' == binding.device

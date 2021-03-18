@@ -2,36 +2,36 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout,
                              QVBoxLayout, QHBoxLayout,
                              QPushButton, QLineEdit)
 
-from .animal_tab import AnimalTabWidget
 from .behaviour_widget import BehaviourWidget
+from ..model.animal import Animal
+from ..model.behaviour import Behaviour
 
 
 class SingleAnimalTab(QWidget):
 
-    def __init__(self, parent: AnimalTabWidget,
-                 name, behaviour_dicts,
+    def __init__(self, parent,
+                 animal: Animal,
                  index_in_parent_tab_widget):
 
         super(SingleAnimalTab, self).__init__()
 
         self.index = index_in_parent_tab_widget
-        self.behaviour_dicts = behaviour_dicts
+        self.animal = animal
         self.parent = parent
+        self.main_widget = self.parent.main_widget
         self.current_pos = 0
         self.behav_widgets = []
-        self.name = name
         self.init_UI()
+
+    @property
+    def name(self):
+        return self.animal.name
 
     def init_UI(self):        
         hbox = self._init_main_layout()
 
         self._init_add_button()
-        # -----------------------
-        #   initial behaviours
-        # -----------------------        
-        for behav in self.behaviour_dicts:
-            behav['compatible'] = list(set(behav['compatible']))
-            self.add_behaviour_widget(behav, initial=True)
+        self._initialize_behaviours()
 
         # ----------------------
         #   left button vbox
@@ -57,12 +57,21 @@ class SingleAnimalTab(QWidget):
         self.vbox_buttons_left.addWidget(btn_remove_animal)
         self.vbox_buttons_left.addStretch(1)
 
+    def _initialize_behaviours(self):
+        for key in self.animal.behaviours:
+            behav = self.animal[key]
+            self.add_behaviour_widget(behav, initial=True)
+
     def _init_add_button(self):
         self.button_add = QPushButton('add behaviour')
-        self.button_add.clicked.connect(lambda: self.add_behaviour_widget(
-            {'name': self._generate_new_name(), 'color': None,
-             'icon': '', 'compatible': []}, initial=False))
+        self.button_add.clicked.connect(self._add_new_behaviour)
         self.grid.addWidget(self.button_add, *self.get_current_pos())
+
+    def _add_new_behaviour(self):
+        name = self.animal.get_unique_name()
+        new_behav = Behaviour(self.animal.number, name=name)
+        self.main_widget.update_UIs_new_behaviour_added(self.animal, new_behav)
+        self.add_behaviour_widget(new_behav)
 
     def _init_main_layout(self):
         vbox = QVBoxLayout()
@@ -97,13 +106,10 @@ class SingleAnimalTab(QWidget):
         self.parent.remove_tab(self.index)
         self.deleteLater()
 
-    def add_behaviour_widget(self, param_dict, initial):
-        if not initial:
-            self.behaviour_dicts.append(param_dict)
-            for bw in self.behav_widgets:
-                bw.compatible_behaviour_widget.add_checkbox(param_dict['name'],
-                                                            state=False)
-        behav_widget = BehaviourWidget(self, param_dict, self.current_pos)
+    def add_behaviour_widget(self, behaviour: Behaviour):
+        for bw in self.behav_widgets:
+            bw.compatible_behaviour_widget.add_checkbox(behaviour.name, state=False)
+        behav_widget = BehaviourWidget(self, behaviour, self.current_pos)
         self.behav_widgets.append(behav_widget)
         self.grid.addWidget(behav_widget, *self.get_current_pos())
         self.current_pos += 1
@@ -111,8 +117,9 @@ class SingleAnimalTab(QWidget):
 
     def get_behav_widget_by_name(self, name):
         for w in self.behav_widgets:
-            if w.param_dict['name'] == name:
+            if w.name.name == name:
                 return w
+        raise KeyError("BehaviourWidget with name {} not found.".format(name))
 
     def get_current_pos(self):
         return self.get_grid_pos(self.current_pos)
@@ -151,7 +158,8 @@ class SingleAnimalTab(QWidget):
 
     def rename_finished(self):
         self.btn_edit_name.setText(self.name_edit.text())
-        self.name = str(self.name_edit.text())
+        new_name = str(self.name_edit.text())
+        self.main_widget.change_animal_name(self.animal, new_name)
         self.vbox_buttons_left.removeWidget(self.name_edit)
         self.vbox_buttons_left.insertWidget(0, self.btn_edit_name)
         self.name_edit.hide()

@@ -1,20 +1,20 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 
-from pyvisor.GUI.model.behaviours import Behaviour
+from pyvisor.GUI.model.behaviour import Behaviour
 
 
 class Animal:
-    ANIMAL_MOVIE = -1
 
-    def __init__(self, number: int):
+    def __init__(self, number: int, name: str):
         self.number = number
-        self.behaviours = dict()
+        self.name = name
+        self.behaviours = dict()  # type: Dict[str, Behaviour]
 
     def get_button_assignments(self) -> Dict[str, Behaviour]:
         button_assignments = {}
         for label in self.behaviours:
             binding = self.behaviours[label]
-            button = binding.keyBinding
+            button = binding.key_bindings
             if button is None:
                 continue
             button_assignments[button] = binding
@@ -64,7 +64,7 @@ class Animal:
     def __str__(self):
         s = ""
         for key in self.behaviours:
-            s += "{}: {}\n".format(key, self.behaviours[key].keyBinding)
+            s += "{}: {}\n".format(key, self.behaviours[key].key_bindings)
         return s
 
     def __repr__(self):
@@ -72,10 +72,42 @@ class Animal:
 
     def key_is_assigned(self, button_identifier) -> bool:
         for binding in self.behaviours.values():
-            if binding.keyBinding == button_identifier:
+            if binding.key_bindings == button_identifier:
                 return True
         return False
 
+    def to_savable_dict(self) -> Dict[str, Any]:
+        d = {
+            "animal_number": self.number,
+            "animal_name": self.name,
+            "behaviours": [self.behaviours[key].to_dict() for key in sorted(self.behaviours.keys())]
+        }
+        return d
+
     @staticmethod
-    def from_json(a):
-        raise NotImplementedError
+    def from_json_dict(json_dict: Dict[str, Any]) -> 'Animal':
+        new_animal = Animal(json_dict['animal_number'], json_dict['animal_name'])
+        behaviours = [Behaviour.from_dict(d) for d in json_dict['behaviours']]
+        for b in behaviours:
+            new_animal[b.label] = b
+        return new_animal
+
+    def get_unique_name(self) -> str:
+        for index in range(100):
+            candidate = 'behaviour_{}'.format(index)
+            if self._name_is_unique(candidate):
+                return candidate
+        raise RuntimeError("No unique name found.")
+
+    def _name_is_unique(self, candidate: str) -> bool:
+        for label in self.behaviours:
+            behav = self.behaviours[label]
+            if behav.name == candidate:
+                return False
+        return True
+
+    def has_behaviour(self, name: str) -> bool:
+        for behav in self.behaviours.values():
+            if behav.name == name:
+                return True
+        return False

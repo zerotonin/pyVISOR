@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (QFrame, QGridLayout,
 import os
 from .compatible_behaviour_widget import CompatibleBehaviourWidget
 from ..icon_gallery.icon_selection_widget import IconSelectionWidget
+from ..model.behaviour import Behaviour
 from ...icon import write_tmp_icon
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -15,10 +16,10 @@ HOME = os.path.expanduser("~")
 
 class BehaviourWidget(QFrame):
 
-    def __init__(self, parent, param_dict,
+    def __init__(self, parent, behaviour: Behaviour,
                  index_in_parent_list):
         super().__init__()        
-        self.param_dict = param_dict
+        self.behaviour = behaviour
         self.parent = parent
         self.index = index_in_parent_list
         self.init_UI()
