@@ -88,13 +88,15 @@ class BehaviourWidget(QFrame):
         #     compatible behaviour
         #          selection
         # ---------------------------------
-        self.compatible_behaviour_widget = CompatibleBehaviourWidget(self)
+        self.compatible_behaviour_widget = CompatibleBehaviourWidget(
+            self, self.behaviour, self.animal_handler)
         self.vbox.addWidget(self.compatible_behaviour_widget)
 
     def create_new_compatible_behaviour_widget(self):
         self.vbox.removeWidget(self.compatible_behaviour_widget)
         self.compatible_behaviour_widget.deleteLater()
-        self.compatible_behaviour_widget = CompatibleBehaviourWidget(self)
+        self.compatible_behaviour_widget = CompatibleBehaviourWidget(
+            self, self.behaviour, self.animal_handler)
         self.vbox.addWidget(self.compatible_behaviour_widget)
         
     def remove(self):        

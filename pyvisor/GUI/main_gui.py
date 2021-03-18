@@ -11,6 +11,7 @@ from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication)
 
+from pyvisor.GUI.model.movie_bindings import MovieBindings
 from .model.animal import Animal
 from .model.animal_handler import AnimalHandler
 from .tab_analysis import TabAnalysis
@@ -58,9 +59,14 @@ class MovScoreGUI(QWidget):
             with open(HERE + "/guidefaults_animals.json", 'r') as f:
                 animals = json.load(f)
 
-        for a in animals:
+        for a in animals["animals"]:
             ani = Animal.from_json_dict(a)
             self.animal_handler.animals[ani.number] = ani
+        self.animal_handler.selected_device = animals["selected_device"]
+        if "movie_bindings" in animals:
+            self.animal_handler.movie_bindings = MovieBindings.from_dict(
+                animals["movie_bindings"]
+            )
 
     def initUI(self):
         """

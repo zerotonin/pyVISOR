@@ -1,16 +1,19 @@
-from typing import Dict, List, Any, Callable
+from typing import Dict, List, Any, Callable, Union
 
 from pyvisor.GUI.model.animal import Animal
 from pyvisor.GUI.model.behaviour import Behaviour
+from .movie_bindings import MovieBindings
 
 
 class AnimalHandler:
 
     def __init__(self):
+        self.movie_bindings = MovieBindings()
         self._UI_callbacks_update_icon = []
         self.animals = {}  # type: Dict[int, Animal]
         self._UI_callbacks_animal_added = []
         self._UI_callbacks_name_changed = []
+        self.selected_device = None  # type: Union[str, None]
 
     def add_animal(self, name: str, number: int) -> Animal:
         new_animal = Animal(number, name)
@@ -28,6 +31,14 @@ class AnimalHandler:
             number in self.animals
         ]
         return savable_list
+
+    def get_savable_dict(self) -> Dict[str, Any]:
+        d = {
+            "animals": self.get_savable_list(),
+            "selected_device": self.selected_device,
+            "movie_bindings": self.movie_bindings.to_dict()
+        }
+        return d
 
     def _update_UIs_add_animal(self, new_animal):
         for callback in self._UI_callbacks_animal_added:
@@ -64,5 +75,3 @@ class AnimalHandler:
     def set_icon_color(self, behaviour: Behaviour, color: str):
         behaviour.color = color
         self._update_UIs_icon(behaviour)
-
-

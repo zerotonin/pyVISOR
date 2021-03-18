@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from pyvisor.GUI.model.key_bindings import KeyBindings
 
@@ -11,13 +11,15 @@ class Behaviour:
                  animal: int = None,
                  color: str = '#C0C0C0',
                  icon_path: str = None,
-                 name: str = None):
+                 name: str = None,
+                 compatible_with: List[str] = None):
 
         self.animal = animal
         self.icon_path = icon_path
         self.name = name
         self.color = color
         self.key_bindings = KeyBindings()
+        self.compatible_with = compatible_with
 
     def set_key_binding(self, device: str, binding: str):
         if device == "X-Box":
@@ -62,6 +64,7 @@ class Behaviour:
             'name': self.name,
             'icon_path': self.icon_path,
             'color': self.color,
+            'compatible_with': self.compatible_with
         }
         return d
 
@@ -72,6 +75,7 @@ class Behaviour:
             d['color'],
             d['icon_path'],
             d['name'],
+            d['compatible_with']
         )
         behav.key_bindings = KeyBindings.from_dict(d['key_bindings'])
         return behav

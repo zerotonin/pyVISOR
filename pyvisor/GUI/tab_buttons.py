@@ -46,14 +46,6 @@ class TabButtons(QWidget):
         self._initialize_device_members()
         self._init_ui()
 
-    def _create_button_binding_dict(self):
-        d = {}
-        d.update({'selected_device': self.selected_device})
-        d.update({'deviceLayout': self.deviceLayout})
-        d.update({'deviceNumber': self.deviceNumber})
-        d.update({'behavAssignment': Behaviour.from_object_dict_to_savable_dict(self.behavAssignment.behaviours)})
-        return d
-
     def make_joystick_info(self):
         if self.deviceNumber == -2:
             self.make_joystick_info_initial()
@@ -86,9 +78,6 @@ class TabButtons(QWidget):
         joy_name = QLabel('Keyboard', self)
         joy_name.setStyleSheet(self.labelStyle)
         vbox_temp.addWidget(joy_name)
-        if not bool(self.behavAssignment.behaviours):
-            key_message = QLabel('no keys defined', self)
-            vbox_temp.addWidget(key_message)
         vbox_temp.addStretch()
         return vbox_temp
 
@@ -191,8 +180,7 @@ class TabButtons(QWidget):
         name_label = QLabel('movie actions')
         name_label.setStyleSheet(self.labelStyle)
         movie_box.addWidget(name_label)
-        movie_assignments = self._get_behaviour_assignments_of_animal(self.behavAssignment.behaviours,
-                                                                      Behaviour.ANIMAL_MOVIE)
+        movie_assignments = self.animal_handler.movie_bindings
         for key in sorted(movie_assignments.keys()):
             binding = movie_assignments[key]
             self._make_movie_label_box(binding, movie_box)

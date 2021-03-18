@@ -1,4 +1,5 @@
-[
+{ "selected_device": "Keyboard",
+  "animals": [
   {"animal_number": 0,
     "animal_name": "animal_0",
     "behaviours": [{
@@ -6,13 +7,15 @@
       "animal": 0,
       "name": "aggression",
       "icon_path": null,
-      "color": "#C0C0C0"
+      "color": "#C0C0C0",
+      "compatible_with": []
     }, {
       "key_bindings": {},
       "animal": 0,
       "name": "courtship",
       "icon_path": null,
-      "color": "#C0C0C0"
+      "color": "#C0C0C0",
+      "compatible_with": []
     }]}, {
   "animal_number": 1,
   "animal_name": "animal_1",
@@ -21,11 +24,14 @@
     "animal": 1,
     "name": "schmooze",
     "icon_path": null,
-    "color": "#C0C0C0"
+    "color": "#C0C0C0",
+    "compatible_with": []
   }, {
     "key_bindings": {},
     "animal": 1,
     "name": "some-behaviour",
     "icon_path": null,
-    "color": "#C0C0C0"
+    "color": "#C0C0C0",
+    "compatible_with": []
   }]}]
+}
