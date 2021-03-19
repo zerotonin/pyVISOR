@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
 from .model.animal import Animal
 from .model.animal_handler import AnimalHandler
 from .model.behaviour import Behaviour
+from .model.key_bindings import KeyBindings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -62,7 +63,9 @@ class TabButtons(QWidget):
 
         for animal_number in sorted(self.animal_handler.animals.keys()):
             animal = self.animal_handler.animals[animal_number]
-            button_assignments = animal.get_button_assignments(self.selected_device)
+            button_assignments = animal.get_button_assignments(
+                self.animal_handler.selected_device
+            )
             for key in sorted(button_assignments.keys()):
                 behaviour = button_assignments[key]
                 hbox = self.make_behav_binding_info(key, behaviour)
@@ -181,34 +184,40 @@ class TabButtons(QWidget):
         name_label.setStyleSheet(self.labelStyle)
         movie_box.addWidget(name_label)
         movie_assignments = self.animal_handler.movie_bindings
-        for key in sorted(movie_assignments.keys()):
-            binding = movie_assignments[key]
-            self._make_movie_label_box(binding, movie_box)
+        for movie_action in sorted(movie_assignments.keys()):
+            binding = movie_assignments[movie_action]
+            self._make_movie_label_box(movie_action, binding, movie_box)
 
         return movie_box
 
-    def _make_movie_label_box(self, binding: Behaviour, movie_box):
-        box, btn_set_uic, button_label = self._create_assign_button_box(binding)
+    def _make_movie_label_box(
+            self,
+            movie_action: str,
+            binding: KeyBindings,
+            movie_box):
+        box, btn_set_uic, button_label = self._create_assign_button_box(
+            binding
+        )
         box.addWidget(btn_set_uic)
         box.addWidget(button_label)
         movie_box.addLayout(box)
 
-    def _create_assign_button_box(self, behaviour: Behaviour):
+    def _create_assign_button_box(self, binding: KeyBindings):
         box = QHBoxLayout()
-        behav_label = QLabel(behaviour.name)
-        behav_label.setStyleSheet('color: ' + behaviour.color)
+        behav_label = QLabel(binding.name)
+        behav_label.setStyleSheet('color: ' + binding.color)
         btn_set_uic = QPushButton('assign button/key')
-        button_now = behaviour
+        button_now = binding
         # double lambda to get the variable out of the general scope and let each button call assignBehav
         # with its own behaviour
         btn_set_uic.clicked.connect((lambda buttonNow: lambda: self.assign_button(buttonNow))(button_now))
-        button_label = self._create_button_label(behaviour)
+        button_label = self._create_button_label(binding)
         box.addWidget(behav_label)
         return box, btn_set_uic, button_label
 
     def _create_button_label(self, behaviour: Behaviour):
         key_bindings = behaviour.key_bindings
-        key = key_bindings[self.selected_device]
+        key = key_bindings[self.animal_handler.selected_device]
         label = 'no button assigned' if key is None else key
         button_label = QLabel(label)
         if key is None:
@@ -299,9 +308,9 @@ class TabButtons(QWidget):
             elif child.layout() is not None:
                 self.clearLayout(child.layout())
 
-    def assign_button(self, buttonBinding: Behaviour):
+    def assign_button(self, behaviour: Behaviour):
         # check if device was selected
-        if self.selected_device is None:
+        if self.animal_handler.selected_device is None:
             QMessageBox.warning(self, 'Set device first!',
                                 "You need to choose an input device first",
                                 QMessageBox.Ok)
@@ -321,16 +330,15 @@ class TabButtons(QWidget):
         else:
             button_identifier = self.waitOnUICpress()
 
-        if self.behavAssignment.key_is_assigned(button_identifier):
-            key, newBinding = self._handle_already_existing(buttonBinding, button_identifier)
-        else:
-            key, newBinding = self._handle_not_existing(buttonBinding, button_identifier)
-        self.behavAssignment[key] = newBinding
+        assigned_behaviour = self.animal_handler.get_behaviour_assigned_to(
+            button_identifier)
+
+        if assigned_behaviour is not None:
+            self.animal_handler.change_button_binding(assigned_behaviour,
+                                                      None)
+        self.animal_handler.change_button_binding(behaviour, button_identifier)
         self.make_joystick_info()
         self.make_animals_box()
-
-    def _device_is_keyboard(self) -> bool:
-        return self.deviceNumber == self.input_device_names.index('Keyboard')
 
     def _handle_not_existing(self, buttonBinding, inputCode) -> Tuple[str, Behaviour]:
         # check if a button was assigned to that behaviour
@@ -344,7 +352,7 @@ class TabButtons(QWidget):
             self._delete_old_behaviour_info(oldBehaviourBinding)
         label, newBinding = self._get_behaviour_and_set_new_binding(buttonBinding, inputCode)
         # icon has to be attached here as well
-        newBinding.device = self.selected_device
+        newBinding.device = self.animal_handler.selected_device
         return label, newBinding
 
     def _get_behaviour_and_set_new_binding(self,
@@ -404,19 +412,17 @@ class TabButtons(QWidget):
 
     def set_assignDevice(self, device):
         device = str(device)
-        if self.selected_device == device:
+        if self.animal_handler.selected_device == device:
             return
-        self.selected_device = device
-        self.deviceNumber = self.input_device_names.index(device)
-        self.selected_device = device
-        if not self._device_is_keyboard():
+        self.animal_handler.selected_device = device
+        if device != "Keyboard":
             self.joystick = pygame.joystick.Joystick(self.deviceNumber)
             self.joystick.init()
             self.make_joystick_info()
         self.make_animals_box()
 
     def set_device(self, device: str):
-        if self.selected_device is None:
+        if self.animal_handler.selected_device is None:
             QMessageBox.warning(self, 'Set device first!',
                                 "You need to choose an input device first",
                                 QMessageBox.Ok)
@@ -612,7 +618,5 @@ class TabButtons(QWidget):
         self.background_image.resize(self.size())
 
     def _initialize_device_members(self):
-        self.selected_device = None
-        self.deviceLayout = None
         self.deviceNumber = -2
         self.lastKeyPressed = (71, 'G')

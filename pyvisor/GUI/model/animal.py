@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Union
 
 from pyvisor.GUI.model.behaviour import Behaviour
 
@@ -114,3 +114,15 @@ class Animal:
             if behav.name == name:
                 return True
         return False
+
+    def get_behaviour_assigned_to(
+            self, selected_device,
+            button_identifier
+    ) -> Union[Behaviour, None]:
+        for behav in self.behaviours.values():
+            binding = behav.key_bindings[selected_device]
+            if binding is None:
+                continue
+            if binding == button_identifier:
+                return behav
+

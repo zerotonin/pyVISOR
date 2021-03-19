@@ -9,10 +9,11 @@ class AnimalHandler:
 
     def __init__(self):
         self.movie_bindings = MovieBindings()
-        self._UI_callbacks_update_icon = []
         self.animals = {}  # type: Dict[int, Animal]
         self._UI_callbacks_animal_added = []
         self._UI_callbacks_name_changed = []
+        self._UI_callbacks_key_binding_changed = []
+        self._UI_callbacks_update_icon = []
         self.selected_device = None  # type: Union[str, None]
 
     def add_animal(self, name: str, number: int) -> Animal:
@@ -75,3 +76,41 @@ class AnimalHandler:
     def set_icon_color(self, behaviour: Behaviour, color: str):
         behaviour.color = color
         self._update_UIs_icon(behaviour)
+
+    def get_behaviour_assigned_to(
+            self, button_identifier
+    ) -> Union[Behaviour, None]:
+        assigned = None
+        for an in self.animals:
+            animal = self.animals[an]
+            assigned_an = animal.get_behaviour_assigned_to(
+                self.selected_device, button_identifier
+            )
+            if assigned_an is None:
+                continue
+            if assigned is not None:
+                raise RuntimeError(
+                    "Key {} is assigned to multiple behaviours.".format(
+                        button_identifier
+                    )
+                )
+            assigned = assigned_an
+        return assigned
+
+    def change_button_binding(
+            self,
+            behaviour: Behaviour,
+            button_identifier: Union[str, None]
+    ):
+        behaviour.key_bindings[self.selected_device] = button_identifier
+        self._update_UIs_key_binding(behaviour)
+
+    def _update_UIs_key_binding(self, behaviour: Behaviour):
+        for callback in self._UI_callbacks_key_binding_changed:
+            callback(behaviour)
+
+    def register_callback_key_binding_changed(
+            self,
+            callback: Callable[[Behaviour], None]
+    ):
+        self._UI_callbacks_key_binding_changed.append(callback)

@@ -21,6 +21,9 @@ class MovieBindings:
     def keys(self):
         return self.key_bindings.keys()
 
+    def __getitem__(self, movie_action: str):
+        return self.key_bindings[movie_action]
+
     @staticmethod
     def from_dict(
             d: Dict[str, Dict[str, Union[None, str]]]
