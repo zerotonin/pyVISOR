@@ -8,7 +8,9 @@ import pyvisor.ManualEthologyScorer as MES
 import os
 import collections
 
-from pyvisor.GUI.model.animal import Animal
+from .model.animal import Animal
+from .model.behaviour import Behaviour
+from .model.gui_data_interface import GUIDataInterface
 
 try:
     import thread as _thread
@@ -21,44 +23,24 @@ HOME = os.path.expanduser("~")
 
 class TabAnalysis(QWidget):
 
-    def __init__(self, parent):
-        
-        self.analysis_list = [] 
-        super().__init__()
+    def __init__(self, parent: QWidget,
+                 gui_data_interface: GUIDataInterface):
 
+        super().__init__()
+        self.analysis_list = []
         self.parent = parent
+        self.gui_data_interface = gui_data_interface
 
         self.init_UI()
         self.sco = MES.ManualEthologyScorer()
         
     def init_UI(self):
-        
-        # ===========================
-        # background image 
-        # ===========================
-        self.background_image = QLabel(self)
-        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
-        self.pixmap = QPixmap(HERE + '/pictures/gamePad.png')
-        self.background_image.setPixmap(self.pixmap.scaled(
-            self.background_image.size(),
-            Qt.KeepAspectRatio))
-        self.background_image.setScaledContents(True)
+        self._init_background_image()
         self.MediaFileName = ''
         self.MediaType = ''
-        self.background_image.resize(self.size())
-        
-        self.vbox = QVBoxLayout()
 
-        self.hboxMov = QHBoxLayout()
-        self.hboxConciseBehav = QHBoxLayout()
-        self.hboxCommand = QHBoxLayout()
-        # Comment out the following line to see desired output.
-        self.vbox.addStretch()
-        self.vbox.addLayout(self.hboxConciseBehav)
-        self.vbox.addLayout(self.hboxMov)
-        self.vbox.addLayout(self.hboxCommand)
-        self.vbox.addStretch()
-        
+        self._init_layout_boxes()
+
         self.labelStyle = """
         color: white;
         background-color: rgba(255, 255, 255, 125);
@@ -71,34 +53,52 @@ class TabAnalysis(QWidget):
         self.setLayout(self.vbox)
 
         self.parent.tabs.currentChanged.connect(self.makeBehaviourSummary)
-        
+
+    def _init_layout_boxes(self):
+        self.vbox = QVBoxLayout()
+        self.hboxMov = QHBoxLayout()
+        self.hboxConciseBehav = QHBoxLayout()
+        self.hboxCommand = QHBoxLayout()
+        # Comment out the following line to see desired output.
+        self.vbox.addStretch()
+        self.vbox.addLayout(self.hboxConciseBehav)
+        self.vbox.addLayout(self.hboxMov)
+        self.vbox.addLayout(self.hboxCommand)
+        self.vbox.addStretch()
+
+    def _init_background_image(self):
+        self.background_image = QLabel(self)
+        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
+        self.pixmap = QPixmap(HERE + '/pictures/gamePad.png')
+        self.background_image.setPixmap(self.pixmap.scaled(
+            self.background_image.size(),
+            Qt.KeepAspectRatio))
+        self.background_image.setScaledContents(True)
+        self.background_image.resize(self.size())
+
     def makeBehaviourSummary(self):
         self.clearLayout(self.hboxConciseBehav)
         # ------------------------
         #      behaviour widgets
         # ------------------------
         
-        # Create step label
+        self._create_step_label()
+        for animalI in sorted(self.gui_data_interface.animals.keys()):
+            vbox = self.makeBehavInfoBox(
+                self.gui_data_interface.animals[animalI]
+            )
+            self.hboxConciseBehav.addLayout(vbox) 
+        
+        movieControlBox = self.makeMovieControlInfoBox()
+        self.hboxConciseBehav.addLayout(movieControlBox) 
+        self.hboxConciseBehav.addStretch()
+
+    def _create_step_label(self):
         self.behav_stepLabel = QLabel('Step 1 Check behaviour settings: ')
         self.behav_stepLabel.resize(20, 40)
         self.behav_stepLabel.setStyleSheet(self.labelStyle)
         self.hboxConciseBehav.addWidget(self.behav_stepLabel)
-        # get data from other tabs
-        self.animal_tabs = self.parent.get_animal_tabs()
-        self.assignment = self.parent.get_assignments()
-        self.UIC_layout = self.parent.get_UIC_layout()
-        # here for loop!
-        for animalI in range(len(self.animal_tabs)):     
-            # Create info label
-            vbox = self.makeBehavInfoBox(animalI, self.animal_tabs[animalI].name,
-                                         self.animal_tabs[animalI].behaviour_dicts,
-                                         self.assignment[1]) # 1 is here for the behaviour assigments / zero would be keys
-            self.hboxConciseBehav.addLayout(vbox) 
-        
-        movieControlBox = self.makeMovieControlInfoBox(self.assignment[1])
-        self.hboxConciseBehav.addLayout(movieControlBox) 
-        self.hboxConciseBehav.addStretch()
-        
+
     def clearLayout(self, layout):
         while layout.count():
             child = layout.takeAt(0)
@@ -198,78 +198,83 @@ class TabAnalysis(QWidget):
     def close_event(self):        
         self.tabs.close_event()
         
-    def makeBehavInfoBox(self, animalNo, animalName, behavDict, assignment: Animal):
+    def makeBehavInfoBox(self, animal: Animal):
         behavBox = QVBoxLayout()
-        nameLabel = QLabel(animalName+ ' (A' +str(animalNo)+')')
+        nameLabel = QLabel(animal.name + ' (A' + str(animal.number)+')')
         nameLabel.setStyleSheet(self.labelStyle)
         behavBox.addWidget(nameLabel)
-        for i in range(len(behavDict)):
-            
+        for behav_label in sorted(animal.behaviours.keys()):
+            behav = animal.behaviours[behav_label]
             hbox = QHBoxLayout()
-            behavLabel = QLabel(behavDict[i]['name'])
-            behavLabel.setStyleSheet('color: '+behavDict[i]['color']) 
-            hbox.addWidget(behavLabel)
-
-            icon_path = behavDict[i]['icon']
-            if icon_path != 'None' and icon_path is not None and icon_path:
-                imageLabel = QLabel()
-                pixmap =  QPixmap(behavDict[i]['icon'])
-                pixmap = pixmap.scaledToWidth(20)
-                imageLabel.setStyleSheet('color: ' + behavDict[i]['color'])
-                imageLabel.setPixmap(pixmap) 
-                hbox.addWidget(imageLabel)
-            
-            key = 'A'+str(animalNo) + '_' + behavDict[i]['name']
-            if key in assignment.keys():
-                deviceLabel = QLabel(assignment[key].device)
-                deviceLabel.setStyleSheet('color: #C0C0C0') 
-                keyLabel = QLabel(assignment[key].key_bindings)
-                keyLabel.setStyleSheet('color: #FFFFFF') 
-                
-            else:
-                deviceLabel = QLabel('not assigned yet')
-                deviceLabel.setStyleSheet('color: #C0C0C0') 
-                keyLabel = QLabel('not assigned yet')
-                keyLabel.setStyleSheet('color: #FFFFFF') 
-                    
-            hbox.addWidget(deviceLabel)
-            hbox.addWidget(keyLabel)
-
+            self._add_name_label(behav, hbox)
+            self._add_icon(behav, hbox)
+            self._add_keybinding_label(hbox, behav)
             behavBox.addLayout(hbox)
 
         return behavBox
-    
-    def makeMovieControlInfoBox(self, behavAssignment):
+
+    def _add_keybinding_label(
+            self, hbox,
+            behaviour: Behaviour
+    ):
+        binding = behaviour.key_bindings[
+            self.gui_data_interface.selected_device
+        ]
+        if binding is None:
+            keyLabel = QLabel('not assigned yet')
+            keyLabel.setStyleSheet('color: #FFFFFF')
+        else:
+            keyLabel = QLabel(binding)
+            keyLabel.setStyleSheet('color: #FFFFFF')
+        hbox.addWidget(keyLabel)
+
+    @staticmethod
+    def _add_name_label(behav, hbox):
+        behavLabel = QLabel(behav.name)
+        behavLabel.setStyleSheet('color: ' + behav.color)
+        hbox.addWidget(behavLabel)
+
+    @staticmethod
+    def _add_icon(behav, hbox):
+        icon_path = behav.icon_path
+        if icon_path is not None:
+            imageLabel = QLabel()
+            pixmap = QPixmap(icon_path)
+            pixmap = pixmap.scaledToWidth(20)
+            imageLabel.setStyleSheet('color: ' + behav.color)
+            imageLabel.setPixmap(pixmap)
+            hbox.addWidget(imageLabel)
+
+    def makeMovieControlInfoBox(self):
         # top label
         movieBox = QVBoxLayout()
+        self._add_title(movieBox)
+
+        for movie_action in sorted(
+                self.gui_data_interface.movie_bindings.keys()
+        ):
+            binding = self.gui_data_interface.movie_bindings[
+                movie_action][self.gui_data_interface.selected_device]
+            tempBox = QHBoxLayout()
+            behavLabel = QLabel(movie_action)
+            behavLabel.setStyleSheet('color: #ffffff')
+            if binding is None:
+                buttonLabel = QLabel("no button assigned")
+                buttonLabel.setStyleSheet('color: #C0C0C0')
+            else:
+                buttonLabel = QLabel(binding)
+                buttonLabel.setStyleSheet('color: #ffffff')
+            tempBox.addWidget(behavLabel)
+            tempBox.addWidget(buttonLabel)
+            movieBox.addLayout(tempBox)
+
+        return movieBox
+
+    def _add_title(self, movieBox):
         nameLabel = QLabel('movie actions')
         nameLabel.setStyleSheet(self.labelStyle)
         movieBox.addWidget(nameLabel)
-        behavAs = collections.OrderedDict(sorted(behavAssignment.items()))
-        try:
-            item_iterator = behavAs.iteritems()
-        except AttributeError:
-            item_iterator = behavAs.items()
-        
-        for key, binding in item_iterator:
-            if binding.animal == 'movie':
-                tempBox = QHBoxLayout()
-                behavLabel = QLabel(binding.name)
-                behavLabel.setStyleSheet('color: '+ binding.color) 
-                deviceLabel = QLabel(binding.device)
-                deviceLabel.setStyleSheet('color: #C0C0C0') 
-                buttonLabel = QLabel(binding.key_bindings)
-                if binding.key_bindings == 'no button assigned':
-                    buttonLabel.setStyleSheet('color: #C0C0C0') 
-                else:
-                    buttonLabel.setStyleSheet('color: #ffffff') 
 
-                tempBox.addWidget(behavLabel)
-                tempBox.addWidget(deviceLabel)
-                tempBox.addWidget(buttonLabel)
-                movieBox.addLayout(tempBox)
-
-        return movieBox
     def resizeEvent(self, event):
         self.background_image.resize(event.size())                   
     def loadMedia(self,argList):

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QTabWidget, QWidget
 import os
 from .single_animal_tab import SingleAnimalTab
 from ..model.animal import Animal
-from ..model.animal_handler import AnimalHandler
+from ..model.gui_data_interface import GUIDataInterface
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -13,11 +13,11 @@ HOME = os.path.expanduser("~")
 
 class AnimalTab(QTabWidget):
 
-    def __init__(self, parent: QWidget, animal_handler: AnimalHandler):
+    def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
         super(AnimalTab, self).__init__(parent)
         self.parent = parent
-        self.animals_handler = animal_handler
-        self.animals = animal_handler.animals
+        self.gui_data_interface = gui_data_interface
+        self.animals = gui_data_interface.animals
         self.main_widget = self.parent.parent
         self.tabs_ = []
         self._block_add = False
@@ -41,7 +41,7 @@ class AnimalTab(QTabWidget):
         # if last tab was clicked
         if self._last_tab_was_clicked(index):
             name, number = self._generate_unique_name(0)
-            animal = self.animals_handler.add_animal(name, number)
+            animal = self.gui_data_interface.add_animal(name, number)
             self._create_animal_tab_and_insert(animal, index)
         self._block_add = False
 
@@ -49,7 +49,7 @@ class AnimalTab(QTabWidget):
         tab = SingleAnimalTab(self,
                               animal,
                               len(self.tabs_),
-                              self.animals_handler)
+                              self.gui_data_interface)
         self.insertTab(index, tab, animal.name)
         self.tabs_.append(tab)
         self.setCurrentIndex(index)
@@ -99,6 +99,6 @@ class AnimalTab(QTabWidget):
 
     def create_new_tab(self, animal: Animal):
         tab = SingleAnimalTab(self, animal, len(self.tabs_),
-                              self.animals_handler)
+                              self.gui_data_interface)
         self.addTab(tab, animal.name)
         self.tabs_.append(tab)

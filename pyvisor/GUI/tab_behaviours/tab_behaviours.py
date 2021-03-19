@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 import os
 
-from ..model.animal_handler import AnimalHandler
+from ..model.gui_data_interface import GUIDataInterface
 from ..styles import style_tab_behaviours
 from .animal_tab import AnimalTab
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -12,10 +12,10 @@ HOME = os.path.expanduser("~")
 
 class BehavioursTab(QWidget):
 
-    def __init__(self, parent: QWidget, animal_handler: AnimalHandler):
+    def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
         super(BehavioursTab, self).__init__(parent)
         self.parent = parent
-        self.animal_handler = animal_handler
+        self.gui_data_interface = gui_data_interface
         self.init_UI()
 
     def init_UI(self):
@@ -35,7 +35,7 @@ class BehavioursTab(QWidget):
 
         vbox = QVBoxLayout()
         self.setLayout(vbox)
-        self.tabs = AnimalTab(self, self.animal_handler)
+        self.tabs = AnimalTab(self, self.gui_data_interface)
         self.setStyleSheet(style_tab_behaviours)
         vbox.addStretch()
         vbox.addWidget(self.tabs)

@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QFrame, QGridLayout,
 import os
 from .compatible_behaviour_widget import CompatibleBehaviourWidget
 from ..icon_gallery.icon_selection_widget import IconSelectionWidget
-from ..model.animal_handler import AnimalHandler
+from ..model.gui_data_interface import GUIDataInterface
 from ..model.behaviour import Behaviour
 from ...icon import write_tmp_icon
 
@@ -19,7 +19,7 @@ class BehaviourWidget(QFrame):
 
     def __init__(self, parent, behaviour: Behaviour,
                  index_in_parent_list,
-                 animal_handler: AnimalHandler):
+                 animal_handler: GUIDataInterface):
         super().__init__()
         self.animal_handler = animal_handler
         self.behaviour = behaviour

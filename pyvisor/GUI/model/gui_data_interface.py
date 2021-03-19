@@ -5,7 +5,7 @@ from pyvisor.GUI.model.behaviour import Behaviour
 from .movie_bindings import MovieBindings
 
 
-class AnimalHandler:
+class GUIDataInterface:
 
     def __init__(self):
         self.movie_bindings = MovieBindings()

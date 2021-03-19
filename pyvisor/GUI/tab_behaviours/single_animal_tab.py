@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout,
 
 from .behaviour_widget import BehaviourWidget
 from ..model.animal import Animal
-from ..model.animal_handler import AnimalHandler
+from ..model.gui_data_interface import GUIDataInterface
 from ..model.behaviour import Behaviour
 
 
@@ -13,7 +13,7 @@ class SingleAnimalTab(QWidget):
     def __init__(self, parent,
                  animal: Animal,
                  index_in_parent_tab_widget,
-                 animal_handler: AnimalHandler):
+                 animal_handler: GUIDataInterface):
 
         super(SingleAnimalTab, self).__init__()
 

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from .behaviour_checkbox import BehaviourCheckbox
-from ..model.animal_handler import AnimalHandler
+from ..model.gui_data_interface import GUIDataInterface
 from ..model.behaviour import Behaviour
 from ...exception.behaviour_already_in_compatibility_list_exception \
     import BehaviourAlreadyInCompatibilityListException
@@ -11,7 +11,7 @@ from ...exception.behaviour_not_in_compatibility_list_exception \
 class CompatibleBehaviourWidget(QWidget):
 
     def __init__(self, parent_behaviour_widget, behaviour: Behaviour,
-                 animal_handler: AnimalHandler):
+                 animal_handler: GUIDataInterface):
         super(CompatibleBehaviourWidget, self).__init__()
         self.parent_behaviour_widget = parent_behaviour_widget
         self.behaviour = behaviour

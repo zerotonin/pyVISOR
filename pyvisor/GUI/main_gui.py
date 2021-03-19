@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApp
 
 from pyvisor.GUI.model.movie_bindings import MovieBindings
 from .model.animal import Animal
-from .model.animal_handler import AnimalHandler
+from .model.gui_data_interface import GUIDataInterface
 from .tab_analysis import TabAnalysis
 from .tab_behaviours.tab_behaviours import BehavioursTab
 from .tab_buttons import TabButtons
@@ -29,7 +29,7 @@ class MovScoreGUI(QWidget):
         """
         """    
         super(MovScoreGUI, self).__init__()
-        self.animal_handler = AnimalHandler()
+        self.gui_data_interface = GUIDataInterface()
         self._load_defaults()
 
         self.initUI()
@@ -61,10 +61,10 @@ class MovScoreGUI(QWidget):
 
         for a in animals["animals"]:
             ani = Animal.from_json_dict(a)
-            self.animal_handler.animals[ani.number] = ani
-        self.animal_handler.selected_device = animals["selected_device"]
+            self.gui_data_interface.animals[ani.number] = ani
+        self.gui_data_interface.selected_device = animals["selected_device"]
         if "movie_bindings" in animals:
-            self.animal_handler.movie_bindings = MovieBindings.from_dict(
+            self.gui_data_interface.movie_bindings = MovieBindings.from_dict(
                 animals["movie_bindings"]
             )
 
@@ -82,9 +82,9 @@ class MovScoreGUI(QWidget):
     def _initiate_tabs(self, vbox):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
-        self.tab_behaviours = BehavioursTab(self, self.animal_handler)
-        self.tab_buttons = TabButtons(self, self.animal_handler)
-        self.tab_analysis = TabAnalysis(self)
+        self.tab_behaviours = BehavioursTab(self, self.gui_data_interface)
+        self.tab_buttons = TabButtons(self, self.gui_data_interface)
+        self.tab_analysis = TabAnalysis(self, self.gui_data_interface)
         self.tab_results = TabResults(self)
         self.tab_names = ['Behaviours',
                           'Button Assignment',
@@ -102,7 +102,7 @@ class MovScoreGUI(QWidget):
         return self.tab_behaviours.tabs.tabs_
 
     def get_assignments(self):
-        return self.tab_buttons.getAssignments()
+        raise NotImplementedError
     
     def get_UIC_layout(self):
         return self.tab_buttons.getSelectedLayout()
@@ -136,7 +136,7 @@ class MovScoreGUI(QWidget):
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
 
     def _save_animals(self):
-        savable_list = self.animal_handler.get_savable_list()
+        savable_list = self.gui_data_interface.get_savable_list()
         with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
             json.dump(savable_list, fh)
 

@@ -13,7 +13,6 @@ class MovieBindings:
                      "changeFrameNoLow10", ]
 
     def __init__(self):
-
         self.key_bindings = {
             ma: KeyBindings() for ma in MovieBindings.movie_actions
         }  # type: Dict[str, KeyBindings]
