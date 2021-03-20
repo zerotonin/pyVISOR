@@ -5,15 +5,19 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 
+from .model.gui_data_interface import GUIDataInterface
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
 class TabResults(QWidget):
-    def __init__(self, parent):        
+
+    def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
         self.analysis_list = [] 
         super(TabResults, self).__init__()
         self.parent = parent
-        # shorthand
-        self.sco = self.parent.shortHandAnalysis.sco
+        self.gui_data_interface = gui_data_interface
+        self.sco = gui_data_interface.manual_scorer
         # create analysis object / if empty scorer object we ignore fps
         self.ana = self.sco.anaO
         try:
@@ -44,16 +48,6 @@ class TabResults(QWidget):
         # self.vbox.addLayout(self.makeStaticPlots())
         # self.vbox.addWidget(self.makeOverviewPlot())
         self.setLayout(self.vbox)
-
-        #set signals and slots
-        self.parent.tabs.currentChanged.connect(self.refreshTab)
-
-    def refreshTab(self):
-        # refresh data source
-        pass
-        
-    def close_event(self):        
-        self.tabs.close_event()
 
     def resizeEvent(self, event):
         self.background_image.resize(event.size())

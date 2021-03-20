@@ -8,10 +8,12 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QPushButton, QMessageBox, QComboBox, QInputDialog)
 
-from .model.animal import Animal
-from .model.gui_data_interface import GUIDataInterface
-from .model.behaviour import Behaviour
-from .model.key_bindings import KeyBindings
+from pyvisor.GUI.model.animal import Animal
+from pyvisor.GUI.model.gui_data_interface import GUIDataInterface
+from pyvisor.GUI.model.behaviour import Behaviour
+from pyvisor.GUI.model.key_bindings import KeyBindings
+from pyvisor.GUI.model.scorer_action import ScorerAction
+from pyvisor.GUI.tab_buttons.assign_button_box import AssignButtonBox
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -34,6 +36,9 @@ class TabButtons(QWidget):
         self.gui_data_interface.register_callback_animal_added(
             lambda x: self.make_animals_box()
         )
+        self._behaviour_boxes = {}  # type: Dict[str, QHBoxLayout]
+        self._movie_action_boxes = {}  # type: Dict[str, QHBoxLayout]
+
         pygame.init()
         # Initialize the joysticks
         pygame.joystick.init()
@@ -177,51 +182,32 @@ class TabButtons(QWidget):
         name_label.setStyleSheet(self.labelStyle)
         movie_box.addWidget(name_label)
         movie_assignments = self.gui_data_interface.movie_bindings
-        for movie_action in sorted(movie_assignments.keys()):
-            binding = movie_assignments[movie_action]
-            self._make_movie_label_box(movie_action, binding, movie_box)
+        for name in sorted(movie_assignments.keys()):
+            movie_action = movie_assignments[name]
+            self._make_movie_label_box(movie_action, movie_box)
 
         return movie_box
 
     def _make_movie_label_box(
             self,
-            movie_action: str,
-            binding: KeyBindings,
+            movie_action: ScorerAction,
             movie_box):
-        box, btn_set_uic, button_label = self._create_assign_button_box(
+        color = "#ffffff"
+        box = self._create_assign_button_box(
+            color,
             movie_action,
-            binding,
-            color="#ffffff"
+            is_behaviour=False
         )
-        box.addWidget(btn_set_uic)
-        box.addWidget(button_label)
+        self._movie_action_boxes[movie_action.name] = box
         movie_box.addLayout(box)
 
     def _create_assign_button_box(self,
-                                  name: str,
-                                  binding: KeyBindings,
-                                  color: str):
-        box = QHBoxLayout()
-        behav_label = QLabel(name)
-        behav_label.setStyleSheet('color: ' + color)
-        btn_set_uic = QPushButton('assign button/key')
-        button_now = binding
-        # double lambda to get the variable out of the general scope and let each button call assignBehav
-        # with its own behaviour
-        btn_set_uic.clicked.connect((lambda buttonNow: lambda: self.assign_button(buttonNow))(button_now))
-        button_label = self._create_button_label(binding)
-        box.addWidget(behav_label)
-        return box, btn_set_uic, button_label
+                                  color: str,
+                                  bound_object: ScorerAction,
+                                  is_behaviour: bool):
 
-    def _create_button_label(self, key_bindings: KeyBindings):
-        key = key_bindings[self.gui_data_interface.selected_device]
-        label = 'no button assigned' if key is None else key
-        button_label = QLabel(label)
-        if key is None:
-            button_label.setStyleSheet('color: #C0C0C0')
-        else:
-            button_label.setStyleSheet('color: #ffffff')
-        return button_label
+        box = AssignButtonBox(self, self.gui_data_interface, bound_object, color, is_behaviour)
+        return box
 
     def make_animals_box(self):
         self.clearLayout(self.hbox_behaviour_buttons)
@@ -260,6 +246,7 @@ class TabButtons(QWidget):
         for key in sorted(animal.behaviours.keys()):
             behav = animal.behaviours[key]
             box = self._create_box_single_behaviour(behav)
+            self._behaviour_boxes[behav.label] = box
             behavBox.addLayout(box)
 
         return behavBox
@@ -268,26 +255,12 @@ class TabButtons(QWidget):
             self,
             behaviour: Behaviour
     ):
-        box, btn_assign, buttonLabel = self._create_assign_button_box(
-            behaviour.name,
-            behaviour.key_bindings,
-            behaviour.color
+        box = self._create_assign_button_box(
+            behaviour.color,
+            behaviour,
+            is_behaviour=True
         )
-        if behaviour.icon_path is not None:
-            icon_label = self._create_icon(behaviour)
-            box.addWidget(icon_label)
-        box.addWidget(btn_assign)
-        box.addWidget(buttonLabel)
         return box
-
-    @staticmethod
-    def _create_icon(binding):
-        imageLabel = QLabel()
-        pixmap = QPixmap(binding.icon_path)
-        pixmap = pixmap.scaledToWidth(20)
-        imageLabel.setStyleSheet('color: ' + binding.color)
-        imageLabel.setPixmap(pixmap)
-        return imageLabel
 
     def synchronizeBehaviourTabAndBindings(self, animal_number: int, behaviour_dict: List[Dict[str, Any]],
                                            behaviour_assignments: Dict[str, Behaviour]):
@@ -311,54 +284,6 @@ class TabButtons(QWidget):
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clearLayout(child.layout())
-
-    def assign_button(self, behaviour: Behaviour):
-        # check if device was selected
-        if self.gui_data_interface.selected_device is None:
-            QMessageBox.warning(self, 'Set device first!',
-                                "You need to choose an input device first",
-                                QMessageBox.Ok)
-            return
-
-        if self.gui_data_interface.selected_device == "Keyboard":
-            text, ok = QInputDialog.getText(self, 'Press', 'Key Entry:')
-            if not ok:
-                return
-            button_identifier = str(text)
-        else:
-            button_identifier = self.waitOnUICpress()
-
-        assigned_behaviour = self.gui_data_interface.get_behaviour_assigned_to(
-            button_identifier)
-
-        if assigned_behaviour is not None:
-            self.gui_data_interface.change_button_binding(assigned_behaviour,
-                                                          None)
-        self.gui_data_interface.change_button_binding(behaviour, button_identifier)
-        self.make_joystick_info()
-        self.make_animals_box()
-
-    @staticmethod
-    def waitOnUICpress():
-        pygame.event.clear()
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.JOYBUTTONDOWN:
-                    inputCode = 'B' + str(event.button)
-                    return inputCode
-                if event.type == pygame.JOYAXISMOTION:
-                    value = event.dict['value']
-                    axis = event.dict['axis']
-                    if abs(value) > 0.75:
-                        if value > 0:
-                            inputCode = 'A' + str(axis) + '+'
-                        else:
-                            inputCode = 'A' + str(axis) + '-'
-                        return inputCode
-                if event.type == pygame.JOYHATMOTION:
-                    value = event.dict['value']
-                    inputCode = 'H' + str(value[0]) + str(value[1])
-                    return inputCode
 
     def set_assignDevice(self, device):
         device = str(device)

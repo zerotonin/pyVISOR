@@ -16,7 +16,7 @@ from .model.animal import Animal
 from .model.gui_data_interface import GUIDataInterface
 from .tab_analysis import TabAnalysis
 from .tab_behaviours.tab_behaviours import BehavioursTab
-from .tab_buttons import TabButtons
+from pyvisor.GUI.tab_buttons.tab_buttons import TabButtons
 from .tab_results import TabResults
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -85,7 +85,7 @@ class MovScoreGUI(QWidget):
         self.tab_behaviours = BehavioursTab(self, self.gui_data_interface)
         self.tab_buttons = TabButtons(self, self.gui_data_interface)
         self.tab_analysis = TabAnalysis(self, self.gui_data_interface)
-        self.tab_results = TabResults(self)
+        self.tab_results = TabResults(self, self.gui_data_interface)
         self.tab_names = ['Behaviours',
                           'Button Assignment',
                           'Analysis',

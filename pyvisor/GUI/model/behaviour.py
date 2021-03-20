@@ -1,24 +1,20 @@
 from typing import Dict, Any, List
 
 from pyvisor.GUI.model.key_bindings import KeyBindings
+from .scorer_action import ScorerAction
 
 
-class Behaviour:
+class Behaviour(ScorerAction):
 
     ANIMAL_MOVIE = -1
 
-    def __init__(self,
-                 animal: int = None,
-                 color: str = '#C0C0C0',
-                 icon_path: str = None,
-                 name: str = None,
+    def __init__(self, animal: int = None, color: str = '#C0C0C0',
+                 icon_path: str = None, name: str = None,
                  compatible_with: List[str] = None):
 
+        super().__init__(name, icon_path)
         self.animal = animal
-        self.icon_path = icon_path
-        self.name = name
         self.color = color
-        self.key_bindings = KeyBindings()
         self.compatible_with = compatible_with
 
     def set_key_binding(self, device: str, binding: str):

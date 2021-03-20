@@ -1,8 +1,10 @@
-from typing import Dict, List, Any, Callable, Union
+from typing import Dict, List, Any, Callable, Union, Tuple
 
 from pyvisor.GUI.model.animal import Animal
 from pyvisor.GUI.model.behaviour import Behaviour
 from .movie_bindings import MovieBindings
+from .scorer_action import ScorerAction
+from ...ManualEthologyScorer import ManualEthologyScorer
 
 
 class GUIDataInterface:
@@ -15,6 +17,7 @@ class GUIDataInterface:
         self._UI_callbacks_key_binding_changed = []
         self._UI_callbacks_update_icon = []
         self.selected_device = None  # type: Union[str, None]
+        self.manual_scorer = ManualEthologyScorer()
 
     def add_animal(self, name: str, number: int) -> Animal:
         new_animal = Animal(number, name)
@@ -77,10 +80,11 @@ class GUIDataInterface:
         behaviour.color = color
         self._update_UIs_icon(behaviour)
 
-    def get_behaviour_assigned_to(
+    def get_action_assigned_to(
             self, button_identifier
-    ) -> Union[Behaviour, None]:
+    ) -> Union[Tuple[Behaviour, bool], Tuple[None, bool]]:
         assigned = None
+        is_behaviour = False
         for an in self.animals:
             animal = self.animals[an]
             assigned_an = animal.get_behaviour_assigned_to(
@@ -95,22 +99,33 @@ class GUIDataInterface:
                     )
                 )
             assigned = assigned_an
-        return assigned
+            is_behaviour = True
+        assigned_movie_action = self.movie_bindings.get_action_assigned_to(
+            self.selected_device, button_identifier)
+        if assigned_movie_action is not None:
+            if assigned is not None:
+                raise RuntimeError(
+                    "Key {} is assigned to multiple behaviours/movie actions.".format(
+                        button_identifier
+                    )
+                )
+        return assigned, is_behaviour
 
     def change_button_binding(
             self,
-            behaviour: Behaviour,
-            button_identifier: Union[str, None]
+            action: ScorerAction,
+            button_identifier: Union[str, None],
+            is_behaviour: bool
     ):
-        behaviour.key_bindings[self.selected_device] = button_identifier
-        self._update_UIs_key_binding(behaviour)
+        action.key_bindings[self.selected_device] = button_identifier
+        self._update_UIs_key_binding(action, is_behaviour)
 
-    def _update_UIs_key_binding(self, behaviour: Behaviour):
+    def _update_UIs_key_binding(self, action: ScorerAction, is_behaviour: bool):
         for callback in self._UI_callbacks_key_binding_changed:
-            callback(behaviour)
+            callback(action, is_behaviour)
 
     def register_callback_key_binding_changed(
             self,
-            callback: Callable[[Behaviour], None]
+            callback: Callable[[ScorerAction, bool], None]
     ):
         self._UI_callbacks_key_binding_changed.append(callback)

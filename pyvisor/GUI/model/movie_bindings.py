@@ -1,6 +1,7 @@
 from typing import Dict, Union
 
 from .key_bindings import KeyBindings
+from .scorer_action import ScorerAction
 
 
 class MovieBindings:
@@ -13,15 +14,15 @@ class MovieBindings:
                      "changeFrameNoLow10", ]
 
     def __init__(self):
-        self.key_bindings = {
-            ma: KeyBindings() for ma in MovieBindings.movie_actions
-        }  # type: Dict[str, KeyBindings]
+        self.scorer_actions = {
+            ma: ScorerAction(ma) for ma in MovieBindings.movie_actions
+        }  # type: Dict[str, ScorerAction]
 
     def keys(self):
-        return self.key_bindings.keys()
+        return self.scorer_actions.keys()
 
     def __getitem__(self, movie_action: str):
-        return self.key_bindings[movie_action]
+        return self.scorer_actions[movie_action]
 
     @staticmethod
     def from_dict(
@@ -31,12 +32,28 @@ class MovieBindings:
         for key in MovieBindings.movie_actions:
             if key not in d:
                 continue
-            bindings.key_bindings[key] = KeyBindings.from_dict(d[key])
+            sa = ScorerAction(key)
+            sa.key_bindings = KeyBindings.from_dict(d[key])
+            bindings.scorer_actions[key] = sa
         return bindings
 
     def to_dict(self) -> Dict[str, Dict[str, Union[None, str]]]:
         d = {
-            key: self.key_bindings[key].to_dict()
-            for key in self.key_bindings
+            key: self.scorer_actions[key].key_bindings.to_dict()
+            for key in self.scorer_actions
         }
         return d
+
+    def get_action_assigned_to(self, device: str, button_identifier: str) -> ScorerAction:
+        assigned = None
+        for key in self.keys():
+            action = self[key]
+            binding = action.key_bindings[device]
+            if binding != button_identifier:
+                continue
+            if binding is None:
+                continue
+            if assigned is not None:
+                raise RuntimeError("Key {} is assigned to multiple movie actions.".format(button_identifier))
+            assigned = action
+        return assigned

@@ -23,6 +23,18 @@ class KeyBindings:
     def __getitem__(self, device: str) -> Union[str, None]:
         return self.get(device)
 
+    def __setitem__(self, device: str, binding: str):
+        if device == "X-Box":
+            self.xbox = binding
+        elif device == "Playstation":
+            self.playstation = binding
+        elif device == "Free":
+            self.free = binding
+        elif device == "Keyboard":
+            self.keyboard = binding
+        else:
+            raise KeyError("Unknown device '{}'".format(device))
+
     def to_dict(self) -> Dict[str, Union[None, str]]:
         return {
             "X-Box": self.xbox,

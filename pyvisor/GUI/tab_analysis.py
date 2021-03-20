@@ -4,9 +4,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QComboBox, QLineEdit,
                              QVBoxLayout, QHBoxLayout, QFileDialog, QInputDialog, QMessageBox)
 import pyvisor.icon as ic
-import pyvisor.ManualEthologyScorer as MES
 import os
-import collections
 
 from .model.animal import Animal
 from .model.behaviour import Behaviour
@@ -30,9 +28,9 @@ class TabAnalysis(QWidget):
         self.analysis_list = []
         self.parent = parent
         self.gui_data_interface = gui_data_interface
+        self.sco = self.gui_data_interface.manual_scorer
 
         self.init_UI()
-        self.sco = MES.ManualEthologyScorer()
         
     def init_UI(self):
         self._init_background_image()
@@ -254,7 +252,7 @@ class TabAnalysis(QWidget):
                 self.gui_data_interface.movie_bindings.keys()
         ):
             binding = self.gui_data_interface.movie_bindings[
-                movie_action][self.gui_data_interface.selected_device]
+                movie_action].key_bindings[self.gui_data_interface.selected_device]
             tempBox = QHBoxLayout()
             behavLabel = QLabel(movie_action)
             behavLabel.setStyleSheet('color: #ffffff')
@@ -556,7 +554,7 @@ class TabAnalysis(QWidget):
 
             behav_binding = self.assignment[1][key]
             # fill lists
-            buttonList.append(behav_binding.key_bindings)
+            buttonList.append(behav_binding.scorer_actions)
             behavList.append(str(behav_binding.name))
             icon_path, icon_color = (behav_binding.icon_path,
                                      behav_binding.color)
@@ -585,7 +583,7 @@ class TabAnalysis(QWidget):
                 # is an int
                 behav = animal_behaviours_as_strings[self.assignment[0][key].animal].index(behav)
 
-            free_binding_list.append((self.assignment[0][key].key_bindings, animal, behav))
+            free_binding_list.append((self.assignment[0][key].scorer_actions, animal, behav))
 
         self.sco.setUIC('Free', buttonBindings=self.assignment[0].keys(),
                         freeBindingList=free_binding_list,
@@ -638,7 +636,7 @@ class TabAnalysis(QWidget):
                 if key not in self.assignment[1].keys():
                     listOfUnassignedBehaviour.append(key)
                 else:
-                    if self.assignment[1][key].key_bindings == 'no button assigned':
+                    if self.assignment[1][key].scorer_actions == 'no button assigned':
                         listOfUnassignedBehaviour.append(key)
 
                 behav_binding = self.assignment[1][key]
@@ -676,7 +674,7 @@ class TabAnalysis(QWidget):
         
         for key, binding in item_iterator:
             if binding.animal == 'movie':
-                if binding.key_bindings == 'no button assigned':
+                if binding.scorer_actions == 'no button assigned':
                     listOfUnassignedBehaviour.append(binding.name)
 
         if len(listOfUnassignedBehaviour) > 0:
