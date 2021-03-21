@@ -10,29 +10,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
 
-class BehavioursTab(QWidget):
+class TabBehaviours(QWidget):
 
     def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
-        super(BehavioursTab, self).__init__(parent)
-        self.parent = parent
+        super(TabBehaviours, self).__init__(parent)
         self.gui_data_interface = gui_data_interface
         self.init_UI()
 
     def init_UI(self):
+        self._init_background_image()
+        stylesheetTab = self._init_animal_tab()
+        self.setStyleSheet(stylesheetTab)
 
-        # ===========================
-        # background image 
-        # ===========================
-        self.background_image = QLabel(self)
-        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
-        self.pixmap = QPixmap(HERE + '/../pictures/behaviour.png')
-        self.background_image.setPixmap(self.pixmap.scaled(
-            self.background_image.size(),
-            Qt.KeepAspectRatio))
-        self.background_image.setScaledContents(True)
-
-        self.background_image.resize(self.size())
-
+    def _init_animal_tab(self):
         vbox = QVBoxLayout()
         self.setLayout(vbox)
         self.tabs = AnimalTab(self, self.gui_data_interface)
@@ -43,8 +33,18 @@ class BehavioursTab(QWidget):
         stylesheetTab = """ 
         QTabBar::tab:selected {background: rgba(255, 255, 255, 100);}
         QTabWidget>QWidget{background: rgba(255, 255, 255, 100);}
-        """        
-        self.setStyleSheet(stylesheetTab)
+        """
+        return stylesheetTab
+
+    def _init_background_image(self):
+        self.background_image = QLabel(self)
+        self.background_image.setGeometry(0, 0, self.parent().height(), self.parent().width())
+        self.pixmap = QPixmap(HERE + '/../pictures/behaviour.png')
+        self.background_image.setPixmap(self.pixmap.scaled(
+            self.background_image.size(),
+            Qt.KeepAspectRatio))
+        self.background_image.setScaledContents(True)
+        self.background_image.resize(self.size())
 
     def resizeEvent(self, event):
         self.background_image.resize(event.size())

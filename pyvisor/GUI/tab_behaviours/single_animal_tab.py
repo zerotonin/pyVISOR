@@ -1,3 +1,5 @@
+from typing import List
+
 from PyQt5.QtWidgets import (QWidget, QGridLayout,
                              QVBoxLayout, QHBoxLayout,
                              QPushButton, QLineEdit)
@@ -13,17 +15,14 @@ class SingleAnimalTab(QWidget):
     def __init__(self, parent,
                  animal: Animal,
                  index_in_parent_tab_widget,
-                 animal_handler: GUIDataInterface):
+                 gui_data_interface: GUIDataInterface):
 
-        super(SingleAnimalTab, self).__init__()
-
+        super(SingleAnimalTab, self).__init__(parent)
         self.index = index_in_parent_tab_widget
         self.animal = animal
-        self.animal_handler = animal_handler
-        self.parent = parent
-        self.main_widget = self.parent.main_widget
+        self.gui_data_interface = gui_data_interface
         self.current_pos = 0
-        self.behav_widgets = []
+        self.behav_widgets = []  # type: List[BehaviourWidget]
         self.init_UI()
 
     @property
@@ -73,8 +72,9 @@ class SingleAnimalTab(QWidget):
     def _add_new_behaviour(self):
         name = self.animal.get_unique_name()
         new_behav = Behaviour(self.animal.number, name=name)
-        self.main_widget.update_UIs_new_behaviour_added(self.animal, new_behav)
+        self.gui_data_interface.add_behaviour(self.animal, new_behav)
         self.add_behaviour_widget(new_behav)
+
 
     def _init_main_layout(self):
         vbox = QVBoxLayout()
@@ -103,17 +103,21 @@ class SingleAnimalTab(QWidget):
         return True
 
     def copy_this_tab(self):
-        self.parent.copy_tab(self.index)
+        self.parent().copy_tab(self.index)
 
     def remove_this_tab(self):
-        self.parent.remove_tab(self.index)
+        self.parent().remove_tab(self.index)
         self.deleteLater()
 
     def add_behaviour_widget(self, behaviour: Behaviour):
         for bw in self.behav_widgets:
-            bw.compatible_behaviour_widget.add_checkbox(behaviour.name, state=False)
+            if behaviour.name == 'delete':
+                break
+            if bw.behaviour.name == 'delete':
+                continue
+            bw.compatible_behaviour_widget.add_checkbox(behaviour, state=False)
         behav_widget = BehaviourWidget(self, behaviour, self.current_pos,
-                                       self.animal_handler)
+                                       self.gui_data_interface)
         self.behav_widgets.append(behav_widget)
         self.grid.addWidget(behav_widget, *self.get_current_pos())
         self.current_pos += 1
@@ -167,4 +171,4 @@ class SingleAnimalTab(QWidget):
         self.vbox_buttons_left.removeWidget(self.name_edit)
         self.vbox_buttons_left.insertWidget(0, self.btn_edit_name)
         self.name_edit.hide()
-        self.parent.rename_tab(self.index, self.name)
+        self.parent().rename_tab(self.index, self.name)

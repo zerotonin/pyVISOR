@@ -15,6 +15,8 @@ class Behaviour(ScorerAction):
         super().__init__(name, icon_path)
         self.animal = animal
         self.color = color
+        if compatible_with is None:
+            compatible_with = []
         self.compatible_with = compatible_with
 
     def set_key_binding(self, device: str, binding: str):

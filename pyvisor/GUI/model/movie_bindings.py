@@ -5,17 +5,17 @@ from .scorer_action import ScorerAction
 
 
 class MovieBindings:
-    movie_actions = ["toggleRunMov", "stopToggle",
-                     "runMovForward", "runMovReverse",
-                     "changeFPShigh", "changeFPSlow",
-                     "changeFrameNoHigh1",
-                     "changeFrameNoLow1",
-                     "changeFrameNoHigh10",
-                     "changeFrameNoLow10", ]
+    _movie_actions = ["toggleRunMov", "stopToggle",
+                      "runMovForward", "runMovReverse",
+                      "changeFPShigh", "changeFPSlow",
+                      "changeFrameNoHigh1",
+                      "changeFrameNoLow1",
+                      "changeFrameNoHigh10",
+                      "changeFrameNoLow10", ]
 
     def __init__(self):
         self.scorer_actions = {
-            ma: ScorerAction(ma) for ma in MovieBindings.movie_actions
+            ma: ScorerAction(ma) for ma in MovieBindings._movie_actions
         }  # type: Dict[str, ScorerAction]
 
     def keys(self):
@@ -29,7 +29,7 @@ class MovieBindings:
             d: Dict[str, Dict[str, Union[None, str]]]
     ) -> "MovieBindings":
         bindings = MovieBindings()
-        for key in MovieBindings.movie_actions:
+        for key in MovieBindings._movie_actions:
             if key not in d:
                 continue
             sa = ScorerAction(key)

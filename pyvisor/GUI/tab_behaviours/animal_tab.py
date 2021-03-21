@@ -15,10 +15,8 @@ class AnimalTab(QTabWidget):
 
     def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
         super(AnimalTab, self).__init__(parent)
-        self.parent = parent
         self.gui_data_interface = gui_data_interface
         self.animals = gui_data_interface.animals
-        self.main_widget = self.parent.parent
         self.tabs_ = []
         self._block_add = False
         self.init_UI()
@@ -93,7 +91,7 @@ class AnimalTab(QTabWidget):
         animal = tab.animal
         name = 'copy_of_' + animal.name
         uname, number = self._generate_unique_name(0)
-        copied_animal = self.main_widget.add_animal(name, number)
+        copied_animal = self.gui_data_interface.add_animal(name, number)
         copied_animal.behaviours = animal.behaviours.copy()
         self._create_animal_tab_and_insert(copied_animal, len(self.tabs_) - 1)
 

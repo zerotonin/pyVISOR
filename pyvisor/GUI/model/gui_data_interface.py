@@ -2,6 +2,7 @@ from typing import Dict, List, Any, Callable, Union, Tuple
 
 from pyvisor.GUI.model.animal import Animal
 from pyvisor.GUI.model.behaviour import Behaviour
+from .callback_handler import CallbackHandler
 from .movie_bindings import MovieBindings
 from .scorer_action import ScorerAction
 from ...ManualEthologyScorer import ManualEthologyScorer
@@ -12,10 +13,12 @@ class GUIDataInterface:
     def __init__(self):
         self.movie_bindings = MovieBindings()
         self.animals = {}  # type: Dict[int, Animal]
-        self._UI_callbacks_animal_added = []
-        self._UI_callbacks_name_changed = []
-        self._UI_callbacks_key_binding_changed = []
-        self._UI_callbacks_update_icon = []
+        self.callbacks_animal_added = CallbackHandler()
+        self.callbacks_behaviour_added = CallbackHandler()
+        self.callbacks_name_changed = CallbackHandler()
+        self.callbacks_key_binding_changed = CallbackHandler()
+        self.callbacks_update_icon = CallbackHandler()
+        self.callbacks_compatibility_changed = CallbackHandler()
         self.selected_device = None  # type: Union[str, None]
         self.manual_scorer = ManualEthologyScorer()
 
@@ -45,12 +48,15 @@ class GUIDataInterface:
         return d
 
     def _update_UIs_add_animal(self, new_animal):
-        for callback in self._UI_callbacks_animal_added:
+        for callback in self.callbacks_animal_added:
             callback(new_animal)
 
-    def register_callback_animal_added(self,
-                                       callback: Callable[[Animal], None]):
-        self._UI_callbacks_animal_added.append(callback)
+    def register_callback_animal_added(
+            self,
+            callback: Callable[[Animal], None]
+    ) -> int:
+        id_ = self.callbacks_animal_added.register(callback)
+        return id_
 
     def get_button_assignments(
             self,
@@ -69,11 +75,11 @@ class GUIDataInterface:
         self._update_UIs_icon(behaviour)
 
     def _update_UIs_icon(self, behaviour: Behaviour):
-        for callback in self._UI_callbacks_update_icon:
+        for callback in self.callbacks_update_icon:
             callback(behaviour)
 
     def _update_UIs_name_changed(self, animal):
-        for callback in self._UI_callbacks_name_changed:
+        for callback in self.callbacks_name_changed:
             callback(animal)
 
     def set_icon_color(self, behaviour: Behaviour, color: str):
@@ -121,11 +127,50 @@ class GUIDataInterface:
         self._update_UIs_key_binding(action, is_behaviour)
 
     def _update_UIs_key_binding(self, action: ScorerAction, is_behaviour: bool):
-        for callback in self._UI_callbacks_key_binding_changed:
+        for callback in self.callbacks_key_binding_changed:
             callback(action, is_behaviour)
 
     def register_callback_key_binding_changed(
             self,
             callback: Callable[[ScorerAction, bool], None]
-    ):
-        self._UI_callbacks_key_binding_changed.append(callback)
+    ) -> int:
+        id_ = self.callbacks_key_binding_changed.register(callback)
+        return id_
+
+    def reset_all_bindings(self):
+        for a in self.animals.keys():
+            animal = self.animals[a]
+            for behav in animal.behaviours.values():
+                self.change_button_binding(behav, None,
+                                           is_behaviour=True)
+        for action in self.movie_bindings.scorer_actions.values():
+            self.change_button_binding(action, None,
+                                       is_behaviour=False)
+
+    def register_callback_compatibility_changed(
+            self,
+            callback: Callable[[Behaviour, Behaviour], None]):
+        id_ = self.callbacks_compatibility_changed.register(callback)
+        return id_
+
+    def set_compatibility(self, behav1: Behaviour, behav2: Behaviour, state: bool):
+        print('{} <-> {}: {}'.format(behav1.name, behav2.name, state))
+        print(behav1.compatible_with)
+        if state:
+            behav1.compatible_with.append(behav2.name)
+            behav2.compatible_with.append(behav1.name)
+        else:
+            idx1 = behav1.compatible_with.index(behav2.name)
+            behav1.compatible_with.pop(idx1)
+            idx2 = behav2.compatible_with.index(behav1.name)
+            behav2.compatible_with.pop(idx2)
+        for cb in self.callbacks_compatibility_changed:
+            cb(behav1, behav2)
+
+    def add_behaviour(self, animal: Animal, behav: Behaviour):
+        animal[behav.label] = behav
+        for cb in self.callbacks_behaviour_added:
+            cb(animal, behav)
+
+    def register_callback_behaviour_added(self, callback: Callable[[Animal, Behaviour], None]):
+        self.callbacks_behaviour_added.register(callback)

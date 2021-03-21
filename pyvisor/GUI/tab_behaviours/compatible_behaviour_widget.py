@@ -11,11 +11,11 @@ from ...exception.behaviour_not_in_compatibility_list_exception \
 class CompatibleBehaviourWidget(QWidget):
 
     def __init__(self, parent_behaviour_widget, behaviour: Behaviour,
-                 animal_handler: GUIDataInterface):
+                 gui_data_interface: GUIDataInterface):
         super(CompatibleBehaviourWidget, self).__init__()
         self.parent_behaviour_widget = parent_behaviour_widget
         self.behaviour = behaviour
-        self.animal_handler = animal_handler
+        self.gui_data_interface = gui_data_interface
         self.behaviour_checkboxes = {}
         self.init_UI()
         self.suppress_actions = False
@@ -23,21 +23,29 @@ class CompatibleBehaviourWidget(QWidget):
     def init_UI(self):
         self.grid = QGridLayout()
         self.setLayout(self.grid)
-        animal = self.animal_handler.animals[self.behaviour.animal]
+        animal = self.gui_data_interface.animals[self.behaviour.animal]
         for key in animal.behaviours:
+            if self.behaviour.name == "delete":
+                break
             behav = animal.behaviours[key]
+            if behav.name == 'delete':
+                continue
             if behav.name == self.behaviour.name:
                 continue
+            if self.behaviour.compatible_with is None:
+                continue
             self.add_checkbox(
-                behav.name,
+                behav,
                 (self.behaviour.compatible_with.count(behav.name) > 0)
             )
 
-    def add_checkbox(self, name, state):
-        checkbox_widget = BehaviourCheckbox(self, name, state)
+    def add_checkbox(self, other_behaviour: Behaviour, state):
+        if other_behaviour.label in self.behaviour_checkboxes:
+            return
+        checkbox_widget = BehaviourCheckbox(self, self.behaviour, other_behaviour, state, self.gui_data_interface)
         self.grid.addWidget(checkbox_widget,
                             *self._get_grid_pos(len(self.behaviour_checkboxes)))
-        self.behaviour_checkboxes[name] = checkbox_widget
+        self.behaviour_checkboxes[other_behaviour.label] = checkbox_widget
 
     def remove_checkbox(self, name):
         w = self.behaviour_checkboxes.pop(name)

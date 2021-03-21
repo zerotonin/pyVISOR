@@ -19,11 +19,10 @@ class BehaviourWidget(QFrame):
 
     def __init__(self, parent, behaviour: Behaviour,
                  index_in_parent_list,
-                 animal_handler: GUIDataInterface):
-        super().__init__()
-        self.animal_handler = animal_handler
+                 gui_data_interface: GUIDataInterface):
+        super().__init__(parent)
+        self.gui_data_interface = gui_data_interface
         self.behaviour = behaviour
-        self.parent = parent
         self.index = index_in_parent_list
         self.init_UI()
 
@@ -89,18 +88,18 @@ class BehaviourWidget(QFrame):
         #          selection
         # ---------------------------------
         self.compatible_behaviour_widget = CompatibleBehaviourWidget(
-            self, self.behaviour, self.animal_handler)
+            self, self.behaviour, self.gui_data_interface)
         self.vbox.addWidget(self.compatible_behaviour_widget)
 
     def create_new_compatible_behaviour_widget(self):
         self.vbox.removeWidget(self.compatible_behaviour_widget)
         self.compatible_behaviour_widget.deleteLater()
         self.compatible_behaviour_widget = CompatibleBehaviourWidget(
-            self, self.behaviour, self.animal_handler)
+            self, self.behaviour, self.gui_data_interface)
         self.vbox.addWidget(self.compatible_behaviour_widget)
         
     def remove(self):        
-        self.parent.remove_widget(self.index)
+        self.parent().remove_widget(self.index)
         
     def set_icon(self):
         icon = QFileDialog.getOpenFileName(self,
@@ -108,7 +107,7 @@ class BehaviourWidget(QFrame):
                                            self.behaviour.icon_path)
         if not icon:
             return
-        self.animal_handler.set_icon(
+        self.gui_data_interface.set_icon(
             self.behaviour, str(icon)
         )
         self.btn_icon.setIcon(QIcon(self.behaviour.icon_path))
@@ -123,7 +122,7 @@ class BehaviourWidget(QFrame):
         if not gallery.accept:
             return
         current_icon = gallery.get_current_icon()
-        self.animal_handler.set_icon(self.behaviour, current_icon)
+        self.gui_data_interface.set_icon(self.behaviour, current_icon)
         tmp_icon_str = write_tmp_icon(self.behaviour.icon_path,
                                       color_tuple)
         self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
@@ -131,7 +130,7 @@ class BehaviourWidget(QFrame):
     def set_color(self):
         color = QColorDialog.getColor()
         self.btn_color.setStyleSheet("QWidget { background-color: %s}" % color.name())
-        self.animal_handler.set_icon_color(self.behaviour, str(color.name()))
+        self.gui_data_interface.set_icon_color(self.behaviour, str(color.name()))
         self._set_icon_from_tmp_file()
 
     def _set_icon_from_tmp_file(self):
@@ -153,6 +152,6 @@ class BehaviourWidget(QFrame):
         self.btn_name.setText(self.name_edit.text())
         name = str(self.name_edit.text())
         num = self.behaviour.animal
-        animal = self.animal_handler.animals[num]
-        self.animal_handler.change_animal_name(animal, name)
+        animal = self.gui_data_interface.animals[num]
+        self.gui_data_interface.change_animal_name(animal, name)
         self.name_edit.hide()

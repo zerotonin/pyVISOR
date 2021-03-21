@@ -1,12 +1,12 @@
 import pygame
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QCloseEvent
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QMessageBox, QWidget, QInputDialog
 
 from ..model.gui_data_interface import GUIDataInterface
 from ..model.scorer_action import ScorerAction
 
 
-class AssignButtonBox(QHBoxLayout):
+class AssignButtonBox(QWidget):
 
     def __init__(self,
                  parent_widget: QWidget,
@@ -14,29 +14,34 @@ class AssignButtonBox(QHBoxLayout):
                  action: ScorerAction,
                  color: str,
                  is_behaviour: bool):
-        super().__init__()
+        super().__init__(parent_widget)
         self.parent_widget = parent_widget
         self.gui_data_interface = gui_data_interface
-        gui_data_interface.register_callback_key_binding_changed(self.button_assignment_changed)
+        self._callback_id = gui_data_interface.register_callback_key_binding_changed(self.button_assignment_changed)
         self.action = action
         self.color = color
         self.is_behaviour = is_behaviour
         self._init_UI()
 
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self.gui_data_interface.callbacks_key_binding_changed.pop(self._callback_id)
+        super().closeEvent()
+
     def _init_UI(self):
+        self.box = QHBoxLayout()
         behav_label = QLabel(self.action.name)
         behav_label.setStyleSheet('color: ' + self.color)
         btn_set_uic = QPushButton('assign button/key')
-        btn_set_uic.clicked.connect(self.assign_button
-                                    )
-        self.button_label = self._create_button_label()
+        btn_set_uic.clicked.connect(self.assign_button)
+        self._create_button_label()
         if self.is_behaviour:
             if self.action.icon_path is not None:
                 self.icon_label = self._create_icon()
-                self.addWidget(self.icon_label)
-        self.addWidget(behav_label)
-        self.addWidget(btn_set_uic)
-        self.addWidget(self.button_label)
+                self.box.addWidget(self.icon_label)
+        self.box.addWidget(behav_label)
+        self.box.addWidget(btn_set_uic)
+        self.box.addWidget(self.button_label)
+        self.setLayout(self.box)
 
     def _create_icon(self):
         imageLabel = QLabel()
@@ -49,12 +54,12 @@ class AssignButtonBox(QHBoxLayout):
     def _create_button_label(self):
         key = self.action.key_bindings[self.gui_data_interface.selected_device]
         label = 'no button assigned' if key is None else key
-        button_label = QLabel(label)
+        self.button_label = QLabel(self)
         if key is None:
-            button_label.setStyleSheet('color: #C0C0C0')
+            self.button_label.setStyleSheet('color: #C0C0C0')
         else:
-            button_label.setStyleSheet('color: #ffffff')
-        return button_label
+            self.button_label.setStyleSheet('color: #ffffff')
+        self.button_label.setText(label)
 
     def assign_button(self):
         if self.gui_data_interface.selected_device is None:
@@ -64,7 +69,7 @@ class AssignButtonBox(QHBoxLayout):
             return
 
         if self.gui_data_interface.selected_device == "Keyboard":
-            text, ok = QInputDialog.getText(self.parent_widget, 'Press', 'Key Entry:')
+            text, ok = QInputDialog.getText(self.parent(), 'Press', 'Key Entry:')
             if not ok:
                 return
             button_identifier = str(text)

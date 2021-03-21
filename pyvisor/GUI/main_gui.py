@@ -9,13 +9,13 @@ import pickle
 
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox, QApplication, QHBoxLayout, QLabel)
 
 from pyvisor.GUI.model.movie_bindings import MovieBindings
 from .model.animal import Animal
 from .model.gui_data_interface import GUIDataInterface
 from .tab_analysis import TabAnalysis
-from .tab_behaviours.tab_behaviours import BehavioursTab
+from .tab_behaviours.tab_behaviours import TabBehaviours
 from pyvisor.GUI.tab_buttons.tab_buttons import TabButtons
 from .tab_results import TabResults
 
@@ -35,7 +35,7 @@ class MovScoreGUI(QWidget):
         self.initUI()
 
     def _load_defaults(self):
-        self._load_animals()
+        self._load_state()
         self._load_display_values()
 
     def _load_display_values(self):
@@ -51,21 +51,21 @@ class MovScoreGUI(QWidget):
                 self.values['display'] = dict()
                 self.values['display']['geometry'] = QRect(0, 0, 640, 480)
 
-    def _load_animals(self):
+    def _load_state(self):
         try:
             with open(HOME + "/.pyvisor/guidefaults_animals.json", 'r') as f:
-                animals = json.load(f)
+                state = json.load(f)
         except FileNotFoundError:
             with open(HERE + "/guidefaults_animals.json", 'r') as f:
-                animals = json.load(f)
+                state = json.load(f)
 
-        for a in animals["animals"]:
+        for a in state["animals"]:
             ani = Animal.from_json_dict(a)
             self.gui_data_interface.animals[ani.number] = ani
-        self.gui_data_interface.selected_device = animals["selected_device"]
-        if "movie_bindings" in animals:
+        self.gui_data_interface.selected_device = state["selected_device"]
+        if "movie_bindings" in state:
             self.gui_data_interface.movie_bindings = MovieBindings.from_dict(
-                animals["movie_bindings"]
+                state["movie_bindings"]
             )
 
     def initUI(self):
@@ -82,7 +82,7 @@ class MovScoreGUI(QWidget):
     def _initiate_tabs(self, vbox):
         self.tabs = QTabWidget()
         vbox.addWidget(self.tabs)
-        self.tab_behaviours = BehavioursTab(self, self.gui_data_interface)
+        self.tab_behaviours = TabBehaviours(self, self.gui_data_interface)
         self.tab_buttons = TabButtons(self, self.gui_data_interface)
         self.tab_analysis = TabAnalysis(self, self.gui_data_interface)
         self.tab_results = TabResults(self, self.gui_data_interface)
@@ -117,9 +117,7 @@ class MovScoreGUI(QWidget):
         Pops up a dialog-window when the user wants to close the GUI's window.
         """
         self._save_display_values()
-        self._save_animals()
-
-        self.tab_buttons.close_event()  # tab_list[1] is a TabButtons object
+        self._save_state()
 
         reply = QMessageBox.question(self,
                                      'Message',
@@ -135,10 +133,10 @@ class MovScoreGUI(QWidget):
         with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
 
-    def _save_animals(self):
-        savable_list = self.gui_data_interface.get_savable_list()
+    def _save_state(self):
+        state_dict = self.gui_data_interface.get_savable_dict()
         with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
-            json.dump(savable_list, fh)
+            json.dump(state_dict, fh)
 
 
 if __name__ == "__main__":

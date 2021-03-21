@@ -1,43 +1,40 @@
-import copy
 import os
-from typing import Dict, Union, List, Any, Tuple
+from typing import Dict, List, Any
+
+import os
+from typing import Dict, List, Any
 
 import pygame
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
-                             QPushButton, QMessageBox, QComboBox, QInputDialog)
+                             QMessageBox, QComboBox, QPushButton)
 
 from pyvisor.GUI.model.animal import Animal
-from pyvisor.GUI.model.gui_data_interface import GUIDataInterface
 from pyvisor.GUI.model.behaviour import Behaviour
-from pyvisor.GUI.model.key_bindings import KeyBindings
+from pyvisor.GUI.model.gui_data_interface import GUIDataInterface
 from pyvisor.GUI.model.scorer_action import ScorerAction
 from pyvisor.GUI.tab_buttons.assign_button_box import AssignButtonBox
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
-DEVICES = {"Keyboard": HERE + "/pictures/gamePad_KB.png",
-           "Playstation": HERE + "/pictures/gamePad_PS.png",
-           "X-Box": HERE + "/pictures/gamePad_XB.png",
-           "Free": HERE + "/pictures/gamePad_free.png"}
+DEVICES = {"Keyboard": HERE + "/../pictures/gamePad_KB.png",
+           "Playstation": HERE + "/../pictures/gamePad_PS.png",
+           "X-Box": HERE + "/../pictures/gamePad_XB.png",
+           "Free": HERE + "/../pictures/gamePad_free.png"}
 
 
 # noinspection PyAttributeOutsideInit
 class TabButtons(QWidget):
 
     def __init__(self, parent: QWidget, gui_data_interface: GUIDataInterface):
-
+        super(TabButtons, self).__init__(parent)
         self.analysis_list = []
-        super(TabButtons, self).__init__()
 
-        self.parent = parent
         self.gui_data_interface = gui_data_interface
-        self.gui_data_interface.register_callback_animal_added(
-            lambda x: self.make_animals_box()
-        )
-        self._behaviour_boxes = {}  # type: Dict[str, QHBoxLayout]
-        self._movie_action_boxes = {}  # type: Dict[str, QHBoxLayout]
+        self._behaviour_boxes = {}  # type: Dict[str, QWidget]
+        self._movie_action_boxes = {}  # type: Dict[str, QWidget]
+        self._animal_boxes = {}  # type: Dict[int, QVBoxLayout]
 
         pygame.init()
         # Initialize the joysticks
@@ -52,7 +49,6 @@ class TabButtons(QWidget):
             self.make_selected_joystick_info()
 
     def make_selected_joystick_info(self):
-        self.clearLayout(self.hboxJoyStickInfo)
         v_box_device = QVBoxLayout()
         joy_name = QLabel(self.input_device_names[self.deviceNumber],
                           self)
@@ -83,7 +79,6 @@ class TabButtons(QWidget):
         return vbox_temp
 
     def make_joystick_info_initial(self):
-        self.clearLayout(self.hboxJoyStickInfo)
         for joyI in range(self.n_joysticks):
             vbox_temp = QVBoxLayout()
             joy_name = QLabel(self.input_device_names[joyI], self)
@@ -156,37 +151,49 @@ class TabButtons(QWidget):
         for device in self.input_device_names:
             self.combo_input_assign.addItem(device)
         # add signal slot for assignment change
-        self.combo_input_assign.activated[str].connect(self.set_assignDevice)
+        self.combo_input_assign.activated[str].connect(self.set_device)
         self.hboxDeviceChoice.addWidget(self.lbl_input_assign)
         self.hboxDeviceChoice.addWidget(self.combo_input_assign)
 
-        # layout
-        self.lbl_input_device = QLabel("select device layout ", self)
-        self.lbl_input_device.setStyleSheet(self.labelStyle)
-        self.combo_input_device = QComboBox(self)
-        for device in DEVICES.keys():
-            self.combo_input_device.addItem(device)
-        # add signal slot for background change
-        self.combo_input_device.activated[str].connect(self.set_device)
-        self.hboxDeviceChoice.addWidget(self.lbl_input_device)
-        self.hboxDeviceChoice.addWidget(self.combo_input_device)
-        self.hboxDeviceChoice.addStretch()
-        initial_device = self.input_device_names[0]
-        self.set_assignDevice(initial_device)
-        self.set_device(initial_device)
+        button_reset = QPushButton("Reset bindings")
+        button_reset.clicked.connect(self._reset_buttons)
+        self.hboxDeviceChoice.addWidget(button_reset)
 
-    def make_movie_actions_box(self):
+        button_default_bindings = QPushButton("Set default movie bindings")
+        button_default_bindings.clicked.connect(self._set_default_movie_bindings)
+        self.hboxDeviceChoice.addWidget(button_default_bindings)
+
+        self.hboxDeviceChoice.addStretch()
+
+    def _set_default_movie_bindings(self):
+        dev = self.gui_data_interface.selected_device
+        if dev == "Keyboard":
+            bindings_map = self._get_default_keyboard_keys()
+        elif dev == "Playstation":
+            bindings_map = self._get_default_playstation_keys()
+        elif dev == "X-Box":
+            bindings_map = self._get_default_xbox_keys()
+        else:
+            return
+        inv_key_values = {value: key for (key, value) in bindings_map.items()}
+        for action_name in inv_key_values:
+            action = self.gui_data_interface.movie_bindings[action_name]
+            new_button = inv_key_values[action_name]
+            self.gui_data_interface.change_button_binding(action, new_button, is_behaviour=False)
+
+    def make_movie_actions_box(self) -> QWidget:
         # top label
-        movie_box = QVBoxLayout()
+        movie_widget = QWidget(self)
+        self.movie_box = QVBoxLayout(movie_widget)
         name_label = QLabel('movie actions')
         name_label.setStyleSheet(self.labelStyle)
-        movie_box.addWidget(name_label)
+        self.movie_box.addWidget(name_label)
         movie_assignments = self.gui_data_interface.movie_bindings
         for name in sorted(movie_assignments.keys()):
             movie_action = movie_assignments[name]
-            self._make_movie_label_box(movie_action, movie_box)
+            self._make_movie_label_box(movie_action, self.movie_box)
 
-        return movie_box
+        return movie_widget
 
     def _make_movie_label_box(
             self,
@@ -199,24 +206,21 @@ class TabButtons(QWidget):
             is_behaviour=False
         )
         self._movie_action_boxes[movie_action.name] = box
-        movie_box.addLayout(box)
+        movie_box.addWidget(box)
 
     def _create_assign_button_box(self,
                                   color: str,
                                   bound_object: ScorerAction,
-                                  is_behaviour: bool):
+                                  is_behaviour: bool) -> AssignButtonBox:
 
         box = AssignButtonBox(self, self.gui_data_interface, bound_object, color, is_behaviour)
         return box
 
     def make_animals_box(self):
-        self.clearLayout(self.hbox_behaviour_buttons)
-
         self._create_behaviours_box()
-        vbox = self.make_movie_actions_box()
-        self.hbox_behaviour_buttons.addLayout(vbox)
+        movie_widget = self.make_movie_actions_box()
+        self.hbox_behaviour_buttons.addWidget(movie_widget)
         self.hbox_behaviour_buttons.addStretch()
-        self.make_joystick_info()
 
     def _create_behaviours_box(self):
         self.behav_stepLabel = QLabel('Behaviours: ')
@@ -229,6 +233,7 @@ class TabButtons(QWidget):
 
     def _create_info_label(self, animal: Animal):
         vbox = self.make_behaviour_info_box(animal)
+        self._animal_boxes[animal.number] = vbox
         self.hbox_behaviour_buttons.addLayout(vbox)
 
     def make_behaviour_info_box(self, animal: Animal):
@@ -247,7 +252,7 @@ class TabButtons(QWidget):
             behav = animal.behaviours[key]
             box = self._create_box_single_behaviour(behav)
             self._behaviour_boxes[behav.label] = box
-            behavBox.addLayout(box)
+            behavBox.addWidget(box)
 
         return behavBox
 
@@ -293,8 +298,6 @@ class TabButtons(QWidget):
         if device != "Keyboard":
             self.joystick = pygame.joystick.Joystick(self.deviceNumber)
             self.joystick.init()
-            self.make_joystick_info()
-        self.make_animals_box()
 
     def set_device(self, device: str):
         if self.gui_data_interface.selected_device is None:
@@ -312,8 +315,6 @@ class TabButtons(QWidget):
         self.background_image.setPixmap(self.pixmap.scaled(self.background_image.size(), Qt.KeepAspectRatio))
         self.background_image.setScaledContents(True)
         self.deviceNumber = self.input_device_names.index(device)
-        self.make_joystick_info()
-        self.make_animals_box()
 
     @staticmethod
     def _get_default_playstation_keys() -> Dict[str, str]:
@@ -337,11 +338,6 @@ class TabButtons(QWidget):
         #   \          /                              \           /
         #    \________/                                \_________/
         #  PS2 CONTROLLER
-        keys = {"B0": None, "B1": None, "B2": None,
-                "B3": None, "B4": None, "B5": None,
-                "B6": None, "B7": None, "B8": None,
-                "B9": None, "H01": None, "H0-1": None,
-                "H-10": None, "H10": None}
         movie_keys = {
             "B10": "toggleRunMov",
             "B11": "stopToggle",
@@ -354,8 +350,7 @@ class TabButtons(QWidget):
             "A4+": "changeFrameNoHigh10",
             "A4-": "changeFrameNoLow10"
         }
-        keys.update(movie_keys)
-        return keys
+        return movie_keys
 
     @staticmethod
     def _get_default_xbox_keys() -> Dict[str, str]:
@@ -374,20 +369,13 @@ class TabButtons(QWidget):
         #  |                      ,-'`  H0-1                     `'-,                     |
         #  \                   ,-'`                                  `'-,                 /
         #   `'----- ,,,, -----'`                                       `'----- ,,,, -----'`
-        keys = {"B0": None, "B1": None, "B2": None,
-                "B3": None, "B4": None, "B5": None, "B6": None, "B7": None,
-                "B8": None, "A2+": None, "A5+": None, "A2-": None,
-                "A5-": None, "H01": None, "H0-1": None,
-                "H-10": None, "H10": None}
-
-        movie_keys = {
+        keys = {
             "B9": "toggleRunMov", "B10": "stopToggle",
             "A0+": "runMovForward", "A0-": "runMovReverse",
             "A1+": "changeFPShigh", "A1-": "changeFPSlow",
             "A3+": "changeFrameNoHigh1", "A3-": "changeFrameNoLow1",
             "A4+": "changeFrameNoHigh10", "A4-": "changeFrameNoLow10"
         }
-        keys.update(movie_keys)
         return keys
 
     @staticmethod
@@ -402,16 +390,11 @@ class TabButtons(QWidget):
         }
         return movie_keys
 
-    def close_event(self):
-        self.save_button_assignments(filename=HOME + '/.pyvisor/guidefaults_buttons.json')
-
     def resizeEvent(self, event):
         self.background_image.resize(event.size())
 
-    def reset_buttons(self):
-        self._initialize_device_members()
-        self._initialize_joystick()
-        self.make_animals_box()
+    def _reset_buttons(self):
+        self.gui_data_interface.reset_all_bindings()
 
     def _initialize_joystick(self):
         # Get count of joysticks
@@ -451,7 +434,6 @@ class TabButtons(QWidget):
         # fill major boxes with infos
         self._fill_major_boxes_with_infos()
         self.setLayout(self.vbox)
-        self.parent.tabs.currentChanged.connect(self.make_animals_box)
 
     def _fill_major_boxes_with_infos(self):
         self.make_joystick_info()
@@ -475,8 +457,8 @@ class TabButtons(QWidget):
 
     def _set_background_image(self):
         self.background_image = QLabel(self)
-        self.background_image.setGeometry(0, 0, self.parent.height(), self.parent.width())
-        self.pixmap = QPixmap(HERE + '/pictures/gamePad.png')
+        self.background_image.setGeometry(0, 0, self.parent().height(), self.parent().width())
+        self.pixmap = QPixmap(HERE + '/../pictures/gamePad.png')
         self.background_image.setPixmap(self.pixmap.scaled(
             self.background_image.size(),
             Qt.KeepAspectRatio))
