@@ -156,4 +156,29 @@ class Animal:
         self.behaviours[behaviour.label] = self.behaviours.pop(old_label)
         self._replace_behaviour_name_in_compatible_lists(old_name, name)
 
+    def copy_behaviours(self, behaviours: Dict[str, Behaviour]):
+        if len(self.behaviours) == 0 or not self._contains_only_behaviour_delete():
+            raise RuntimeError("This animal's behaviours dict already contains behaviours. "
+                               "Use copy_behaviours only for empty behaviours dict.")
+        for behav in behaviours.values():
+            if behav.name == 'delete':
+                continue
+            new_behav = Behaviour(
+                animal_number=behav.animal_number,
+                icon_path=behav.icon_path,
+                color=behav.color,
+                name=behav.name,
+                compatible_with=behav.compatible_with
+            )
+            self[new_behav.label] = new_behav
+
+    def _contains_only_behaviour_delete(self) -> bool:
+        if len(self.behaviours) != 1:
+            return False
+        for behav in self.behaviours.values():
+            if behav.name == 'delete':
+                return True
+        return False
+
+
 

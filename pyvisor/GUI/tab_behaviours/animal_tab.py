@@ -72,9 +72,6 @@ class AnimalTab(QTabWidget):
 
     def rename_tab(self, index, name):
         self.tabBar().setTabText(index, name)
-        as_list = list(self.values[index])
-        as_list[0] = name
-        self.values[index] = tuple(as_list)
 
     def remove_tab(self, index):        
         self.tabs_.pop(index)
@@ -87,12 +84,11 @@ class AnimalTab(QTabWidget):
             return        
         self.add_tab(0)
 
-    def copy_tab(self, tab: SingleAnimalTab):
-        animal = tab.animal
+    def copy_tab(self, animal: Animal):
         name = 'copy_of_' + animal.name
         uname, number = self._generate_unique_name(0)
         copied_animal = self.gui_data_interface.add_animal(name, number)
-        copied_animal.behaviours = animal.behaviours.copy()
+        copied_animal.copy_behaviours(animal.behaviours)
         self._create_animal_tab_and_insert(copied_animal, len(self.tabs_) - 1)
 
     def create_new_tab(self, animal: Animal):

@@ -17,7 +17,8 @@ class SingleAnimalTab(QWidget):
                  index_in_parent_tab_widget,
                  gui_data_interface: GUIDataInterface):
 
-        super(SingleAnimalTab, self).__init__(parent)
+        super().__init__(parent)
+        self.parent_animal_tab_widget = parent
         self.index = index_in_parent_tab_widget
         self.animal = animal
         self.gui_data_interface = gui_data_interface
@@ -75,7 +76,6 @@ class SingleAnimalTab(QWidget):
         self.gui_data_interface.add_behaviour(self.animal, new_behav)
         self.add_behaviour_widget(new_behav)
 
-
     def _init_main_layout(self):
         vbox = QVBoxLayout()
         hbox = QHBoxLayout()
@@ -103,11 +103,12 @@ class SingleAnimalTab(QWidget):
         return True
 
     def copy_this_tab(self):
-        self.parent().copy_tab(self.index)
+        self.parent_animal_tab_widget.copy_tab(self.animal)
 
     def remove_this_tab(self):
-        self.parent().remove_tab(self.index)
-        self.deleteLater()
+        self.parent_animal_tab_widget.remove_tab(self.index)
+        self.gui_data_interface.remove_animal(self.animal)
+        self.close()
 
     def add_behaviour_widget(self, behaviour: Behaviour):
         for bw in self.behav_widgets:
@@ -158,8 +159,8 @@ class SingleAnimalTab(QWidget):
     def rename_finished(self):
         self.btn_edit_name.setText(self.name_edit.text())
         new_name = str(self.name_edit.text())
-        self.main_widget.change_animal_name(self.animal, new_name)
+        self.gui_data_interface.change_animal_name(self.animal, new_name)
         self.vbox_buttons_left.removeWidget(self.name_edit)
         self.vbox_buttons_left.insertWidget(0, self.btn_edit_name)
         self.name_edit.hide()
-        self.parent().rename_tab(self.index, self.name)
+        self.parent_animal_tab_widget.rename_tab(self.index, self.name)

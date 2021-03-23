@@ -8,7 +8,7 @@ import pygame
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QCloseEvent
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
-                             QMessageBox, QComboBox, QPushButton)
+                             QMessageBox, QComboBox, QPushButton, QScrollArea)
 
 from pyvisor.GUI.model.animal import Animal
 from pyvisor.GUI.model.behaviour import Behaviour
@@ -32,10 +32,20 @@ class TabButtons(QWidget):
         self.analysis_list = []
 
         self.gui_data_interface = gui_data_interface
+        self._callback_id_animal_added = self.gui_data_interface.callbacks_animal_added.register(
+            self._create_animal_box
+        )
+        self._callback_id_animal_name_changed = self.gui_data_interface.callbacks_animal_name_changed.register(
+            self._handle_animal_name_changed
+        )
         self._callback_id_behav_added = self.gui_data_interface.callbacks_behaviour_added.register(
             self._handle_behaviour_added
         )
+        self._callback_id_animal_removed = self.gui_data_interface.callbacks_animal_removed.register(
+            self._handle_animal_removed
+        )
         self._animal_info_boxes = {}  # type: Dict[int, QVBoxLayout]
+        self._animal_name_labels = {}  # type: Dict[int, QLabel]
         self._behaviour_boxes = {}  # type: Dict[str, QWidget]
         self._movie_action_boxes = {}  # type: Dict[str, QWidget]
         self._animal_boxes = {}  # type: Dict[int, QVBoxLayout]
@@ -46,11 +56,21 @@ class TabButtons(QWidget):
         self._initialize_device_members()
         self._init_ui()
 
+    def _handle_animal_removed(self, animal: Animal):
+        abox = self._animal_boxes[animal.number]
+        self.hbox_animal_columns.removeItem(abox)
+
     def _handle_behaviour_added(self, animal: Animal, behaviour: Behaviour):
         self._create_box_single_behaviour(behaviour)
 
+    def _handle_animal_name_changed(self, animal: Animal):
+        self._animal_name_labels[animal.number].setText("{} (A{})".format(animal.name, animal.number))
+
     def closeEvent(self, a0: QCloseEvent) -> None:
         self.gui_data_interface.callbacks_behaviour_added.pop(self._callback_id_behav_added)
+        self.gui_data_interface.callbacks_animal_added.pop(self._callback_id_animal_added)
+        self.gui_data_interface.callbacks_animal_name_changed.pop(self._callback_id_animal_name_changed)
+        self.gui_data_interface.callbacks_animal_removed.pop(self._callback_id_animal_removed)
 
     def make_joystick_info(self):
         if self.deviceNumber == -2:
@@ -229,30 +249,31 @@ class TabButtons(QWidget):
     def make_animals_box(self):
         self._create_behaviours_box()
         movie_widget = self.make_movie_actions_box()
-        self.hbox_behaviour_buttons.addWidget(movie_widget)
-        self.hbox_behaviour_buttons.addStretch()
+        self.hbox_animal_columns.addWidget(movie_widget)
+        self.hbox_animal_columns.addStretch()
 
     def _create_behaviours_box(self):
         self.behav_stepLabel = QLabel('Behaviours: ')
         self.behav_stepLabel.resize(20, 40)
         self.behav_stepLabel.setStyleSheet(self.labelStyle)
-        self.hbox_behaviour_buttons.addWidget(self.behav_stepLabel)
+        self.hbox_animal_columns.addWidget(self.behav_stepLabel)
         for animal_number in sorted(self.gui_data_interface.animals):
             animal = self.gui_data_interface.animals[animal_number]
-            self._create_info_label(animal)
+            self._create_animal_box(animal)
 
-    def _create_info_label(self, animal: Animal):
-        vbox = self.make_animal_info_box(animal)
+    def _create_animal_box(self, animal: Animal):
+        vbox = self.make_animal_behaviour_box(animal)
         self._animal_boxes[animal.number] = vbox
-        self.hbox_behaviour_buttons.addLayout(vbox)
+        self.hbox_animal_columns.addLayout(vbox)
 
-    def make_animal_info_box(self, animal: Animal):
+    def make_animal_behaviour_box(self, animal: Animal):
         # top label
         animal_box = QVBoxLayout()
         self._animal_info_boxes[animal.number] = animal_box
-        nameLabel = QLabel(animal.name + ' (A' + str(animal.number) + ')')
-        nameLabel.setStyleSheet(self.labelStyle)
-        animal_box.addWidget(nameLabel)
+        name_label = QLabel(animal.name + ' (A' + str(animal.number) + ')')
+        self._animal_name_labels[animal.number] = name_label
+        name_label.setStyleSheet(self.labelStyle)
+        animal_box.addWidget(name_label)
 
         if not animal.has_behaviour('delete'):
             behav_delete = Behaviour(animal_number=animal.number,
@@ -446,7 +467,7 @@ class TabButtons(QWidget):
     def _add_layouts_to_central_vertical_box(self):
         self.vbox.addStretch()
         self.vbox.addLayout(self.hboxDeviceChoice)
-        self.vbox.addLayout(self.hbox_behaviour_buttons)
+        self.vbox.addLayout(self.hbox_animal_columns)
         self.vbox.addLayout(self.hboxLoadSavePreset)
         self.vbox.addLayout(self.hboxJoyStickInfo)
         self.vbox.addStretch()
@@ -454,7 +475,7 @@ class TabButtons(QWidget):
     def _make_major_boxes(self):
         self.vbox = QVBoxLayout()
         self.hboxDeviceChoice = QHBoxLayout()
-        self.hbox_behaviour_buttons = QHBoxLayout()
+        self.hbox_animal_columns = QHBoxLayout()
         self.hboxJoyStickInfo = QHBoxLayout()
         self.hboxLoadSavePreset = QHBoxLayout()
 

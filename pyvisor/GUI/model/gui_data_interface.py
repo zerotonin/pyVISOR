@@ -15,6 +15,7 @@ class GUIDataInterface:
         self.animals = {}  # type: Dict[int, Animal]
         self.callbacks_animal_added = CallbackHandler()
         self.callbacks_animal_name_changed = CallbackHandler()
+        self.callbacks_animal_removed = CallbackHandler()
         self.callbacks_behaviour_added = CallbackHandler()
         self.callbacks_behaviour_name_changed = CallbackHandler()
         self.callbacks_behaviour_color_changed = CallbackHandler()
@@ -193,6 +194,11 @@ class GUIDataInterface:
         callbacks = self.callbacks_behaviour_removed.callback_functions.copy()
         for callback in callbacks.values():
             callback(behaviour)
+
+    def remove_animal(self, animal):
+        self.animals.pop(animal.number)
+        for callback in self.callbacks_animal_removed:
+            callback(animal)
 
 
 class NameExistsException(RuntimeError):

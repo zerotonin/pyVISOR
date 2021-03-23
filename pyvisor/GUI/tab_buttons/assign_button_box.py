@@ -67,7 +67,7 @@ class AssignButtonBox(QWidget):
         self.box = QHBoxLayout()
         self.behav_label = QLabel(self.action.name)
         self.behav_label.setStyleSheet('color: ' + self.color)
-        btn_set_uic = QPushButton('assign button/key')
+        btn_set_uic = QPushButton('assign button')
         btn_set_uic.clicked.connect(self.assign_button)
         self._create_button_label()
         if self.is_behaviour:
@@ -96,7 +96,7 @@ class AssignButtonBox(QWidget):
 
     def _create_button_label(self):
         key = self.action.key_bindings[self.gui_data_interface.selected_device]
-        label = 'no button assigned' if key is None else key
+        label = 'no button\nassigned' if key is None else key
         self.button_label = QLabel(self)
         if key is None:
             self.button_label.setStyleSheet('color: #C0C0C0')
