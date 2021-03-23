@@ -35,7 +35,7 @@ class Animal:
     @staticmethod
     def from_key_assignment_dictionary(key_assignments: Dict[str, Behaviour]) -> 'Animal':
         b0 = list(key_assignments.values())[0]
-        new_animal = Animal(b0.animal)
+        new_animal = Animal(b0.animal_number)
         for key in key_assignments:
             binding = key_assignments[key]
             new_animal[binding.label] = binding
@@ -125,4 +125,35 @@ class Animal:
                 continue
             if binding == button_identifier:
                 return behav
+
+    def _replace_behaviour_name_in_compatible_lists(self, old_name: str, current_name: str):
+        for behav in self.behaviours.values():
+            if behav.name == current_name:
+                continue
+            if old_name not in behav.compatible_with:
+                continue
+            idx = behav.compatible_with.index(old_name)
+            behav.compatible_with[idx] = current_name
+
+    def behaviour_with_name_exists(self, name: str):
+        for behav in self.behaviours.values():
+            if behav.name == name:
+                return True
+        return False
+
+    def remove_behaviour(self, behaviour: Behaviour):
+        for behav in self.behaviours.values():
+            if behav is behaviour:
+                continue
+            if behaviour.name in behav.compatible_with:
+                behav.compatible_with.remove(behaviour.name)
+        self.behaviours.pop(behaviour.label)
+
+    def rename_behaviour(self, behaviour: Behaviour, name: str):
+        old_name = behaviour.name
+        old_label = behaviour.label
+        behaviour.set_name(name)
+        self.behaviours[behaviour.label] = self.behaviours.pop(old_label)
+        self._replace_behaviour_name_in_compatible_lists(old_name, name)
+
 

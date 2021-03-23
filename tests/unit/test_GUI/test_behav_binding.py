@@ -4,7 +4,7 @@ from pyvisor.GUI.model.behaviour import Behaviour
 def test_to_dict():
 
     binding = Behaviour(
-        animal='fly1',
+        animal_number='fly1',
         color='#FFAA50',
         icon_path='/home/icons/are/nice.png',
         name='aggression',
@@ -36,7 +36,7 @@ def test_from_dict():
 
     binding = Behaviour.from_dict(d)
 
-    assert 'seal' == binding.animal
+    assert 'seal' == binding.animal_number
     assert 'chill' == binding.name
     assert binding.color is None
     assert '/home/icons/are/quite/okay.png' == binding.icon_path

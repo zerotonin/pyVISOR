@@ -8,12 +8,12 @@ class Behaviour(ScorerAction):
 
     ANIMAL_MOVIE = -1
 
-    def __init__(self, animal: int = None, color: str = '#C0C0C0',
+    def __init__(self, animal_number: int = None, color: str = '#C0C0C0',
                  icon_path: str = None, name: str = None,
                  compatible_with: List[str] = None):
 
         super().__init__(name, icon_path)
-        self.animal = animal
+        self.animal_number = animal_number
         self.color = color
         if compatible_with is None:
             compatible_with = []
@@ -35,19 +35,19 @@ class Behaviour(ScorerAction):
 
     @property
     def label(self) -> str:
-        if self.animal == self.ANIMAL_MOVIE:
+        if self.animal_number == self.ANIMAL_MOVIE:
             return "movie_{}".format(self.name)
-        return "A{}_{}".format(self.animal, self.name)
+        return "A{}_{}".format(self.animal_number, self.name)
 
     @property
     def is_movie(self) -> bool:
-        return self.animal == self.ANIMAL_MOVIE
+        return self.animal_number == self.ANIMAL_MOVIE
 
     def __str__(self):
         s = 'BehavBinding:\n'
         for lbl, attr in zip(
                 ['animal', 'icon', 'behaviour'],
-                [self.animal, self.icon_path, self.name]
+                [self.animal_number, self.icon_path, self.name]
         ):
             s += f'  {lbl}: {attr}\n'
         return s
@@ -58,7 +58,7 @@ class Behaviour(ScorerAction):
     def to_dict(self) -> Dict[str, Any]:
         d = {
             'key_bindings': self.key_bindings.to_dict(),
-            'animal': self.animal,
+            'animal': self.animal_number,
             'name': self.name,
             'icon_path': self.icon_path,
             'color': self.color,

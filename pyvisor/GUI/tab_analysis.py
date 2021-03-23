@@ -570,18 +570,18 @@ class TabAnalysis(QWidget):
 
         free_binding_list = list()
         for key in self.assignment[0].keys():
-            print('animal:', self.assignment[0][key].animal)
-            if self.assignment[0][key].animal == 'movie':
+            print('animal:', self.assignment[0][key].animal_number)
+            if self.assignment[0][key].animal_number == 'movie':
                 animal = -1
-            elif self.assignment[0][key].animal == 'None':
+            elif self.assignment[0][key].animal_number == 'None':
                 continue
             else:
-                animal = self.assignment[0][key].animal
+                animal = self.assignment[0][key].animal_number
 
             behav = self.assignment[0][key].name  # is a str
             if self._is_animal_behaviour(key, animal_behaviours_as_strings):
                 # is an int
-                behav = animal_behaviours_as_strings[self.assignment[0][key].animal].index(behav)
+                behav = animal_behaviours_as_strings[self.assignment[0][key].animal_number].index(behav)
 
             free_binding_list.append((self.assignment[0][key].scorer_actions, animal, behav))
 
@@ -642,7 +642,7 @@ class TabAnalysis(QWidget):
                 behav_binding = self.assignment[1][key]
                 icon_path = behav_binding.icon_path
                 if len(icon_path) == 0:
-                    no_icons.append((behav_binding.animal, behav_binding.name))
+                    no_icons.append((behav_binding.animal_number, behav_binding.name))
 
         if len(no_icons) > 0:            
             warnmsg = "You have to assign an icon before the analysis "
@@ -673,7 +673,7 @@ class TabAnalysis(QWidget):
             item_iterator = self.assignment[1].items()
         
         for key, binding in item_iterator:
-            if binding.animal == 'movie':
+            if binding.animal_number == 'movie':
                 if binding.scorer_actions == 'no button assigned':
                     listOfUnassignedBehaviour.append(binding.name)
 

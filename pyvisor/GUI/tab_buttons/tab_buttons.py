@@ -6,7 +6,7 @@ from typing import Dict, List, Any
 
 import pygame
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QCloseEvent
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QMessageBox, QComboBox, QPushButton)
 
@@ -32,6 +32,10 @@ class TabButtons(QWidget):
         self.analysis_list = []
 
         self.gui_data_interface = gui_data_interface
+        self._callback_id_behav_added = self.gui_data_interface.callbacks_behaviour_added.register(
+            self._handle_behaviour_added
+        )
+        self._animal_info_boxes = {}  # type: Dict[int, QVBoxLayout]
         self._behaviour_boxes = {}  # type: Dict[str, QWidget]
         self._movie_action_boxes = {}  # type: Dict[str, QWidget]
         self._animal_boxes = {}  # type: Dict[int, QVBoxLayout]
@@ -41,6 +45,12 @@ class TabButtons(QWidget):
         pygame.joystick.init()
         self._initialize_device_members()
         self._init_ui()
+
+    def _handle_behaviour_added(self, animal: Animal, behaviour: Behaviour):
+        self._create_box_single_behaviour(behaviour)
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self.gui_data_interface.callbacks_behaviour_added.pop(self._callback_id_behav_added)
 
     def make_joystick_info(self):
         if self.deviceNumber == -2:
@@ -120,7 +130,7 @@ class TabButtons(QWidget):
         if behav_binding.is_movie:
             animal_no_str = 'movie command'
         else:
-            animal_no_str = 'animal No {}'.format(behav_binding.animal)
+            animal_no_str = 'animal No {}'.format(behav_binding.animal_number)
         labels_list.append(QLabel(animal_no_str, self))
         labels_list.append(QLabel(behav_binding.name, self))
         # set labels to transparent background
@@ -232,29 +242,28 @@ class TabButtons(QWidget):
             self._create_info_label(animal)
 
     def _create_info_label(self, animal: Animal):
-        vbox = self.make_behaviour_info_box(animal)
+        vbox = self.make_animal_info_box(animal)
         self._animal_boxes[animal.number] = vbox
         self.hbox_behaviour_buttons.addLayout(vbox)
 
-    def make_behaviour_info_box(self, animal: Animal):
+    def make_animal_info_box(self, animal: Animal):
         # top label
-        behavBox = QVBoxLayout()
+        animal_box = QVBoxLayout()
+        self._animal_info_boxes[animal.number] = animal_box
         nameLabel = QLabel(animal.name + ' (A' + str(animal.number) + ')')
         nameLabel.setStyleSheet(self.labelStyle)
-        behavBox.addWidget(nameLabel)
+        animal_box.addWidget(nameLabel)
 
         if not animal.has_behaviour('delete'):
-            behav_delete = Behaviour(animal=animal.number,
+            behav_delete = Behaviour(animal_number=animal.number,
                                      name="delete")
             animal[behav_delete.label] = behav_delete
 
         for key in sorted(animal.behaviours.keys()):
             behav = animal.behaviours[key]
-            box = self._create_box_single_behaviour(behav)
-            self._behaviour_boxes[behav.label] = box
-            behavBox.addWidget(box)
+            self._create_box_single_behaviour(behav)
 
-        return behavBox
+        return animal_box
 
     def _create_box_single_behaviour(
             self,
@@ -265,7 +274,9 @@ class TabButtons(QWidget):
             behaviour,
             is_behaviour=True
         )
-        return box
+        self._behaviour_boxes[behaviour.label] = box
+        behavBox = self._animal_info_boxes[behaviour.animal_number]
+        behavBox.addWidget(box)
 
     def synchronizeBehaviourTabAndBindings(self, animal_number: int, behaviour_dict: List[Dict[str, Any]],
                                            behaviour_assignments: Dict[str, Behaviour]):
@@ -281,14 +292,6 @@ class TabButtons(QWidget):
 
         self._add_missing_behaviour_bindings(animal_number, behaviour_assignments, behaviour_dict, listOfAssignments)
         return behaviour_assignments
-
-    def clearLayout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clearLayout(child.layout())
 
     def set_assignDevice(self, device):
         device = str(device)

@@ -2,6 +2,7 @@ import pygame
 from PyQt5.QtGui import QPixmap, QCloseEvent
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QMessageBox, QWidget, QInputDialog
 
+from ..model.behaviour import Behaviour
 from ..model.gui_data_interface import GUIDataInterface
 from ..model.scorer_action import ScorerAction
 
@@ -17,39 +18,81 @@ class AssignButtonBox(QWidget):
         super().__init__(parent_widget)
         self.parent_widget = parent_widget
         self.gui_data_interface = gui_data_interface
-        self._callback_id = gui_data_interface.register_callback_key_binding_changed(self.button_assignment_changed)
         self.action = action
         self.color = color
+        self._init_callbacks(gui_data_interface)
         self.is_behaviour = is_behaviour
         self._init_UI()
 
+    def _init_callbacks(self, gui_data_interface):
+        self._callback_id_binding = gui_data_interface.register_callback_key_binding_changed(
+            self.button_assignment_changed)
+        self._callback_id_color = gui_data_interface.callbacks_behaviour_color_changed.register(
+            self.set_color
+        )
+        self._callback_id_icon = gui_data_interface.callbacks_update_icon.register(
+            self._set_icon
+        )
+        self._callback_id_name = gui_data_interface.callbacks_behaviour_name_changed.register(
+            self._set_name
+        )
+        self._callback_id_removed = gui_data_interface.callbacks_behaviour_removed.register(
+            self.remove
+        )
+
+    def remove(self, behaviour: Behaviour):
+        if behaviour is self.action:
+            self.close()
+
+    def _set_name(self, action: ScorerAction):
+        if action is not self.action:
+            return
+        self.behav_label.setText(action.name)
+
+    def set_color(self, action: ScorerAction):
+        if action is not self.action:
+            return
+        assert self.is_behaviour
+        self.color = action.color
+        self.behav_label.setStyleSheet('color: ' + self.color)
+
     def closeEvent(self, a0: QCloseEvent) -> None:
-        self.gui_data_interface.callbacks_key_binding_changed.pop(self._callback_id)
-        super().closeEvent()
+        self.gui_data_interface.callbacks_key_binding_changed.pop(self._callback_id_binding)
+        self.gui_data_interface.callbacks_update_icon.pop(self._callback_id_icon)
+        self.gui_data_interface.callbacks_behaviour_color_changed.pop(self._callback_id_color)
+        self.gui_data_interface.callbacks_behaviour_name_changed.pop(self._callback_id_name)
+        self.gui_data_interface.callbacks_behaviour_removed.pop(self._callback_id_removed)
 
     def _init_UI(self):
         self.box = QHBoxLayout()
-        behav_label = QLabel(self.action.name)
-        behav_label.setStyleSheet('color: ' + self.color)
+        self.behav_label = QLabel(self.action.name)
+        self.behav_label.setStyleSheet('color: ' + self.color)
         btn_set_uic = QPushButton('assign button/key')
         btn_set_uic.clicked.connect(self.assign_button)
         self._create_button_label()
         if self.is_behaviour:
-            if self.action.icon_path is not None:
-                self.icon_label = self._create_icon()
-                self.box.addWidget(self.icon_label)
-        self.box.addWidget(behav_label)
+            self._create_icon()
+            self.box.addWidget(self.imageLabel)
+        self.box.addWidget(self.behav_label)
         self.box.addWidget(btn_set_uic)
         self.box.addWidget(self.button_label)
         self.setLayout(self.box)
 
-    def _create_icon(self):
-        imageLabel = QLabel()
+    def _set_icon(self, behaviour: Behaviour):
+        if behaviour is not self.action:
+            return
         pixmap = QPixmap(self.action.icon_path)
         pixmap = pixmap.scaledToWidth(20)
-        imageLabel.setStyleSheet('color: ' + self.color)
-        imageLabel.setPixmap(pixmap)
-        return imageLabel
+        self.imageLabel.setPixmap(pixmap)
+
+    def _create_icon(self):
+        self.imageLabel = QLabel()
+        if self.action.icon_path is None:
+            return
+        pixmap = QPixmap(self.action.icon_path)
+        pixmap = pixmap.scaledToWidth(20)
+        self.imageLabel.setStyleSheet('color: ' + self.color)
+        self.imageLabel.setPixmap(pixmap)
 
     def _create_button_label(self):
         key = self.action.key_bindings[self.gui_data_interface.selected_device]

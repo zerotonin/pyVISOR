@@ -1,5 +1,7 @@
+from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from .behaviour_checkbox import BehaviourCheckbox
+from ..model.animal import Animal
 from ..model.gui_data_interface import GUIDataInterface
 from ..model.behaviour import Behaviour
 from ...exception.behaviour_already_in_compatibility_list_exception \
@@ -12,18 +14,37 @@ class CompatibleBehaviourWidget(QWidget):
 
     def __init__(self, parent_behaviour_widget, behaviour: Behaviour,
                  gui_data_interface: GUIDataInterface):
-        super(CompatibleBehaviourWidget, self).__init__()
+        super().__init__()
         self.parent_behaviour_widget = parent_behaviour_widget
         self.behaviour = behaviour
         self.gui_data_interface = gui_data_interface
+        self._callback_id_add = self.gui_data_interface.callbacks_behaviour_added.register(
+            self._handle_behaviour_added
+        )
         self.behaviour_checkboxes = {}
         self.init_UI()
         self.suppress_actions = False
 
+    def _handle_behaviour_added(self, animal: Animal, behaviour: Behaviour):
+        if behaviour.animal_number != self.behaviour.animal_number:
+            return
+        if self.behaviour.name == 'delete':
+            return
+        self.add_checkbox(behaviour, False)
+
+    def _remove_callbacks(self):
+        self.gui_data_interface.callbacks_behaviour_added.pop(self._callback_id_add)
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self._remove_callbacks()
+
+    def __del__(self):
+        self._remove_callbacks()
+
     def init_UI(self):
         self.grid = QGridLayout()
         self.setLayout(self.grid)
-        animal = self.gui_data_interface.animals[self.behaviour.animal]
+        animal = self.gui_data_interface.animals[self.behaviour.animal_number]
         for key in animal.behaviours:
             if self.behaviour.name == "delete":
                 break

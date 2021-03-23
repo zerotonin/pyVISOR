@@ -14,8 +14,11 @@ class GUIDataInterface:
         self.movie_bindings = MovieBindings()
         self.animals = {}  # type: Dict[int, Animal]
         self.callbacks_animal_added = CallbackHandler()
+        self.callbacks_animal_name_changed = CallbackHandler()
         self.callbacks_behaviour_added = CallbackHandler()
-        self.callbacks_name_changed = CallbackHandler()
+        self.callbacks_behaviour_name_changed = CallbackHandler()
+        self.callbacks_behaviour_color_changed = CallbackHandler()
+        self.callbacks_behaviour_removed = CallbackHandler()
         self.callbacks_key_binding_changed = CallbackHandler()
         self.callbacks_update_icon = CallbackHandler()
         self.callbacks_compatibility_changed = CallbackHandler()
@@ -30,7 +33,8 @@ class GUIDataInterface:
 
     def change_animal_name(self, animal: Animal, new_name: str):
         animal.name = new_name
-        self._update_UIs_name_changed(animal)
+        for callback in self.callbacks_animal_name_changed:
+            callback(animal)
 
     def get_savable_list(self) -> List[Dict[str, Any]]:
         savable_list = [
@@ -78,13 +82,10 @@ class GUIDataInterface:
         for callback in self.callbacks_update_icon:
             callback(behaviour)
 
-    def _update_UIs_name_changed(self, animal):
-        for callback in self.callbacks_name_changed:
-            callback(animal)
-
     def set_icon_color(self, behaviour: Behaviour, color: str):
         behaviour.color = color
-        self._update_UIs_icon(behaviour)
+        for callback in self.callbacks_behaviour_color_changed:
+            callback(behaviour)
 
     def get_action_assigned_to(
             self, button_identifier
@@ -174,3 +175,29 @@ class GUIDataInterface:
 
     def register_callback_behaviour_added(self, callback: Callable[[Animal, Behaviour], None]):
         self.callbacks_behaviour_added.register(callback)
+
+    def change_behaviour_name(self, behaviour: Behaviour, name: str):
+        if name == behaviour.name:
+            raise NameIdenticalException
+        animal = self.animals[behaviour.animal_number]
+        if animal.behaviour_with_name_exists(name):
+            raise NameExistsException
+        animal.rename_behaviour(behaviour, name)
+        for callback in self.callbacks_behaviour_name_changed:
+            callback(behaviour)
+
+    def remove_behaviour(self, behaviour: Behaviour):
+        animal = self.animals[behaviour.animal_number]
+        print(animal.behaviours.keys())
+        animal.remove_behaviour(behaviour)
+        callbacks = self.callbacks_behaviour_removed.callback_functions.copy()
+        for callback in callbacks.values():
+            callback(behaviour)
+
+
+class NameExistsException(RuntimeError):
+    pass
+
+
+class NameIdenticalException(RuntimeError):
+    pass

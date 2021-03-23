@@ -136,11 +136,9 @@ class SingleAnimalTab(QWidget):
     def get_grid_pos(i):
         return [i / 3, i % 3]
 
-    def remove_widget(self, i):
+    def remove_widget(self, i, behaviour: Behaviour):
         item = self.behav_widgets.pop(i)
-        behav_dict = self.behaviour_dicts.pop(i)
         self.grid.removeWidget(item)
-        item.deleteLater()
         self.current_pos -= 1
 
         for j in range(i, len(self.behav_widgets)):
@@ -149,14 +147,7 @@ class SingleAnimalTab(QWidget):
             self.grid.addWidget(w, *self.get_grid_pos(w.index))            
         self.grid.addWidget(self.button_add, *self.get_grid_pos(len(self.behav_widgets)))
 
-        name = behav_dict['name']
-        for bd in self.behaviour_dicts:
-            comp = bd['compatible']
-            if comp.count(name):
-                comp.pop(comp.index(name))
-        for bw in self.behav_widgets:
-            bw.create_new_compatible_behaviour_widget()
-            # bw.compatible_behaviour_widget.remove_checkbox(name)
+        self.gui_data_interface.remove_behaviour(behaviour)
 
     def rename(self):
         self.vbox_buttons_left.removeWidget(self.btn_edit_name)
