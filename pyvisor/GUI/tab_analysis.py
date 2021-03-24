@@ -460,7 +460,7 @@ class TabAnalysis(QWidget):
         
         icon_list = list()
         button_list = list()
-        self.sco = MES.ManualEthologyScorer()
+        self.sco = self.gui_data_interface.manual_scorer
 
         number_of_behaviours, number_of_unique_disjunctive_behaviours = self._get_animal_configurations(button_list,
                                                                                                         icon_list)
@@ -614,77 +614,48 @@ class TabAnalysis(QWidget):
             print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
         else:
             print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
-            
-    def checkingInputs(self):
-        #initialise return variable
+
+    def _media_file_not_specified(self):
+        return (self.MediaFileName == '') or (self.MediaType == '')
+
+    def checkingInputs(self) -> bool:
         goOn = True
 
         # check if media file info is there
-        if (self.MediaFileName == '') or (self.MediaType == ''):
+        if self._media_file_not_specified():
             QMessageBox.warning(self, 'Choose media first!',
                                 "You need to choose an input media file(s)!",
                                 QMessageBox.Ok)
             goOn = False
-        
-        # check behaviour assignment
-        listOfUnassignedBehaviour = list()
-        no_icons = []
-        for animalI in range(len(self.animal_tabs)):
-            behavDict = self.animal_tabs[animalI].behaviour_dicts
-            for i in range(len(behavDict)):
-                key = 'A'+str(animalI) + '_' + behavDict[i]['name']
-                if key not in self.assignment[1].keys():
-                    listOfUnassignedBehaviour.append(key)
-                else:
-                    if self.assignment[1][key].scorer_actions == 'no button assigned':
-                        listOfUnassignedBehaviour.append(key)
 
-                behav_binding = self.assignment[1][key]
-                icon_path = behav_binding.icon_path
-                if len(icon_path) == 0:
-                    no_icons.append((behav_binding.animal_number, behav_binding.name))
-
-        if len(no_icons) > 0:            
+        no_icons = self.gui_data_interface.get_behaviours_without_icons()
+        if no_icons:
             warnmsg = "You have to assign an icon before the analysis "
             warnmsg += "can be started.\n"
             for ni in no_icons:
-                warnmsg += f"Animal {ni[0]}, behaviour {ni[1]} has no icon assigned.\n"
+                animal = self.gui_data_interface.animals[ni.animal_number]
+                warnmsg += "Animal {}, behaviour {} has no icon assigned.\n".format(
+                    animal.name,
+                    ni.name
+                )
             QMessageBox.warning(self, "No Icon Assigned!",
                                 warnmsg,
                                 QMessageBox.Ok)
             goOn = False
 
-        if len(listOfUnassignedBehaviour) > 0:
-            msg = 'There are unassigned behaviours:\n'
-            for behav in listOfUnassignedBehaviour:
-                msg = msg + behav + '\n'
+        no_button_assigned = self.gui_data_interface.get_scorer_actions_without_buttons_assigned()
+        if len(no_button_assigned) > 0:
+            msg = 'These actions have no buttons assigned:\n'
+            for action in no_button_assigned:
+                if isinstance(action, Behaviour):
+                    animal = self.gui_data_interface.animals[action.animal_number]
+                    msg += "- Animal {}, behaviour {}\n".format(animal.name, action.name)
+                else:
+                    msg += "- MovieAction {}\n".format(action.name)
 
-            QMessageBox.warning(self, 'Cannot proceed!',
+            QMessageBox.warning(self, 'Scorer actions unassigned!',
                                 msg,
                                 QMessageBox.Ok)
             goOn = False
         
-        # check movie control inputs
-        listOfUnassignedBehaviour = list()
-
-        try:
-            item_iterator = self.assignment[1].iteritems()
-        except AttributeError:
-            item_iterator = self.assignment[1].items()
-        
-        for key, binding in item_iterator:
-            if binding.animal_number == 'movie':
-                if binding.scorer_actions == 'no button assigned':
-                    listOfUnassignedBehaviour.append(binding.name)
-
-        if len(listOfUnassignedBehaviour) > 0:
-            msg = 'There are unassigned movie controls:\n'
-            for behav in listOfUnassignedBehaviour:
-                msg = msg + behav + '\n'
-
-            QMessageBox.warning(self, 'Cannot proceed!',
-                                msg,
-                                QMessageBox.Ok)
-            goOn = False
-
         return goOn

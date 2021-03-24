@@ -200,6 +200,13 @@ class GUIDataInterface:
         for callback in self.callbacks_animal_removed:
             callback(animal)
 
+    def get_behaviours_without_icons(self) -> List[Behaviour]:
+        items = []
+        for an in sorted(self.animals.keys()):
+            animal = self.animals[an]
+            items += animal.get_behaviours_without_icons()
+        return items
+
 
 class NameExistsException(RuntimeError):
     pass

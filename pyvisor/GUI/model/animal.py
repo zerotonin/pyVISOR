@@ -180,5 +180,14 @@ class Animal:
                 return True
         return False
 
+    def get_behaviours_without_icons(self) -> List[Behaviour]:
+        items = []
+        for label in sorted(self.behaviours.keys()):
+            behav = self.behaviours[label]
+            if behav.icon_path is not None:
+                continue
+            items.append(behav)
+        return items
+
 
 
