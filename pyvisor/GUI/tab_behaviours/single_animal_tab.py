@@ -103,10 +103,10 @@ class SingleAnimalTab(QWidget):
         return True
 
     def copy_this_tab(self):
-        self.parent_animal_tab_widget.copy_tab(self.animal)
+        self.parent_animal_tab_widget.copy_tab(self.animal, self.index)
 
     def remove_this_tab(self):
-        self.parent_animal_tab_widget.remove_tab(self.index)
+        self.parent_animal_tab_widget.remove_tab(self.animal.number, self.index)
         self.gui_data_interface.remove_animal(self.animal)
         self.close()
 

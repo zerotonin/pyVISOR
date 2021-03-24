@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 from PyQt5.QtWidgets import QTabWidget, QWidget
 
@@ -17,7 +17,7 @@ class AnimalTab(QTabWidget):
         super(AnimalTab, self).__init__(parent)
         self.gui_data_interface = gui_data_interface
         self.animals = gui_data_interface.animals
-        self.tabs_ = []
+        self.tabs_ = {}  # type: Dict[int, SingleAnimalTab]
         self._block_add = False
         self.init_UI()
 
@@ -46,11 +46,12 @@ class AnimalTab(QTabWidget):
     def _create_animal_tab_and_insert(self, animal, index):
         tab = SingleAnimalTab(self,
                               animal,
-                              len(self.tabs_),
+                              index,
                               self.gui_data_interface)
         self.insertTab(index, tab, animal.name)
-        self.tabs_.append(tab)
+        self.tabs_[animal.number] = tab
         self.setCurrentIndex(index)
+        self._block_add = False
 
     def _last_tab_was_clicked(self, index: int) -> bool:
         return index == self.count() - 1 and not self._block_add
@@ -73,26 +74,29 @@ class AnimalTab(QTabWidget):
     def rename_tab(self, index, name):
         self.tabBar().setTabText(index, name)
 
-    def remove_tab(self, index):        
-        self.tabs_.pop(index)
+    def remove_tab(self, animal_number: int, index: int):
+        self.tabs_.pop(animal_number)
         self._block_add = True
         self.removeTab(index)
-        for t in range(index, len(self.tabs_)):
-            self.tabs_[t].index = t
-        self.setCurrentIndex(max(index - 1, 0))
-        if index > 0:
-            return        
-        self.add_tab(0)
+        for tab in self.tabs_.values():
+            if tab.index > index:
+                tab.index = tab.index - 1
+        if len(self.tabs_) == 0:
+            self.add_tab(0)
+        current = index if index < len(self.tabs_) else len(self.tabs_) - 1
+        self.setCurrentIndex(current)
+        self._block_add = False
 
-    def copy_tab(self, animal: Animal):
+    def copy_tab(self, animal: Animal, index: int):
+        self._block_add = True
         name = 'copy_of_' + animal.name
         uname, number = self._generate_unique_name(0)
         copied_animal = self.gui_data_interface.add_animal(name, number)
         copied_animal.copy_behaviours(animal.behaviours)
-        self._create_animal_tab_and_insert(copied_animal, len(self.tabs_) - 1)
+        self._create_animal_tab_and_insert(copied_animal, index + 1)
 
     def create_new_tab(self, animal: Animal):
         tab = SingleAnimalTab(self, animal, len(self.tabs_),
                               self.gui_data_interface)
         self.addTab(tab, animal.name)
-        self.tabs_.append(tab)
+        self.tabs_[animal.number] = tab
