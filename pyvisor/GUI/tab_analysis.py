@@ -9,6 +9,7 @@ import os
 from .model.animal import Animal
 from .model.behaviour import Behaviour
 from .model.gui_data_interface import GUIDataInterface
+from ..ManualEthologyScorer import ManualEthologyScorer
 
 try:
     import thread as _thread
@@ -28,7 +29,7 @@ class TabAnalysis(QWidget):
         self.analysis_list = []
         self.parent = parent
         self.gui_data_interface = gui_data_interface
-        self.sco = self.gui_data_interface.manual_scorer
+        self.manual_scorer = None  # type: ManualEthologyScorer
 
         self.init_UI()
         
@@ -310,7 +311,7 @@ class TabAnalysis(QWidget):
         # load data
         filename = self.getFileName(title='Load Annotation', path=HOME, fileFilter = '*.pkl, *.pickle', mode ='load')
         if (len(filename) > 0):
-            self.sco.load_data(str(filename), 'pickle')
+            self.manual_scorer.load_data(str(filename), 'pickle')
         else:
             QMessageBox.warning(self, 'Data Loading Aborted!',
                                 "Data was not loaded!",
@@ -321,8 +322,8 @@ class TabAnalysis(QWidget):
             filename = self.getFileName(title='Save Results', path=HOME, fileFilter = '*.txt', mode ='save')
 
         if filename:
-            self.sco.save_data(str(filename),'text')
-            self.sco.save_data(str(filename)+'.pkl','pickle')
+            self.manual_scorer.save_data(str(filename), 'text')
+            self.manual_scorer.save_data(str(filename) + '.pkl', 'pickle')
         else:
             QMessageBox.warning(self, 'Data Saving Aborted!',
                                 "Data was  not saved!",
@@ -342,7 +343,7 @@ class TabAnalysis(QWidget):
                 filename = self.getFileName(title='Save Results', path=HOME, fileFilter = self.modeDict[mode], mode ='save')
         
             if filename:
-                self.sco.save_data(str(filename),self.modeDict[mode])
+                self.manual_scorer.save_data(str(filename), self.modeDict[mode])
             else:
                 QMessageBox.warning(self, 'Data Saving Aborted!',
                                     "Data was  not saved!",
@@ -365,7 +366,7 @@ class TabAnalysis(QWidget):
             else:
                 goOn = False
         if goOn:
-            self.sco.dIO.saveOverlayImage(str(filename),frameNo)
+            self.manual_scorer.dIO.saveOverlayImage(str(filename), frameNo)
             
     def exportMovie(self,  irrelevant, dirname='verboseMode',
                     prefix='verboseMode', extension='verboseMode'):
@@ -397,7 +398,7 @@ class TabAnalysis(QWidget):
                 goOn = False
 
         if goOn:
-            self.sco.dIO.saveOverlayMovie(dirname, prefix, extension)
+            self.manual_scorer.dIO.saveOverlayMovie(dirname, prefix, extension)
 
     def getFileName(self,title,path,fileFilter,mode):
         if mode == 'load':
@@ -460,22 +461,20 @@ class TabAnalysis(QWidget):
         
         icon_list = list()
         button_list = list()
-        self.sco = self.gui_data_interface.manual_scorer
+        self.manual_scorer = ManualEthologyScorer(self.gui_data_interface.animals,
+                                                  self.gui_data_interface.movie_bindings)
 
-        number_of_behaviours, number_of_unique_disjunctive_behaviours = self._get_animal_configurations(button_list,
-                                                                                                        icon_list)
-
-        self.animal_handler.save_state()
+        self.gui_data_interface.save_state()
 
         # load media
         if self.MediaType == 'Movie':
-            self.sco.loadMovie(self.MediaFileName)
+            self.manual_scorer.loadMovie(self.MediaFileName)
 
         elif self.MediaType == 'ImageSequence':
-            self.sco.loadImageSequence(self.MediaFileName)
+            self.manual_scorer.loadImageSequence(self.MediaFileName)
 
         elif self.MediaType == 'Norpix':
-            self.sco.loadNorPixSeq(self.MediaFileName)
+            self.manual_scorer.loadNorPixSeq(self.MediaFileName)
 
         else:
             QMessageBox.warning(self, 'Unknown media type: ' + self.MediaType,
@@ -485,28 +484,14 @@ class TabAnalysis(QWidget):
 
         icon_obj_list = self._make_icons(icon_list)
 
-        self._assign_icon_positions(number_of_behaviours, icon_obj_list, number_of_unique_disjunctive_behaviours)
-
         self.gui_device_name_to_scorer_device_name()
         self.UIC_switch_writer()
 
-        _thread.start_new_thread(self.sco.go, ())
+        _thread.start_new_thread(self.manual_scorer.go, ())
 
-    def _assign_icon_positions(self, behav_NumList, iconObjList, uniqueDJB_NumList):
-        # All Icon Positions are set one after the other / this needs to be user definable
-        counterStart = 0
-        counterStart2 = 0
-        for animalI in range(len(self.animal_tabs)):
-            counterStop = counterStart + uniqueDJB_NumList[animalI]
-            counterStop2 = counterStart2 + behav_NumList[animalI]
-            # the following line has to be changed
-            self.sco.animals[animalI].assignIconPos2UniqueDJB(self.sco.iconPos[counterStart:counterStop])
-            self.sco.animals[animalI].assignIcons(iconObjList[counterStart2:counterStop2],
-                                                  ['simple'] * (behav_NumList[animalI]))
-            counterStart = counterStop
-            counterStart2 = counterStop2
 
-    def _make_icons(self, iconList):
+    @staticmethod
+    def _make_icons(iconList):
         iconObjList = list()
         for i in range(len(iconList)):
             # make color
@@ -523,24 +508,24 @@ class TabAnalysis(QWidget):
         return iconObjList
 
     def _get_animal_configurations(self, buttonList, iconList):
-        uniqueDJB_NumList = list()
+        unique_disjoint_behav_NumList = list()
         behav_NumList = list()
         self.behavIterationList = list()
-        for animalI in range(len(self.animal_tabs)):
+        for an in sorted(self.gui_data_interface.animals.keys()):
             behavList, disjuncList = self._get_behaviours_and_disjunctions(animalI, buttonList, iconList)
 
             # add animal to self.scorer object
-            self.sco.addAnimal(self.animal_tabs[animalI].name,  # animal label
-                               100,  # ethogram length
-                               behavList,  # behaviour labels
-                               [0] * len(behavList),  # beginning status
-                               disjuncList)  # disjunction list first 4 or disjunct to each other as are the last two
+            self.manual_scorer.addAnimal(self.animal_tabs[animalI].name,  # animal label
+                                         100,  # ethogram_length length
+                                         behavList,  # behaviour labels
+                                         [0] * len(behavList),  # beginning status
+                                         disjuncList)  # disjunction list first 4 or disjunct to each other as are the last two
 
             # as list are mutable they cannot be hashed with set
             # therefore we have to do this
-            uniqueDJB_NumList.append(len(set(tuple(row) for row in disjuncList)))
+            unique_disjoint_behav_NumList.append(len(set(tuple(row) for row in disjuncList)))
             behav_NumList.append(len(behavList))
-        return behav_NumList, uniqueDJB_NumList
+        return behav_NumList, unique_disjoint_behav_NumList
 
     def _get_behaviours_and_disjunctions(self, animalI, buttonList, iconList):
         # initialise disjunction lists and behaviour lists
@@ -585,9 +570,9 @@ class TabAnalysis(QWidget):
 
             free_binding_list.append((self.assignment[0][key].scorer_actions, animal, behav))
 
-        self.sco.setUIC('Free', buttonBindings=self.assignment[0].keys(),
-                        freeBindingList=free_binding_list,
-                        UICdevice=self.UIC_layout)
+        self.manual_scorer.setUIC('Free', buttonBindings=self.assignment[0].keys(),
+                                  freeBindingList=free_binding_list,
+                                  UICdevice=self.UIC_layout)
 
     def _is_animal_behaviour(self, key: str, animal_behaviours_as_strings: List[List[str]]) -> bool:
         return self.assignment[0][key].name in chain.from_iterable(animal_behaviours_as_strings)

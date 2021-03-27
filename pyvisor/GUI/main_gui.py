@@ -117,7 +117,7 @@ class MovScoreGUI(QWidget):
         Pops up a dialog-window when the user wants to close the GUI's window.
         """
         self._save_display_values()
-        self._save_state()
+        self.gui_data_interface.save_state()
 
         reply = QMessageBox.question(self,
                                      'Message',
@@ -132,11 +132,6 @@ class MovScoreGUI(QWidget):
         self.values['display']['geometry'] = self.frameGeometry()
         with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
-
-    def _save_state(self):
-        state_dict = self.gui_data_interface.get_savable_dict()
-        with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
-            json.dump(state_dict, fh)
 
 
 if __name__ == "__main__":

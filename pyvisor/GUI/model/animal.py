@@ -189,5 +189,14 @@ class Animal:
             items.append(behav)
         return items
 
+    def get_behaviours_without_buttons_assigned(self, device: str) -> List[Behaviour]:
+        items = []
+        for label in sorted(self.behaviours.keys()):
+            behav = self.behaviours[label]
+            if behav.key_bindings[device] is not None:
+                continue
+            items.append(behav)
+        return items
+
 
 

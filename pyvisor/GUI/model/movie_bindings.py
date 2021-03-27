@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from .key_bindings import KeyBindings
 from .scorer_action import ScorerAction
@@ -57,3 +57,12 @@ class MovieBindings:
                 raise RuntimeError("Key {} is assigned to multiple movie actions.".format(button_identifier))
             assigned = action
         return assigned
+
+    def get_actions_without_buttons_assigned(self, device: str) -> List[ScorerAction]:
+        items = []
+        for name in self.keys():
+            action = self[name]
+            if action.key_bindings[device] is not None:
+                continue
+            items.append(action)
+        return items

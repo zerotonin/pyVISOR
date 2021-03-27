@@ -27,7 +27,7 @@ class analysis():
         '''
         This function reads in the animals structure from the Manual Ethology 
         Scorer. 
-        @params animals structure a list of animalEthogram objects
+        @params animals structure a list of AnimalEthogram objects
         '''
         self.ethograms  = self.parent.get_data()
         self.behaviours = self.parent.get_labels()

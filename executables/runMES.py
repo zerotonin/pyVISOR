@@ -17,21 +17,17 @@ iconList = [pygame.image.load(this_files_directory+'/heart.png'),
             pygame.image.load(this_files_directory+'/shoe.png'),
             pygame.image.load(this_files_directory+'/toothBrush.png'),
             pygame.image.load(this_files_directory+'/telescope.png')]
-            
-reload(MES)
-reload(MEH)
-%matplotlib qt
-        
+
 
 sco = MES.ManualEthologyScorer()
 sco.addAnimal('male 1', #animal label
-              100, # ethogram length
+              100, # ethogram_length length
               ['courtship','aggression','wing ext','leg fenc','cleaning','exploration'], # behaviour labels
               [0,0,0,0,0,0,0], # beginning status
-              [[0,1,2,3],[0,1,2,3],[0,1,2,3],[0,1,2,3],[4,5],[4,5]]), # disjunction list first 4 or disjunct to each other as are the last two
+              [[0,1,2,3],[0,1,2,3],[0,1,2,3],[0,1,2,3],[4,5],[4,5]]), # disjunction list first 4 are disjoint to each other as are the last two
               
 sco.addAnimal('male 2', #animal label
-              100, # ethogram length
+              100, # ethogram_length length
               ['courtship','aggression','wing ext','leg fenc','cleaning','exploration'], # behaviour labels
               [0,0,0,0,0,0,0], # beginning status
               [[0,1,2,3],[0,1,2,3],[0,1,2,3],[0,1,2,3],[4,5],[4,5]]), # disjunction list first 4 or disjunct to each other as are the last two

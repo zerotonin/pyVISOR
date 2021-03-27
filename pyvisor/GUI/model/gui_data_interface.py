@@ -1,3 +1,5 @@
+import json
+import os
 from typing import Dict, List, Any, Callable, Union, Tuple
 
 from pyvisor.GUI.model.animal import Animal
@@ -6,6 +8,8 @@ from .callback_handler import CallbackHandler
 from .movie_bindings import MovieBindings
 from .scorer_action import ScorerAction
 from ...ManualEthologyScorer import ManualEthologyScorer
+
+HOME = os.path.expanduser("~")
 
 
 class GUIDataInterface:
@@ -24,7 +28,6 @@ class GUIDataInterface:
         self.callbacks_update_icon = CallbackHandler()
         self.callbacks_compatibility_changed = CallbackHandler()
         self.selected_device = None  # type: Union[str, None]
-        self.manual_scorer = ManualEthologyScorer()
 
     def add_animal(self, name: str, number: int) -> Animal:
         new_animal = Animal(number, name)
@@ -206,6 +209,19 @@ class GUIDataInterface:
             animal = self.animals[an]
             items += animal.get_behaviours_without_icons()
         return items
+
+    def get_scorer_actions_without_buttons_assigned(self) -> List[ScorerAction]:
+        items = []
+        for an in sorted(self.animals.keys()):
+            animal = self.animals[an]
+            items += animal.get_behaviours_without_buttons_assigned(self.selected_device)
+        items += self.movie_bindings.get_actions_without_buttons_assigned(self.selected_device)
+        return items
+
+    def save_state(self):
+        state_dict = self.get_savable_dict()
+        with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
+            json.dump(state_dict, fh)
 
 
 class NameExistsException(RuntimeError):

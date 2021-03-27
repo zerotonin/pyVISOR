@@ -25,13 +25,13 @@ filename = '/media/gwdg-backup/02-16-16/15-32-41.912.seq'
 
 sco = MES.ManualEthologyScorer()
 sco.addAnimal('male 1', #animal label
-              100, # ethogram length
+              100, # ethogram_length length
               ['flipper','thrust','glide'], # behaviour labels
               [0,0,0], # beginning status
               [[0,1,2],[0,1,2],[0,1,2]])# disjunction list first 4 or disjunct to each other as are the last two
               
 sco.addAnimal('male 2', #animal label
-              100, # ethogram length
+              100, # ethogram_length length
               ['flipper','thrust','glide'], # behaviour labels
               [0,0,0], # beginning status
               [[0,1,2],[0,1,2],[0,1,2]])# disjunction list first 4 or disjunct to each other as are the last two
