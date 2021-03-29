@@ -56,5 +56,9 @@ class UserInputControl2:
         })
 
     def handle_input(self, input_code: str):
+        print("input_code:", input_code)
+        if input_code not in self._map_button_to_action:
+            print("button not assigned to any action")
+            return
         self._map_button_to_action[input_code](self.movie.get_frameNo())
 

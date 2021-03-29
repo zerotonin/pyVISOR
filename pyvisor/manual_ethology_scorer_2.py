@@ -66,8 +66,10 @@ class ManualEthologyScorer2:
             if event.type == pygame.JOYHATMOTION:
                 self._handle_event_joyhatmotion(event)
             if event.type == pygame.KEYDOWN:
-                self.user_input_control.handle_input(event.key)
+                input_code = event.unicode
+                self.user_input_control.handle_input(input_code)
             self.refresh_media()
+        return True
 
     def _handle_event_joyhatmotion(self, event):
         value = event.dict['value']
