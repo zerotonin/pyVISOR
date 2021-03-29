@@ -28,6 +28,7 @@ class GUIDataInterface:
         self.callbacks_update_icon = CallbackHandler()
         self.callbacks_compatibility_changed = CallbackHandler()
         self.selected_device = None  # type: Union[str, None]
+        self.manual_scorer = None  # type: Union[None, ManualEthologyScorer]
 
     def add_animal(self, name: str, number: int) -> Animal:
         new_animal = Animal(number, name)
@@ -159,8 +160,6 @@ class GUIDataInterface:
         return id_
 
     def set_compatibility(self, behav1: Behaviour, behav2: Behaviour, state: bool):
-        print('{} <-> {}: {}'.format(behav1.name, behav2.name, state))
-        print(behav1.compatible_with)
         if state:
             behav1.compatible_with.append(behav2.name)
             behav2.compatible_with.append(behav1.name)

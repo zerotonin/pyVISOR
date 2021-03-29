@@ -1,15 +1,16 @@
-from typing import List
+import os
+from typing import List, Union
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QComboBox, QLineEdit,
                              QVBoxLayout, QHBoxLayout, QFileDialog, QInputDialog, QMessageBox)
-import pyvisor.icon as ic
-import os
 
 from .model.animal import Animal
 from .model.behaviour import Behaviour
 from .model.gui_data_interface import GUIDataInterface
 from ..ManualEthologyScorer import ManualEthologyScorer
+from ..manual_ethology_scorer_2 import ManualEthologyScorer2
 
 try:
     import thread as _thread
@@ -29,14 +30,14 @@ class TabAnalysis(QWidget):
         self.analysis_list = []
         self.parent = parent
         self.gui_data_interface = gui_data_interface
-        self.manual_scorer = None  # type: ManualEthologyScorer
+        self.manual_scorer = None  # type: Union[ManualEthologyScorer, None]
 
+        self.media_file_name = ''
+        self.media_type = ''
         self.init_UI()
         
     def init_UI(self):
         self._init_background_image()
-        self.MediaFileName = ''
-        self.MediaType = ''
 
         self._init_layout_boxes()
 
@@ -301,8 +302,8 @@ class TabAnalysis(QWidget):
         if (len(filenames) > 0) and (ok is True):
             succStr = argList[1] + filenames[0]
             self.mov_label.setText(succStr)
-            self.MediaFileName = str(filenames[0]) # for some reason the media handler dislikes Qstrings
-            self.MediaType = argList[3]
+            self.media_file_name = str(filenames[0]) # for some reason the media handler dislikes Qstrings
+            self.media_type = argList[3]
         
         else:
             self.mov_label.setText(argList[2])
@@ -414,194 +415,36 @@ class TabAnalysis(QWidget):
         filename = filename[0]
         return filename
 
-    def compatabilityList2disjunctionList(self,disjuncList):
-        # initialise variables
-        compabilityList = list()
-        behavList = list()
-        allDisjunc = list()
-
-        # read out complex parallel behaviour list
-        for tupI in disjuncList:
-            # get the succession of behaviours in one list
-            behavList.append(str(tupI[0]))
-            # get all unique paralell behaviours in a list of lists
-            mySet = set(tupI[1])
-            compabilityList.append(list(mySet))
-            
-        #go trough each behaviour again
-        for i in range(len(behavList)):
-
-            #initialise disunctionlist with all behaviours
-            disjuncList = behavList[:]
-            compList    = compabilityList[i]
-
-            # now delete every parallel behaviour out of the disjuction list
-            for j in range(len(compList)):
-                if compList[j] in disjuncList:
-                    disjuncList.remove(str(compList[j]))
-                else:
-                    print("Behaviour " + compList[j] + " was found in compatebility list but no references were found in the general behaviour list!")
-
-            # now we make the disjunction list as list of index positions
-            disjuncIndexList = list()
-
-            for behav in disjuncList:
-                disjuncIndexList.append(behavList.index(behav))
-
-            #add everything to a list of lists again
-            allDisjunc.append(disjuncIndexList)
-        
-        return allDisjunc
-    
     def runScorer(self):
         goOn = self.checkingInputs()
 
         if goOn is False:
             return
-        
-        icon_list = list()
-        button_list = list()
-        self.manual_scorer = ManualEthologyScorer(self.gui_data_interface.animals,
-                                                  self.gui_data_interface.movie_bindings)
+
+        scorer = ManualEthologyScorer2(self.gui_data_interface.animals,
+                                       self.gui_data_interface.movie_bindings,
+                                       self.gui_data_interface.selected_device)
+        self.gui_data_interface.manual_scorer = scorer
+        self.manual_scorer = scorer
 
         self.gui_data_interface.save_state()
 
-        # load media
-        if self.MediaType == 'Movie':
-            self.manual_scorer.loadMovie(self.MediaFileName)
-
-        elif self.MediaType == 'ImageSequence':
-            self.manual_scorer.loadImageSequence(self.MediaFileName)
-
-        elif self.MediaType == 'Norpix':
-            self.manual_scorer.loadNorPixSeq(self.MediaFileName)
-
-        else:
-            QMessageBox.warning(self, 'Unknown media type: ' + self.MediaType,
-                                "Specify a movie, an image sequence, or norpix sequence.",
+        try:
+            self.manual_scorer.load_movie(self.media_file_name, self.media_type)
+        except KeyError as ex:
+            QMessageBox.warning(self, 'Unknown media type: ' + self.media_type,
+                                "Specify a movie, an image sequence, or norpix sequence.\nError message: {}".format(ex),
                                 QMessageBox.Ok)
             return
 
-        icon_obj_list = self._make_icons(icon_list)
-
-        self.gui_device_name_to_scorer_device_name()
-        self.UIC_switch_writer()
-
         _thread.start_new_thread(self.manual_scorer.go, ())
-
-
-    @staticmethod
-    def _make_icons(iconList):
-        iconObjList = list()
-        for i in range(len(iconList)):
-            # make color
-            colorList = list()
-            for j in [1, 3, 5]:  # colors are defined in hexcode e.g #ff32a2
-                colorList.append(int(iconList[i][1][j:j + 2], 16))
-            colorTupel = (colorList[0], colorList[1], colorList[2])
-
-            # make icon
-            icon = ic.icon(color=colorTupel)
-            icon.readImage(iconList[i][0])
-            icon.decall2icon()
-            iconObjList.append(icon.icon2pygame())
-        return iconObjList
-
-    def _get_animal_configurations(self, buttonList, iconList):
-        unique_disjoint_behav_NumList = list()
-        behav_NumList = list()
-        self.behavIterationList = list()
-        for an in sorted(self.gui_data_interface.animals.keys()):
-            behavList, disjuncList = self._get_behaviours_and_disjunctions(animalI, buttonList, iconList)
-
-            # add animal to self.scorer object
-            self.manual_scorer.addAnimal(self.animal_tabs[animalI].name,  # animal label
-                                         100,  # ethogram_length length
-                                         behavList,  # behaviour labels
-                                         [0] * len(behavList),  # beginning status
-                                         disjuncList)  # disjunction list first 4 or disjunct to each other as are the last two
-
-            # as list are mutable they cannot be hashed with set
-            # therefore we have to do this
-            unique_disjoint_behav_NumList.append(len(set(tuple(row) for row in disjuncList)))
-            behav_NumList.append(len(behavList))
-        return behav_NumList, unique_disjoint_behav_NumList
-
-    def _get_behaviours_and_disjunctions(self, animalI, buttonList, iconList):
-        # initialise disjunction lists and behaviour lists
-        behavList = list()
-        disjuncList = list()
-        # shorthand
-        behavDict = self.animal_tabs[animalI].behaviour_dicts
-        for i in range(len(behavDict)):
-            # get key
-            key = 'A' + str(animalI) + '_' + behavDict[i]['name']
-
-            behav_binding = self.assignment[1][key]
-            # fill lists
-            buttonList.append(behav_binding.scorer_actions)
-            behavList.append(str(behav_binding.name))
-            icon_path, icon_color = (behav_binding.icon_path,
-                                     behav_binding.color)
-            iconList.append((icon_path, icon_color))
-            # disjunction list needs to be updated because it is not implemented yet
-            disjuncList.append((behavDict[i]['name'], behavDict[i]['compatible']))
-            self.behavIterationList.append(key);
-        disjuncList = self.compatabilityList2disjunctionList(disjuncList)
-        return behavList, disjuncList
-
-    def UIC_switch_writer(self):
-        animal_behaviours_as_strings = self._get_animal_behaviours_as_strings()
-
-        free_binding_list = list()
-        for key in self.assignment[0].keys():
-            print('animal:', self.assignment[0][key].animal_number)
-            if self.assignment[0][key].animal_number == 'movie':
-                animal = -1
-            elif self.assignment[0][key].animal_number == 'None':
-                continue
-            else:
-                animal = self.assignment[0][key].animal_number
-
-            behav = self.assignment[0][key].name  # is a str
-            if self._is_animal_behaviour(key, animal_behaviours_as_strings):
-                # is an int
-                behav = animal_behaviours_as_strings[self.assignment[0][key].animal_number].index(behav)
-
-            free_binding_list.append((self.assignment[0][key].scorer_actions, animal, behav))
-
-        self.manual_scorer.setUIC('Free', buttonBindings=self.assignment[0].keys(),
-                                  freeBindingList=free_binding_list,
-                                  UICdevice=self.UIC_layout)
 
     def _is_animal_behaviour(self, key: str, animal_behaviours_as_strings: List[List[str]]) -> bool:
         return self.assignment[0][key].name in chain.from_iterable(animal_behaviours_as_strings)
 
-    def _get_animal_behaviours_as_strings(self):
-        behavStrListList = list()
-        for i in range(len(self.animal_tabs)):
-            behavStrListList.append(list())
-        for string in self.behavIterationList:
-            idx = string.index('_')
-            animalI = int(string[1:idx])
-            behavStrListList[animalI].append(string[idx + 1:])
-        return behavStrListList
-
-    def gui_device_name_to_scorer_device_name(self):
-        
-        if self.UIC_layout == 'X-Box':
-            self.UIC_layout ='XBox'
-        elif self.UIC_layout == 'Playstation':
-            self.UIC_layout ='PS'
-        elif self.UIC_layout == 'Keyboard':
-            self.UIC_layout ='Keyboard'
-        elif self.UIC_layout == 'Free':
-            print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
-        else:
-            print('Unknown UIC device in function tab_analysis.guiUICLayout2scoLayout: ' + self.UIC_layout)
 
     def _media_file_not_specified(self):
-        return (self.MediaFileName == '') or (self.MediaType == '')
+        return (self.media_file_name == '') or (self.media_type == '')
 
     def checkingInputs(self) -> bool:
         goOn = True
@@ -615,11 +458,11 @@ class TabAnalysis(QWidget):
 
         no_icons = self.gui_data_interface.get_behaviours_without_icons()
         if no_icons:
-            warnmsg = "You have to assign an icon before the analysis "
+            warnmsg = "You have to assign an Icon before the analysis "
             warnmsg += "can be started.\n"
             for ni in no_icons:
                 animal = self.gui_data_interface.animals[ni.animal_number]
-                warnmsg += "Animal {}, behaviour {} has no icon assigned.\n".format(
+                warnmsg += "Animal {}, behaviour {} has no Icon assigned.\n".format(
                     animal.name,
                     ni.name
                 )

@@ -18,13 +18,7 @@ class TabResults(QWidget):
         self.parent = parent
         self.gui_data_interface = gui_data_interface
         self.sco = gui_data_interface.manual_scorer
-        # create analysis object / if empty scorer object we ignore fps
-        self.ana = self.sco.anaO
-        try:
-            self.refreshAnaObj()
-        except:
-            print('no data for analysis available')
-        
+
         self.init_UI()
 
     def init_UI(self):        

@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
 
-class icon:
+class Icon:
     
     def __init__(self, size=(96, 96), color=(144, 21, 222), alpha=255):
         self.size   = size
@@ -24,12 +24,9 @@ class icon:
         self.circle = []
         self.decall = []
         self.radius = int(self.size[0]/2)
-        self.icon   = []
+        self.icon   = None
     
     def readImage(self, filename):
-        self.decall = Image.open(filename).convert('RGBA')
-    
-    def loadLibDecall(self, filename):
         self.decall = Image.open(filename).convert('RGBA')
     
     def decall2icon(self):
@@ -66,7 +63,7 @@ class icon:
         r, g, b = map(invert, (r, g, b))
         self.decall = Image.merge(self.decall.mode, (r, g, b, a))
     
-    def icon2pygame(self):
+    def icon2pygame(self) -> pygame.image:
         raw_str = self.icon.tobytes("raw", 'RGBA')
         return pygame.image.fromstring(raw_str, self.size , 'RGBA')
 
@@ -77,7 +74,7 @@ def write_tmp_icon(path_to_icon, color):
     if len(path_to_icon) == 0:
         return ""
     relative_path = path_to_icon.split("resources/icons/")
-    if (len(relative_path) != 2):
+    if len(relative_path) != 2:
         raise RuntimeError("can't handle path '" + path_to_icon
                            + "' with current naive approach!")
     relative_path = relative_path[1]
@@ -88,14 +85,13 @@ def write_tmp_icon(path_to_icon, color):
     tmp_str = "/".join(folders) + "/" + fname + color_str + extension    
     if (os.path.isfile(HOME + '/.pyvisor/.tmp_icons/' + tmp_str)):
         return tmp_str
-    # os.makedirs(HOME + '/.pyvisor/.tmp_icons/' + folders)
     current_path = HOME + '/.pyvisor/.tmp_icons'
     for folder in folders:
         current_path = current_path + "/" + folder
         if (os.path.isdir(current_path)):
             continue
         os.mkdir(current_path)
-    I = icon(color=color)
+    I = Icon(color=color)
     I.readImage(path_to_icon)
     I.decall2icon()
     f = open(HOME + '/.pyvisor/.tmp_icons/' + tmp_str, 'wb')

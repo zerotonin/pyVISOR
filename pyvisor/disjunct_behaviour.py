@@ -29,7 +29,7 @@ class DisjunctBehaviour:
             self.icon = pygame.image.load(icon)
 
         elif modus == 'compose':
-            # Create a a transparent surface in icon size
+            # Create a a transparent surface in Icon size
             newIm = pygame.Surface([self.iconSize, self.iconSize], pygame.SRCALPHA, 32)
             newIm = newIm.convert_alpha()
             # draw circler

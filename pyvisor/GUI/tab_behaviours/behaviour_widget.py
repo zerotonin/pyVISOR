@@ -62,7 +62,7 @@ class BehaviourWidget(QFrame):
                             0, 0, 1, 2)
 
     def _init_icon_row(self):
-        lbl_icon = QLabel('icon')
+        lbl_icon = QLabel('Icon')
         self.grid.addWidget(lbl_icon,
                             2, 1, 1, 1)
         self.btn_icon = QPushButton('')
@@ -97,7 +97,7 @@ class BehaviourWidget(QFrame):
 
     def set_icon(self):
         icon = QFileDialog.getOpenFileName(self,
-                                           'select icon',
+                                           'select Icon',
                                            self.behaviour.icon_path)
         if not icon:
             return

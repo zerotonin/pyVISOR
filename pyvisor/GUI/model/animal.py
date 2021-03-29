@@ -3,6 +3,9 @@ from typing import Dict, List, Any, Union
 from pyvisor.GUI.model.behaviour import Behaviour
 
 
+AnimalNumber = int
+
+
 class Animal:
 
     def __init__(self, number: int, name: str):

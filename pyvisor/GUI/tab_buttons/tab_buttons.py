@@ -158,7 +158,7 @@ class TabButtons(QWidget):
             labels_list[i].setStyleSheet(self.labelStyle)
         # adjust behaviour color
         labels_list[2].setStyleSheet('color: ' + behav_binding.color)
-        # add widgets to layout !!! need to add icon when implemented
+        # add widgets to layout !!! need to add Icon when implemented
         for i in range(3):
             hbox_temp.addWidget(labels_list[i])
         return hbox_temp

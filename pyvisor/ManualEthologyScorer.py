@@ -23,6 +23,7 @@ from .animal_ethogram import AnimalEthogram
 this_files_directory = os.path.dirname(os.path.realpath(__file__))
 _AnimalNumber = int
 
+
 class ManualEthologyScorer:
 
     def __init__(self, animals: Dict[_AnimalNumber, Animal], movie_bindings: MovieBindings):
@@ -41,7 +42,7 @@ class ManualEthologyScorer:
         print(this_files_directory)
         self.deleteIcon = self.image2surf(this_files_directory + '/../resources/icons/game/del.png')
 
-        # preallocate icon positions
+        # preallocate Icon positions
         self.iconPos = [[(0, 0), (0, 96)],
                         [(96, 0), (96, 96)],
                         [(192, 0), (192, 96)],
@@ -69,7 +70,7 @@ class ManualEthologyScorer:
 
     def setIconPositions(self):
 
-        if (self.mediaType == 'unknown'):
+        if self.mediaType == 'unknown':
             print('you first have to load a medium')
         else:
             xPos = [0, 96, 192, 288, 384, 480]
@@ -90,30 +91,25 @@ class ManualEthologyScorer:
             print(self.iconPos)
 
     def updateIconsPerAnimal(self, animal):
-        '''
-        Updates the display depending on the status variable. 
-        '''
-
         for i in range(len(animal.behaviours)):
             try:
                 # Status of the animal
                 status = animal.behaviours[i].status
-                if (status == 1):
-                    self.screen.blit(animal.behaviours[i].icon, animal.behaviours[i].icon_path[0])
-                elif (status == -1):
+                if status == 1:
+                    self.screen.blit(animal.behaviours[i].Icon, animal.behaviours[i].icon_path[0])
+                elif status == -1:
                     # check if all behaviours in this disjunctionlist are -1
                     stati = list()
                     for dBI in animal.behaviours:
                         stati.append(dBI.status)
                     # if all stati are -1 this is a real deletion
-                    if (sum(stati) == len(stati) * -1):
+                    if sum(stati) == len(stati) * -1:
                         self.screen.blit(self.deleteIcon, animal.behaviours[i].icon_path[0])
 
                 # ethogram_length for behaviour 1
-                if (animal.behaviours[i].ethogram[self.movie.get_frameNo()] == 1):
+                if animal.behaviours[i].ethogram[self.movie.get_frameNo()] == 1:
                     self.screen.blit(animal.behaviours[i].iconT, animal.behaviours[i].icon_path[1])
             except IndexError:
-                # print 'overshoot'
                 self.movie.frameNo = self.movie.length
 
     def updateIcons(self):
@@ -126,9 +122,9 @@ class ManualEthologyScorer:
         label = myfont.render("frame: " + str(self.movie.frameNo), 1, (255, 255, 0))
         label2 = myfont.render("time: " + str(self.movie.get_time()) + ' s', 1, (255, 255, 0))
         label3 = myfont.render("replay-fps: " + str(self.mediafps), 1, (255, 255, 0))
-        self.screen.blit(label, (self.MovieWinOffSet + 10, self.movie.height - 45 + 144))
-        self.screen.blit(label2, (self.MovieWinOffSet + 10, self.movie.height - 30 + 144))
-        self.screen.blit(label3, (self.MovieWinOffSet + 10, self.movie.height - 15 + 144))
+        self.screen.blit(label, (self.movie_window_offset + 10, self.movie.height - 45 + 144))
+        self.screen.blit(label2, (self.movie_window_offset + 10, self.movie.height - 30 + 144))
+        self.screen.blit(label3, (self.movie_window_offset + 10, self.movie.height - 15 + 144))
 
     def loadMovie(self, filename):
         pygame.init()
@@ -207,7 +203,7 @@ class ManualEthologyScorer:
 
         # update the movie
         self.screen.fill((0, 0, 0))
-        self.screen.blit(movie_screen, (self.MovieWinOffSet, 144))
+        self.screen.blit(movie_screen, (self.movie_window_offset, 144))
         self.updateIcons()
         pygame.display.update()
 
@@ -319,11 +315,11 @@ class ManualEthologyScorer:
         # if images looks transpoded change height and width in media handler NOT HERE
         height = self.movie.height
         width = self.movie.width
-        if (width < 576):
-            self.MovieWinOffSet = int((576 - width) / 2.0)
+        if width < 576:
+            self.movie_window_offset = int((576 - width) / 2.0)
             width = 576
         else:
-            self.MovieWinOffSet = 0
+            self.movie_window_offset = 0
         height = height + 288
 
         self.screen = self.window.set_mode((int(width), int(height)))
@@ -368,7 +364,7 @@ class ManualEthologyScorer:
                                                                                                              self.runMov,
                                                                                                              self.movBackWards,
                                                                                                              inputCode)
-                        elif (value > self.user_input_control.axisThresh[inputCode + '+']):
+                        elif value > self.user_input_control.axisThresh[inputCode + '+']:
                             inputCode = inputCode + '+'
                             self.mediafps, self.runMov, self.movBackWards = self.user_input_control.checkPad(event,
                                                                                                              self.mediafps,

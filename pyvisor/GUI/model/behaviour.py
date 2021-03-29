@@ -1,7 +1,12 @@
 from typing import Dict, Any, List
 
+import numpy as np
+
 from pyvisor.GUI.model.key_bindings import KeyBindings
 from .scorer_action import ScorerAction
+from ...icon import Icon
+
+BehaviourName = str
 
 
 class Behaviour(ScorerAction):
@@ -34,6 +39,13 @@ class Behaviour(ScorerAction):
             raise KeyError(msg.format(device))
 
     @property
+    def icon(self):
+        icon = Icon(color=self.color)
+        icon.readImage(self.icon_path)
+        icon.decall2icon()
+        return icon.icon2pygame()
+
+    @property
     def label(self) -> str:
         if self.animal_number == self.ANIMAL_MOVIE:
             return "movie_{}".format(self.name)
@@ -46,7 +58,7 @@ class Behaviour(ScorerAction):
     def __str__(self):
         s = 'BehavBinding:\n'
         for lbl, attr in zip(
-                ['animal', 'icon', 'behaviour'],
+                ['animal', 'Icon', 'behaviour'],
                 [self.animal_number, self.icon_path, self.name]
         ):
             s += f'  {lbl}: {attr}\n'
