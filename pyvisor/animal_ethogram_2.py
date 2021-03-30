@@ -14,10 +14,10 @@ class AnimalEthogram2:
         self._table = pd.DataFrame(
             np.zeros((n_frames, len(animal.behaviours)), dtype=bool),
             index=range(n_frames),
-            columns=sorted([b.name for b in animal.behaviours.values()])
+            columns=sorted([b.label for b in animal.behaviours.values()])
         )
         self._icons = {
-            behav.name: behav.icon for behav in self._animal.behaviours.values()
+            behav.label: behav.icon for behav in self._animal.behaviours.values()
         }
 
     def assign_behaviours(self, frame: int, behav_labels: List[str]):
@@ -26,7 +26,7 @@ class AnimalEthogram2:
         self._table.loc[frame, behav_labels] = [True] * len(behav_labels)
         if self._table.loc[frame].sum() == len(behav_labels):
             return
-        for label in self._table.columns.names:
+        for label in self._table.columns:
             if not self._behaviours_are_compatible(behav_labels + [label]):
                 self._table.loc[frame, label] = False
 
@@ -46,3 +46,6 @@ class AnimalEthogram2:
                 if other_behav.name not in this_behav.compatible_with:
                     return False
         return True
+
+    def delete_behaviours(self, frame_number: int):
+        self._table.loc[frame_number] = [False] * len(self._table.columns)

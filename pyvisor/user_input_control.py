@@ -28,37 +28,48 @@ class UserInputControl2:
                 behav = animal.behaviours[label]
                 self._map_button_to_action[
                     behav.key_bindings[selected_device]
-                ] = lambda frame: self.ethogram.assign_state(frame, behav.label)
+                ] = _ToggleStateCaller(self.ethogram, label)
 
     def _init_movie_buttons(self, movie_bindings: MovieBindings, selected_device: str):
         self._map_button_to_action.update({
             movie_bindings["toggleRunMov"].key_bindings[selected_device]:
-                lambda x: self.movie.toggle_play(),
+                self.movie.toggle_play,
             movie_bindings["stopToggle"].key_bindings[selected_device]:
-                lambda x: None,
+                self._stop_and_reset,
             movie_bindings["runMovForward"].key_bindings[selected_device]:
-                lambda x: self.movie.set_run_forward(),
+                self.movie.set_run_forward,
             movie_bindings["runMovReverse"].key_bindings[selected_device]:
-                lambda x: self.movie.set_run_reverse(),
+                self.movie.set_run_reverse,
             movie_bindings["changeFPShigh"].key_bindings[selected_device]:
-                lambda x: self.movie.increase_fps(),
+                self.movie.increase_fps,
             movie_bindings["changeFPSlow"].key_bindings[selected_device]:
-                lambda x: self.movie.decrease_fps(),
+                self.movie.decrease_fps,
             movie_bindings["changeFrameNoHigh1"].key_bindings[selected_device]:
-                lambda x: self.movie.set_current_frame_delta(1),
+                lambda: self.movie.set_current_frame_delta(1),
             movie_bindings["changeFrameNoLow1"].key_bindings[selected_device]:
-                lambda x: self.movie.set_current_frame_delta(-1),
+                lambda: self.movie.set_current_frame_delta(-1),
             movie_bindings["changeFrameNoHigh10"].key_bindings[selected_device]:
-                lambda x: self.movie.set_current_frame_delta(10),
+                lambda: self.movie.set_current_frame_delta(10),
             movie_bindings["changeFrameNoLow10"].key_bindings[selected_device]:
-                lambda x: self.movie.set_current_frame_delta(-10)
+                lambda: self.movie.set_current_frame_delta(-10)
 
         })
 
-    def handle_input(self, input_code: str):
-        print("input_code:", input_code)
-        if input_code not in self._map_button_to_action:
-            print("button not assigned to any action")
-            return
-        self._map_button_to_action[input_code](self.movie.get_frameNo())
+    def _stop_and_reset(self):
+        self.movie.set_stop()
+        self.ethogram.clear_states()
 
+    def handle_input(self, input_code: str):
+        if input_code not in self._map_button_to_action:
+            return
+        self._map_button_to_action[input_code]()
+
+
+class _ToggleStateCaller:
+
+    def __init__(self, ethogram: Ethogram, label: str):
+        self._ethogram = ethogram
+        self._label = label
+
+    def __call__(self):
+        self._ethogram.toggle_state(self._label)

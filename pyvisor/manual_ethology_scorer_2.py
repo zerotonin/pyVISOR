@@ -29,6 +29,7 @@ class ManualEthologyScorer2:
         }  # type: Dict[AnimalNumber, List[Tuple[int, int]]]
 
         self.window = pygame.display
+        self._delete_icon = None
         self.ethogram = None
         self.movie = None  # type: Union[None, MediaHandler]
         self.user_input_control = None  # type: Union[None, UserInputControl2]
@@ -41,7 +42,7 @@ class ManualEthologyScorer2:
 
         # setup icons
         icon = self.image2surf(this_files_directory + "/../resources/MES.png")
-        self.delete_icon = self.image2surf(this_files_directory + "/../resources/icons/game/del.png")
+        self._delete_icon = self.image2surf(this_files_directory + "/../resources/icons/game/del.png")
         self.window.set_icon(icon)
         self.window.set_caption("Manual Ethology Scorer - " + self.movie.fileName)
 
@@ -68,7 +69,8 @@ class ManualEthologyScorer2:
             if event.type == pygame.KEYDOWN:
                 input_code = event.unicode
                 self.user_input_control.handle_input(input_code)
-            self.refresh_media()
+        self.refresh_media()
+        self.ethogram.apply_states_at_frame(self.movie.frameNo)
         return True
 
     def _handle_event_joyhatmotion(self, event):
@@ -157,7 +159,7 @@ class ManualEthologyScorer2:
         if len(state) == 0:
             return
         if 'delete' in state:
-            icons = [self.delete_icon]
+            icons = [self._delete_icon]
         else:
             icons = animal_etho.get_icons(state)
         positions = self._icon_positions[an][:len(icons)]

@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 import numpy as np
 
@@ -109,4 +109,12 @@ class Behaviour(ScorerAction):
             d[binding.label] = binding
         return d
 
+    @staticmethod
+    def parse_label(label: str) -> Tuple[int, str]:
+        if not label.startswith("A"):
+            raise ValueError("Behaviour label has to start with 'A{animal_number}_'")
+        s = label.split('_')
+        animal_number = int(s[0][1:])
+        behav_name = '_'.join(s[1:])
+        return animal_number, behav_name
 

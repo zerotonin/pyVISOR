@@ -12,8 +12,9 @@ import pygame
 from PIL import Image
 
 
-class MediaHandler():
-    def __init__(self, filename, mode, fps=0, bufferSize=2000):
+class MediaHandler:
+
+    def __init__(self, filename, mode, bufferSize=2000):
         self.activeFrame = []
         self.frameNo = 0
         self.mode = mode
@@ -52,17 +53,22 @@ class MediaHandler():
             self.size = (self.width, self.height)
             self.fps = 25
         else:
-            print('MediaHandler:unknown input_device')
+            raise RuntimeError('MediaHandler: unknown input_device')
+        self._movie_fps = self.fps
+
 
     def get_frame(self) -> np.ndarray:
         period = 1.0 / self.fps * 1000
-        time_diff = pygame.time.get_ticks() - self.t_last_frame_drawn
+        t = pygame.time.get_ticks()
+        time_diff = t - self.t_last_frame_drawn
         frame_number = self.frameNo
         if time_diff > period and self._run_movie:
             if self._run_forward:
                 frame_number += 1
+                self.t_last_frame_drawn = t
             else:
                 frame_number -= 1
+                self.t_last_frame_drawn = t
             if frame_number > self.length - 2 or frame_number < 0:
                 self._run_movie = False
         frame = self.getFrame(frame_number)
@@ -123,7 +129,7 @@ class MediaHandler():
         self.activeFrame = self.media.get_frame(frameNo)
 
     def get_time(self):
-        return self.frameNo / self.fps
+        return self.frameNo / self._movie_fps
 
     def toggle_play(self):
         self._run_movie = not self._run_movie
@@ -142,3 +148,7 @@ class MediaHandler():
 
     def set_current_frame_delta(self, delta: int):
         self.frameNo += delta
+
+    def set_stop(self):
+        self._run_movie = False
+        self.frameNo = 0
