@@ -12,7 +12,7 @@ reload(ic)
 this_files_directory=os.path.dirname(os.path.realpath('__file__'))
 fileName = this_files_directory +'/icons/game/01.png'
 
-myIcon = ic.icon()
+myIcon = ic.Icon()
 myIcon.readImage(fileName)
 myIcon.invertDecall()
 myIcon.decall2icon()

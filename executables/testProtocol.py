@@ -4,13 +4,12 @@ Created on Thu Jun  9 12:52:32 2016
 
 @author: bgeurten
 """
-import numpy as np
-import animalEthogram
-reload(animalEthogram)
-a = animalEthogram.animalEthogram(100,
-                                  ['A1 B0','A1 B1','A1 B2','A1 B3','A1 B4','A1 B5'], 
-                                  [0,0,0,0,0,0],
-                                  [[0,1,2],[0,1,2],[0,1,2],[3],[4,5] ,[4,5]])
+
+from pyvisor.animal_ethogram import AnimalEthogram
+a = AnimalEthogram(100,
+['A1 B0','A1 B1','A1 B2','A1 B3','A1 B4','A1 B5'],
+[0,0,0,0,0,0],
+[[0,1,2],[0,1,2],[0,1,2],[3],[4,5] ,[4,5]])
 a.setBehaviour('Behav3',9,3)
 a.setBehaviour('Behav3',16,3)
 
