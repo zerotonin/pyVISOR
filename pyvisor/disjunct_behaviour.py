@@ -22,7 +22,7 @@ class DisjunctBehaviour:
         self.icon_path = icon_path
         self.iconSize = iconSize
 
-    def setIcon(self, icon, modus):
+    def set_icon(self, icon, modus):
         if modus == 'simple':
             self.icon = icon
         elif modus == 'fileName':
@@ -45,14 +45,14 @@ class DisjunctBehaviour:
         self.iconT = pygame.transform.scale(self.iconT,
                                             (int(self.iconT.get_height() / 2), int(self.iconT.get_height() / 2)))
 
-    def assignValue(self, frameA, frameB, value):
+    def assign_value(self, frameA, frameB, value):
         # This is neede because the movie can run backwards
         if (frameA > frameB):
             self.ethogram[frameB:frameA] = value
         elif (frameA < frameB):
             self.ethogram[frameA:frameB] = value
 
-    def setBehaviour(self, newB, frameNo):
+    def set_behaviour(self, newB, frameNo):
 
         # print ' behaviour: ' , self.label ,' | status: ', self.status, ' | newB: '
 
@@ -82,10 +82,10 @@ class DisjunctBehaviour:
                 # the old behaviour has to end first
                 if (self.status == -1):
                     # end deleting
-                    self.assignValue(self.lastChange, frameNo, 0)
+                    self.assign_value(self.lastChange, frameNo, 0)
                 else:
                     # end active behaviour
-                    self.assignValue(self.lastChange, frameNo, self.status)
+                    self.assign_value(self.lastChange, frameNo, self.status)
 
                 # start new behaviour
                 self.lastChange = frameNo
