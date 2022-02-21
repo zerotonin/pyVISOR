@@ -1,7 +1,7 @@
 """
 USAGE: 
    o install in develop mode: navigate to the folder containing this file,
-                              and type 'python setup.py develop --user'.
+                              and type `pip install -e . --user`
                               (ommit '--user' if you want to install for 
                                all users)                           
 """
@@ -9,23 +9,22 @@ USAGE:
 
 from setuptools import setup
 
-## use setup to install SDF package and executable scripts
-setup(name='pymovscore',
-      version='0.99',
+setup(name='pyvisor',
+      version='0.0.1',
       description='',
       url='',
       author='Bart Geurten, Ilyas Kuhlemann',
       author_email='ilyasp.ku@gmail.com',
       license='',
-      packages=["pymovscore",
-                "pymovscore.analysis",
-                "pymovscore.exception",
-                "pymovscore.GUI",
-                "pymovscore.GUI.icon_gallery",
-                "pymovscore.GUI.tab_behaviours"],
+      packages=["pyvisor",
+                "pyvisor.analysis",
+                "pyvisor.exception",
+                "pyvisor.GUI",
+                "pyvisor.GUI.icon_gallery",
+                "pyvisor.GUI.tab_behaviours"],
       entry_points={
           "console_scripts": [],
-          "gui_scripts" : ["pymovscore-gui = pymovscore.GUI.run_gui:main"]         
+          "gui_scripts": ["pyvisor-gui = pyvisor.GUI.run_gui:main"]         
       },
       install_requires=[
           "pillow",
@@ -37,6 +36,7 @@ setup(name='pymovscore',
           "pandas",
           "scipy",
           "dill",
-          "xlsxwriter"
+          "xlsxwriter",
+          "PyQt5"
       ],
       zip_safe=False)

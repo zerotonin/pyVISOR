@@ -1,0 +1,6 @@
+*__pycache__*
+pyvisor.egg-info
+dist
+docs/_build
+.idea
+venv
