@@ -32,7 +32,7 @@ class animalEthogram():
         self.disjunctionList =disjunctionList
         
         #add unique disjunct behaviour goup List
-        self.uniqueDJList = self.getUniqueDJList(self.disjunctionList)    
+        self.uniqueDJList = self.get_unique_disjunct_list(self.disjunctionList)    
         
         self.Switch = {}
         for i in range(len(behavLabels)):
@@ -41,7 +41,7 @@ class animalEthogram():
             self.Switch['Del' +   str(i)]  = self.setLambda(i,-1)
         
         
-    def assignIconPos2UniqueDJB(self,iconPosList):
+    def assign_icon_position_to_unique_behaviour(self,iconPosList):
         uniqueDJL = self.uniqueDJList
         uniqueDJL.sort(key = len)
         uniqueDJL = reversed(uniqueDJL)
@@ -51,11 +51,11 @@ class animalEthogram():
                 self.behaviours[behav].iconPos = newPos
                 
                 
-    def assignIcons(self, iconList,modi):
+    def assign_icons(self, iconList,modi):
         for i in range(len(self.behaviours)):
             self.behaviours[i].setIcon(iconList[i],modi[i])
     
-    def setBehaviour(self, newB,frameNo,behavI):
+    def set_behaviour(self, newB,frameNo,behavI):
         # get the number of disjunctive behaviours to the active behaviour
         #print self.disjunctionList
         numberOfDisjunctions = len(self.disjunctionList[behavI])
@@ -88,11 +88,11 @@ class animalEthogram():
             else:
                 self.Switch[newB](frameNo)
                 
-    def resetEthogram(self,frameLen):
+    def reset_ethogram(self,frameLen):
         for i in range(len(self.behaviours)):           
             self.behaviours[i].ethogram =  np.zeros((frameLen,1),int)
             
-    def getEthogram(self):
+    def get_ethogram(self):
         if (len(self.behaviours) == 1):
             return self.behaviours[0].ethogram
         else:
@@ -105,7 +105,7 @@ class animalEthogram():
     def setLambda(self,iterator, behaviour):
             return lambda y: self.behaviours[iterator].setBehaviour(behaviour,y)
     
-    def getUniqueDJList(self,disjuncList):
+    def get_unique_disjunct_list(self,disjuncList):
         output = []
         seen = list()
         for item in disjuncList:
