@@ -1,64 +1,59 @@
-# README #
+# pyVISOR
 
+pyVISOR is a desktop toolkit for manual ethology scoring. It allows researchers to play back image sequences or movies, annotate behaviours with configurable key bindings or game controllers, and export structured ethograms for downstream analysis. The project bundles a PyQt-based GUI, reusable data models, and automation helpers aimed at behavioural neuroscience and related disciplines.
 
-### What is this repository for? ###
+## Supported platforms
 
-This is the Manual Ethology Scorer (MES) BAsically it can run image sequences and movies while you type in through a gamepad what the organisms are doing.
+pyVISOR is built on cross-platform Python tooling and is expected to run on:
 
-* Version: 0
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+- **Windows 10/11** (x86_64)
+- **macOS 12+** (Apple Silicon or Intel)
+- **Linux** distributions with glibc 2.28+ (x86_64)
 
-### ToDo ###
+The GUI requires a working OpenGL-capable display stack. Xbox-compatible gamepads are optional but supported.
 
-* Core 
-    * Update dataIO to include analysis data if present
+## Quick start
 
-* GUI
-    * Annotation Plots A time axis showing activities (seperate thread)
-    * Analysis Graphics - Results Tab
-    * Autosave
-    * hidden dirs should be changed to the multiplatform qt
-        $ settings = QSettings("gwdg", "patras")
-        $ lastDir = settings.value("lastDir", "")
-        $ settings.setValue("lastDir", self.__from)
-        
+1. Install the published package:
+   ```bash
+   pip install pyvisor
+   ```
+2. Launch the graphical scorer:
+   ```bash
+   pyvisor-gui
+   ```
+3. Open a video or image sequence, configure animals and behaviours, then begin annotating.
 
-* Binaries for all platforms (Win, Mac,Linux, Rasp)
+### From source
 
+If you are working from a source checkout, install the project in editable mode:
 
-### How do I get set up? ###
-
-You might need an Xbox One Gamepad driver:
-
-https://github.com/paroj/xpad
-
-```
-    $ sudo apt-get install xboxdrv
-    $ sudo systemctl enable xboxdrv.service
-    $ sudo systemctl start xboxdrv.service
+```bash
+pip install -e .[dev]
 ```
 
+Then start the GUI as described above.
 
-Anaconda is a package that includes all sub packages we need except opencv, pyav and pims, which can be installed easily:
+## Contributing
 
-Download from https://www.continuum.io/downloads
+We welcome contributions of bug reports, feature ideas, and pull requests.
 
-Than install everything through Anaconda
-```
-    $ conda env create -f visor.yaml
-    $ conda activate visor
-    $ conda install -c conda-forge av
-    $ python -m pip install pygame
-    $ conda install -c conda-forge moviepy S
-    $ python setup.py install # Installing pymovscore
-```
+1. Fork the repository and create a feature branch.
+2. Install development dependencies with `pip install -e .[dev]`.
+3. Run the unit tests with `pytest` before opening a pull request.
+4. Follow the existing code style and include documentation or tests where relevant.
 
-### Troubleshouting
+Please open an issue if you plan significant changes so the community can discuss the design upfront.
 
-after installation resource json and del.png are not found copy those files resources to /path/to/ANACONDA/env/visor/lib/python/sitepackeges/pymovscore
+## Troubleshooting
 
-```
-    $ cp -rvf /visor/resources....
-    $ cp -rvf json
-    $ cp -rvf pictures Gui
-```
+- **GUI does not start** – verify that PyQt dependencies are installed for your platform and that you are using Python 3.9 or newer.
+- **Video playback is blank or stutters** – ensure you have hardware-accelerated OpenGL drivers and install the optional multimedia dependencies listed in `pyproject` extras (e.g., `PyAV`, `opencv-python`).
+- **Controller input is not detected** – confirm that the operating system recognises your gamepad. On Linux you may need the `xpad` or `xboxdrv` kernel modules.
+- **Configuration files** – pyVISOR stores temporary GUI state in `~/.pyvisor/`. Deleting this directory resets layouts and cached icons.
+
+If you encounter an issue that is not covered here, please file a bug report with logs (`~/.pyvisor/*.log`) and steps to reproduce.
+
+## License
+
+This project is distributed under the terms specified in the `LICENSE` file.
