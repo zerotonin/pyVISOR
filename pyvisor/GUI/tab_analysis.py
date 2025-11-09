@@ -4,7 +4,8 @@ from typing import List, Union
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QComboBox, QLineEdit,
-                             QVBoxLayout, QHBoxLayout, QFileDialog, QInputDialog, QMessageBox)
+                             QVBoxLayout, QHBoxLayout, QFileDialog, QInputDialog, QMessageBox,
+                             QCheckBox, QSpinBox)
 
 from .model.animal import Animal
 from .model.behaviour import Behaviour
@@ -49,6 +50,7 @@ class TabAnalysis(QWidget):
         """
         self.makeBehaviourSummary()
         self.makeMovieFileIO()
+        self.makeAutosaveRow()
         self.makeCommandoRow()
         self.setLayout(self.vbox)
 
@@ -57,12 +59,14 @@ class TabAnalysis(QWidget):
     def _init_layout_boxes(self):
         self.vbox = QVBoxLayout()
         self.hboxMov = QHBoxLayout()
+        self.hboxAutosave = QHBoxLayout()
         self.hboxConciseBehav = QHBoxLayout()
         self.hboxCommand = QHBoxLayout()
         # Comment out the following line to see desired output.
         self.vbox.addStretch()
         self.vbox.addLayout(self.hboxConciseBehav)
         self.vbox.addLayout(self.hboxMov)
+        self.vbox.addLayout(self.hboxAutosave)
         self.vbox.addLayout(self.hboxCommand)
         self.vbox.addStretch()
 
@@ -146,7 +150,79 @@ class TabAnalysis(QWidget):
                
         self.hboxMov.addWidget(self.mov_label)
         self.hboxMov.addStretch()
-        
+
+    def makeAutosaveRow(self):
+        settings = self.gui_data_interface.autosave_settings
+
+        self.autosave_checkbox = QCheckBox('Enable autosave')
+        self.autosave_checkbox.setChecked(settings['enabled'])
+        self.autosave_checkbox.setStyleSheet(self.labelStyle)
+        self.autosave_checkbox.stateChanged.connect(self._on_autosave_enabled_changed)
+
+        self.autosave_interval_spin = QSpinBox()
+        self.autosave_interval_spin.setRange(1, 240)
+        minutes = max(1, int(round(settings['interval_seconds'] / 60)))
+        self.autosave_interval_spin.setValue(minutes)
+        self.autosave_interval_spin.setSuffix(' min')
+        self.autosave_interval_spin.valueChanged.connect(self._on_autosave_interval_changed)
+
+        self.autosave_path_edit = QLineEdit(settings['directory'])
+        self.autosave_path_edit.setReadOnly(True)
+        self.autosave_path_edit.setStyleSheet('color: #ffffff')
+
+        self.autosave_browse_button = QPushButton('Browse…')
+        self.autosave_browse_button.clicked.connect(self._choose_autosave_directory)
+
+        every_label = QLabel('every')
+        every_label.setStyleSheet(self.labelStyle)
+        to_label = QLabel('to')
+        to_label.setStyleSheet(self.labelStyle)
+
+        self.hboxAutosave.addWidget(self.autosave_checkbox)
+        self.hboxAutosave.addWidget(every_label)
+        self.hboxAutosave.addWidget(self.autosave_interval_spin)
+        self.hboxAutosave.addWidget(to_label)
+        self.hboxAutosave.addWidget(self.autosave_path_edit)
+        self.hboxAutosave.addWidget(self.autosave_browse_button)
+        self.hboxAutosave.addStretch()
+
+        self._update_autosave_widget_state(settings['enabled'])
+
+    def _update_autosave_widget_state(self, enabled: bool):
+        self.autosave_interval_spin.setEnabled(enabled)
+        self.autosave_path_edit.setEnabled(enabled)
+        self.autosave_browse_button.setEnabled(enabled)
+
+    def _on_autosave_enabled_changed(self, state):
+        enabled = state == Qt.Checked
+        self.gui_data_interface.autosave_settings['enabled'] = enabled
+        self._update_autosave_widget_state(enabled)
+        self.gui_data_interface.save_state()
+        self._refresh_manual_scorer_autosave()
+
+    def _on_autosave_interval_changed(self, value: int):
+        seconds = max(60, value * 60)
+        self.gui_data_interface.autosave_settings['interval_seconds'] = seconds
+        self.gui_data_interface.save_state()
+        self._refresh_manual_scorer_autosave()
+
+    def _choose_autosave_directory(self):
+        directory = QFileDialog.getExistingDirectory(self, 'Autosave Directory',
+                                                     self.gui_data_interface.autosave_settings['directory'])
+        if not directory:
+            return
+        self.gui_data_interface.autosave_settings['directory'] = directory
+        self.autosave_path_edit.setText(directory)
+        self.gui_data_interface.save_state()
+        self._refresh_manual_scorer_autosave()
+
+    def _refresh_manual_scorer_autosave(self):
+        scorer = self.gui_data_interface.manual_scorer
+        if scorer is None:
+            return
+        scorer.autosave_settings = self.gui_data_interface.autosave_settings
+        scorer.dio.autosave()
+
     def makeCommandoRow(self):
         # ------------------------
         #       command widgets
@@ -423,7 +499,8 @@ class TabAnalysis(QWidget):
 
         scorer = ManualEthologyScorer2(self.gui_data_interface.animals,
                                        self.gui_data_interface.movie_bindings,
-                                       self.gui_data_interface.selected_device)
+                                       self.gui_data_interface.selected_device,
+                                       autosave_settings=dict(self.gui_data_interface.autosave_settings))
         self.gui_data_interface.manual_scorer = scorer
         self.manual_scorer = scorer
 

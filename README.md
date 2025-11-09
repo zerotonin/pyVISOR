@@ -34,6 +34,24 @@ pip install -e .[dev]
 
 Then start the GUI as described above.
 
+### Autosave ethograms
+
+The scorer can periodically persist in-progress ethograms so that annotations
+survive crashes or accidental exits. Open the **Analysis** tab and enable the
+*Autosave* row to configure:
+
+- **Enable autosave** – turns periodic snapshots on or off.
+- **Interval** – how often snapshots are written (in minutes). The GUI stores
+  the value per user and applies it the next time the scorer starts.
+- **Target directory** – where autosave artifacts are stored (defaults to
+  `~/.pyvisor/autosaves`). Each cycle updates `autosave_latest.pkl` and
+  `autosave_latest.txt` and archives timestamped `.pkl` snapshots so you can
+  roll back to earlier states.
+
+Autosave runs continuously while the scorer is open. You can tweak the
+settings even during an active scoring session; the background writer applies
+changes immediately.
+
 ### Create a local conda environment
 
 Use the provided `environment.yml` to create an isolated workspace with all

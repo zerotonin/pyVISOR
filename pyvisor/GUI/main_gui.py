@@ -68,6 +68,14 @@ class MovScoreGUI(QWidget):
             self.gui_data_interface.movie_bindings = MovieBindings.from_dict(
                 state["movie_bindings"]
             )
+        autosave_state = state.get("autosave", {})
+        if autosave_state.get("directory") in (None, ""):
+            autosave_state["directory"] = os.path.join(HOME, ".pyvisor", "autosaves")
+        self.gui_data_interface.autosave_settings.update({
+            "enabled": autosave_state.get("enabled", self.gui_data_interface.autosave_settings["enabled"]),
+            "interval_seconds": autosave_state.get("interval_seconds", self.gui_data_interface.autosave_settings["interval_seconds"]),
+            "directory": autosave_state.get("directory", self.gui_data_interface.autosave_settings["directory"])
+        })
 
     def initUI(self):
         """

@@ -29,6 +29,11 @@ class GUIDataInterface:
         self.callbacks_compatibility_changed = CallbackHandler()
         self.selected_device = None  # type: Union[str, None]
         self.manual_scorer = None  # type: Union[None, ManualEthologyScorer]
+        self.autosave_settings = {
+            "enabled": False,
+            "interval_seconds": 300,
+            "directory": os.path.join(HOME, ".pyvisor", "autosaves")
+        }
 
     def add_animal(self, name: str, number: int) -> Animal:
         new_animal = Animal(number, name)
@@ -52,7 +57,8 @@ class GUIDataInterface:
         d = {
             "animals": self.get_savable_list(),
             "selected_device": self.selected_device,
-            "movie_bindings": self.movie_bindings.to_dict()
+            "movie_bindings": self.movie_bindings.to_dict(),
+            "autosave": self.autosave_settings
         }
         return d
 
@@ -219,7 +225,9 @@ class GUIDataInterface:
 
     def save_state(self):
         state_dict = self.get_savable_dict()
-        with open(HOME + '/.pyvisor/guidefaults_animals.json', 'wt') as fh:
+        directory = os.path.join(HOME, '.pyvisor')
+        os.makedirs(directory, exist_ok=True)
+        with open(os.path.join(directory, 'guidefaults_animals.json'), 'wt') as fh:
             json.dump(state_dict, fh)
 
 

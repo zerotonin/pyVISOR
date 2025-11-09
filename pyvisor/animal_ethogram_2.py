@@ -49,3 +49,13 @@ class AnimalEthogram2:
 
     def delete_behaviours(self, frame_number: int):
         self._table.loc[frame_number] = [False] * len(self._table.columns)
+
+    def to_numpy(self) -> np.ndarray:
+        return self._table.to_numpy(dtype=int, copy=True)
+
+    def get_formatted_behaviour_labels(self) -> List[str]:
+        labels: List[str] = []
+        for label in self._table.columns:
+            behav = self._animal.behaviours[label]
+            labels.append(f"{self._animal.name} : {behav.name}")
+        return labels

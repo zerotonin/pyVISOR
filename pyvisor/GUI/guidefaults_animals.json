@@ -33,5 +33,10 @@
     "icon_path": null,
     "color": "#C0C0C0",
     "compatible_with": []
-  }]}]
+  }]}],
+  "autosave": {
+    "enabled": false,
+    "interval_seconds": 300,
+    "directory": ""
+  }
 }

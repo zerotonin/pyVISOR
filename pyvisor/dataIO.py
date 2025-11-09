@@ -5,8 +5,10 @@ Created on Wed Jun  1 13:42:07 2016
 @author: bgeurten
 """
 import numpy as np
-import scipy.io as sio 
+import scipy.io as sio
 from time import sleep
+import threading
+from datetime import datetime
 #import pandas as pd
 import pickle, xlsxwriter, pygame,os
 
@@ -16,8 +18,116 @@ class dataIO:
         self.saveFpos     = ''
         self.loadFpos     = ''
         self.parent = parent
+        self._autosave_thread = None
+        self._autosave_stop_event = threading.Event()
+        self._autosave_lock = threading.Lock()
+        self._autosave_config = {
+            'enabled': False,
+            'interval': 300,
+            'output_path': ''
+        }
+
     def autosave(self):
-        pass
+        """Start, update, or stop the autosave worker.
+
+        Autosave parameters are provided by the parent scorer via the
+        ``autosave_settings`` attribute.  The expected schema is::
+
+            {
+                "enabled": bool,
+                "interval_seconds": int,
+                "directory": str,
+            }
+
+        The worker writes ``autosave_latest.pkl`` and
+        ``autosave_latest.txt`` into the configured directory at the given
+        interval.  When autosave is disabled any existing worker is shut
+        down gracefully.
+        """
+
+        settings = getattr(self.parent, 'autosave_settings', None)
+        if settings is None:
+            return
+
+        enabled = bool(settings.get('enabled', False))
+        interval = int(settings.get('interval_seconds', 300))
+        output_path = settings.get('directory', '') or ''
+
+        snapshot_now = False
+        with self._autosave_lock:
+            self._autosave_config.update({
+                'enabled': enabled,
+                'interval': max(1, interval),
+                'output_path': output_path
+            })
+
+            if not enabled:
+                self._stop_autosave_locked()
+                return
+
+            if not self._autosave_thread or not self._autosave_thread.is_alive():
+                self._autosave_stop_event.clear()
+                self._autosave_thread = threading.Thread(target=self._autosave_worker,
+                                                          name='pyvisor-autosave',
+                                                          daemon=True)
+                self._autosave_thread.start()
+            else:
+                snapshot_now = True
+
+        if snapshot_now:
+            self._write_autosave_snapshot()
+
+    def stop_autosave(self):
+        with self._autosave_lock:
+            self._autosave_config['enabled'] = False
+            self._stop_autosave_locked()
+
+    def _stop_autosave_locked(self):
+        if self._autosave_thread and self._autosave_thread.is_alive():
+            self._autosave_stop_event.set()
+            self._autosave_thread.join(timeout=1.0)
+        self._autosave_thread = None
+        self._autosave_stop_event = threading.Event()
+
+    def _autosave_worker(self):
+        # Perform an immediate snapshot followed by periodic updates.
+        while True:
+            try:
+                self._write_autosave_snapshot()
+            except Exception as exc:  # pragma: no cover - log and continue
+                print('Autosave failed: {}'.format(exc))
+
+            interval = self._autosave_config.get('interval', 300)
+            if self._autosave_stop_event.wait(interval):
+                break
+
+    def _write_autosave_snapshot(self):
+        with self._autosave_lock:
+            if not self._autosave_config.get('enabled', False):
+                return
+            directory = self._autosave_config.get('output_path')
+            if not directory:
+                return
+
+            os.makedirs(directory, exist_ok=True)
+
+            data = self.parent.get_data()
+            if data is False or data is None:
+                return
+
+            labels = []
+            if hasattr(self.parent, 'get_labels'):
+                labels = self.parent.get_labels() or []
+
+            timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+            base_path = os.path.join(directory, 'autosave_latest')
+            timestamp_base = os.path.join(directory, f'autosave_{timestamp}')
+
+            self.saveAsPy(base_path + '.pkl', data)
+            self.saveAsTXT(base_path + '.txt', data, labels)
+
+            # Keep a timestamped copy to make it easy to revisit older states.
+            self.saveAsPy(timestamp_base + '.pkl', data)
     
     def saveAsTXT(self,fpos,data,behavLabels):
         headStr = ''
