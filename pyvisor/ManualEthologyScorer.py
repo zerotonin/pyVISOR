@@ -19,6 +19,7 @@ from .GUI.model.movie_bindings import MovieBindings
 from .analysis import analysis_online as analysis
 from . import animal_ethogram as aE
 from .animal_ethogram import AnimalEthogram
+from .resources import resource_path
 
 this_files_directory = os.path.dirname(os.path.realpath(__file__))
 _AnimalNumber = int
@@ -40,7 +41,7 @@ class ManualEthologyScorer:
         self.movBackWards = False
         self.mediaType = 'unknown'
         print(this_files_directory)
-        self.deleteIcon = self.image2surf(this_files_directory + '/../resources/icons/game/del.png')
+        self.deleteIcon = self.image2surf(str(resource_path('icons', 'game', 'del.png')))
 
         # preallocate Icon positions
         self.iconPos = [[(0, 0), (0, 96)],
@@ -306,8 +307,8 @@ class ManualEthologyScorer:
         clock = pygame.time.Clock()
 
         # setup icons
-        icon = self.image2surf(this_files_directory + "/../resources/MES.png")
-        self.deleteIcon = self.image2surf(this_files_directory + "/../resources/icons/game/del.png")
+        icon = self.image2surf(str(resource_path("MES.png")))
+        self.deleteIcon = self.image2surf(str(resource_path("icons", "game", "del.png")))
         self.window.set_icon(icon)
         self.window.set_caption("Manual Ethology Scorer - " + self.movie.fileName)
 

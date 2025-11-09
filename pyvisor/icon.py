@@ -10,6 +10,10 @@ from PIL import Image, ImageDraw
 import pygame
 import numpy as np
 import os
+from pathlib import Path
+
+from .resources import icons_root
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 
@@ -73,16 +77,20 @@ def write_tmp_icon(path_to_icon, color):
         return ""
     if len(path_to_icon) == 0:
         return ""
-    relative_path = path_to_icon.split("resources/icons/")
-    if len(relative_path) != 2:
-        raise RuntimeError("can't handle path '" + path_to_icon
-                           + "' with current naive approach!")
-    relative_path = relative_path[1]
-    folders, _file = os.path.split(relative_path)
-    folders = folders.split("/")
-    fname, extension = os.path.splitext(_file)
+    icon_path = Path(path_to_icon)
+    try:
+        relative_path = icon_path.relative_to(icons_root())
+    except ValueError:
+        folders = []
+        fname = icon_path.stem
+        extension = icon_path.suffix
+    else:
+        folders = list(relative_path.parent.parts)
+        fname = relative_path.stem
+        extension = relative_path.suffix
     color_str = "_%i_%i_%i" % color
-    tmp_str = "/".join(folders) + "/" + fname + color_str + extension    
+    tmp_parts = folders + [fname + color_str + extension]
+    tmp_str = "/".join(part for part in tmp_parts if part)
     if (os.path.isfile(HOME + '/.pyvisor/.tmp_icons/' + tmp_str)):
         return tmp_str
     current_path = HOME + '/.pyvisor/.tmp_icons'
@@ -92,7 +100,7 @@ def write_tmp_icon(path_to_icon, color):
             continue
         os.mkdir(current_path)
     I = Icon(color=color)
-    I.readImage(path_to_icon)
+    I.readImage(str(icon_path))
     I.decall2icon()
     f = open(HOME + '/.pyvisor/.tmp_icons/' + tmp_str, 'wb')
     I.icon.save(f)
