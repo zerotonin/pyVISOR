@@ -34,6 +34,20 @@ pip install -e .[dev]
 
 Then start the GUI as described above.
 
+### Create a local conda environment
+
+Use the provided `environment.yml` to create an isolated workspace with all
+runtime dependencies pinned to known-good versions:
+
+```bash
+conda env create -f environment.yml
+conda activate pyvisor
+pip install -e .
+```
+
+The final `pip install -e .` step installs the project in editable mode so that
+changes to the source tree are picked up immediately.
+
 ## Contributing
 
 We welcome contributions of bug reports, feature ideas, and pull requests.
