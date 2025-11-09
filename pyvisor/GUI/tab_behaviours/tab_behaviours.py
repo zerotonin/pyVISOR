@@ -7,7 +7,6 @@ from ..model.gui_data_interface import GUIDataInterface
 from ..styles import style_tab_behaviours
 from .animal_tab import AnimalTab
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 
 class TabBehaviours(QWidget):

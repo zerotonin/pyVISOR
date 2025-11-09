@@ -8,8 +8,7 @@ from .callback_handler import CallbackHandler
 from .movie_bindings import MovieBindings
 from .scorer_action import ScorerAction
 from ...ManualEthologyScorer import ManualEthologyScorer
-
-HOME = os.path.expanduser("~")
+from ...paths import ensure_autosave_dir, settings_path
 
 
 class GUIDataInterface:
@@ -32,7 +31,7 @@ class GUIDataInterface:
         self.autosave_settings = {
             "enabled": False,
             "interval_seconds": 300,
-            "directory": os.path.join(HOME, ".pyvisor", "autosaves")
+            "directory": str(ensure_autosave_dir())
         }
 
     def add_animal(self, name: str, number: int) -> Animal:
@@ -225,9 +224,9 @@ class GUIDataInterface:
 
     def save_state(self):
         state_dict = self.get_savable_dict()
-        directory = os.path.join(HOME, '.pyvisor')
-        os.makedirs(directory, exist_ok=True)
-        with open(os.path.join(directory, 'guidefaults_animals.json'), 'wt') as fh:
+        settings_file = settings_path('guidefaults_animals.json')
+        settings_file.parent.mkdir(parents=True, exist_ok=True)
+        with settings_file.open('wt') as fh:
             json.dump(state_dict, fh)
 
 

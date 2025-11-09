@@ -19,9 +19,9 @@ from .tab_behaviours.tab_behaviours import TabBehaviours
 from pyvisor.GUI.tab_buttons.tab_buttons import TabButtons
 from .tab_results import TabResults
 from pyvisor.resources import resource_path
+from pyvisor.paths import ensure_autosave_dir, ensure_user_data_dir, settings_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 
 class MovScoreGUI(QWidget):
@@ -40,8 +40,9 @@ class MovScoreGUI(QWidget):
         self._load_display_values()
 
     def _load_display_values(self):
+        settings_file = settings_path('guidefaults_movscoregui.pkl')
         try:
-            with open(HOME + "/.pyvisor/guidefaults_movscoregui.pkl", 'rb') as f:
+            with settings_file.open('rb') as f:
                 self.values = pickle.load(f)
         except FileNotFoundError:
             try:
@@ -53,8 +54,9 @@ class MovScoreGUI(QWidget):
                 self.values['display']['geometry'] = QRect(0, 0, 640, 480)
 
     def _load_state(self):
+        state_file = settings_path('guidefaults_animals.json')
         try:
-            with open(HOME + "/.pyvisor/guidefaults_animals.json", 'r') as f:
+            with state_file.open('r') as f:
                 state = json.load(f)
         except FileNotFoundError:
             with open(HERE + "/guidefaults_animals.json", 'r') as f:
@@ -70,7 +72,7 @@ class MovScoreGUI(QWidget):
             )
         autosave_state = state.get("autosave", {})
         if autosave_state.get("directory") in (None, ""):
-            autosave_state["directory"] = os.path.join(HOME, ".pyvisor", "autosaves")
+            autosave_state["directory"] = str(ensure_autosave_dir())
         self.gui_data_interface.autosave_settings.update({
             "enabled": autosave_state.get("enabled", self.gui_data_interface.autosave_settings["enabled"]),
             "interval_seconds": autosave_state.get("interval_seconds", self.gui_data_interface.autosave_settings["interval_seconds"]),
@@ -139,7 +141,9 @@ class MovScoreGUI(QWidget):
 
     def _save_display_values(self):
         self.values['display']['geometry'] = self.frameGeometry()
-        with open(HOME + '/.pyvisor/guidefaults_movscoregui.pkl', 'wb') as f:
+        ensure_user_data_dir()
+        settings_file = settings_path('guidefaults_movscoregui.pkl')
+        with settings_file.open('wb') as f:
             pickle.dump(self.values, f, pickle.HIGHEST_PROTOCOL)
 
 
@@ -147,11 +151,8 @@ if __name__ == "__main__":
 
     import sys
     app = QApplication(sys.argv)
+    ensure_user_data_dir()
     gui = MovScoreGUI()
     gui.show()
-
-    import os
-    if not os.path.isdir(HOME+'/.pyvisor'):
-        os.makedirs(HOME+'/.pyvisor')
 
     sys.exit(app.exec_())

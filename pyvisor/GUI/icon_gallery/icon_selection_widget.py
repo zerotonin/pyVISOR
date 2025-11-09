@@ -2,7 +2,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 from .icon_gallery import IconGallery
 from pyvisor.resources import icon_categories

@@ -13,6 +13,7 @@ from .ethogram import Ethogram
 from .user_input_control import UserInputControl2
 from .resources import resource_path
 from . import dataIO
+from .paths import ensure_autosave_dir
 
 this_files_directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -207,9 +208,7 @@ class ManualEthologyScorer2:
             max(1, int(self._autosave_settings.get('interval_seconds', 300)))
         )
         if not self._autosave_settings.get('directory'):
-            self._autosave_settings['directory'] = os.path.join(
-                os.path.expanduser('~'), '.pyvisor', 'autosaves'
-            )
+            self._autosave_settings['directory'] = str(ensure_autosave_dir())
 
     def get_data(self):
         if self.ethogram is None:

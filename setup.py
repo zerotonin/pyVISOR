@@ -22,6 +22,7 @@ setup(name='pyvisor',
           "gui_scripts": ["pyvisor-gui = pyvisor.GUI.run_gui:main"]
       },
       install_requires=[
+          "appdirs",
           "pillow",
           "pygame",
           "numpy",

@@ -1,9 +1,6 @@
 import os
 from typing import Dict, List, Any
 
-import os
-from typing import Dict, List, Any
-
 import pygame
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QCloseEvent
@@ -17,7 +14,6 @@ from pyvisor.GUI.model.scorer_action import ScorerAction
 from pyvisor.GUI.tab_buttons.assign_button_box import AssignButtonBox
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 DEVICES = {"Keyboard": HERE + "/../pictures/gamePad_KB.png",
            "Playstation": HERE + "/../pictures/gamePad_PS.png",
            "X-Box": HERE + "/../pictures/gamePad_XB.png",

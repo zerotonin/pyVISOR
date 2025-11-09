@@ -8,7 +8,6 @@ from ..model.animal import Animal
 from ..model.gui_data_interface import GUIDataInterface
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 
 class AnimalTab(QTabWidget):

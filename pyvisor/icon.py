@@ -9,13 +9,10 @@ Created on Thu Jun 16 13:19:47 2016
 from PIL import Image, ImageDraw
 import pygame
 import numpy as np
-import os
 from pathlib import Path
 
+from .paths import ensure_tmp_icon_dir
 from .resources import icons_root
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 
 class Icon:
@@ -73,10 +70,9 @@ class Icon:
 
     
 def write_tmp_icon(path_to_icon, color):
-    if path_to_icon is None:
-        return ""
-    if len(path_to_icon) == 0:
-        return ""
+    if not path_to_icon:
+        return None
+
     icon_path = Path(path_to_icon)
     try:
         relative_path = icon_path.relative_to(icons_root())
@@ -90,18 +86,15 @@ def write_tmp_icon(path_to_icon, color):
         extension = relative_path.suffix
     color_str = "_%i_%i_%i" % color
     tmp_parts = folders + [fname + color_str + extension]
-    tmp_str = "/".join(part for part in tmp_parts if part)
-    if (os.path.isfile(HOME + '/.pyvisor/.tmp_icons/' + tmp_str)):
-        return tmp_str
-    current_path = HOME + '/.pyvisor/.tmp_icons'
-    for folder in folders:
-        current_path = current_path + "/" + folder
-        if (os.path.isdir(current_path)):
-            continue
-        os.mkdir(current_path)
+    relative_tmp_path = Path(*tmp_parts)
+    tmp_icon_dir = ensure_tmp_icon_dir()
+    target_path = tmp_icon_dir / relative_tmp_path
+    if target_path.is_file():
+        return target_path
+    target_path.parent.mkdir(parents=True, exist_ok=True)
     I = Icon(color=color)
     I.readImage(str(icon_path))
     I.decall2icon()
-    f = open(HOME + '/.pyvisor/.tmp_icons/' + tmp_str, 'wb')
-    I.icon.save(f)
-    return tmp_str
+    with target_path.open('wb') as f:
+        I.icon.save(f)
+    return target_path

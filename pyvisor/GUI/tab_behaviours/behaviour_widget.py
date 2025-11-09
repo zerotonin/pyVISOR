@@ -13,7 +13,6 @@ from ...icon import write_tmp_icon
 from pyvisor.resources import resource_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 
 class BehaviourWidget(QFrame):
@@ -118,9 +117,11 @@ class BehaviourWidget(QFrame):
             return
         current_icon = gallery.get_current_icon()
         self.gui_data_interface.set_icon(self.behaviour, current_icon)
-        tmp_icon_str = write_tmp_icon(self.behaviour.icon_path,
-                                      color_tuple)
-        self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
+        self.current_icon = self.behaviour.icon_path
+        tmp_icon_path = write_tmp_icon(self.behaviour.icon_path,
+                                       color_tuple)
+        if tmp_icon_path:
+            self.btn_icon.setIcon(QIcon(str(tmp_icon_path)))
 
     def set_color(self):
         color = QColorDialog.getColor()
@@ -133,9 +134,11 @@ class BehaviourWidget(QFrame):
         color_tuple = (int(color_str[1: 3], 16),
                        int(color_str[3: 5], 16),
                        int(color_str[5: 7], 16))
-        tmp_icon_str = write_tmp_icon(self.current_icon,
-                                      color_tuple)
-        self.btn_icon.setIcon(QIcon(HOME + "/.pyvisor/.tmp_icons/" + tmp_icon_str))
+        self.current_icon = self.behaviour.icon_path
+        tmp_icon_path = write_tmp_icon(self.current_icon,
+                                       color_tuple)
+        if tmp_icon_path:
+            self.btn_icon.setIcon(QIcon(str(tmp_icon_path)))
 
     def rename(self):
         if self.behaviour.name == 'delete':

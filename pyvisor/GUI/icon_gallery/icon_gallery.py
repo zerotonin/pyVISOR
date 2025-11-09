@@ -2,12 +2,9 @@ from PyQt5.QtCore import QSize
 #from PyQt5.QtGui import 
 from PyQt5.QtWidgets import QScrollArea, QWidget, QGridLayout, QButtonGroup
 import glob
-import os
+
 from .icon_button import IconButton
 from ... import icon
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-HOME = os.path.expanduser("~")
 
 class IconGallery(QScrollArea):
     
@@ -38,10 +35,12 @@ class IconGallery(QScrollArea):
         
         for i in range(n):
             row, column = (i / cols, i % cols)
-            tmp_str = icon.write_tmp_icon(icon_paths[i], self.bg_color)
-            self.ICONS_TO_DELETE.append(tmp_str)
+            tmp_icon_path = icon.write_tmp_icon(icon_paths[i], self.bg_color)
+            if tmp_icon_path is None:
+                continue
+            self.ICONS_TO_DELETE.append(tmp_icon_path)
             new_icon_button = IconButton(self,
-                                         HOME + '/.pyvisor/.tmp_icons/' + tmp_str,
+                                         str(tmp_icon_path),
                                          icon_paths[i])
             new_icon_button.setIconSize(QSize(*self.icon_size))                        
             grid.addWidget(new_icon_button, row, column)

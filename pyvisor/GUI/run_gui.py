@@ -1,36 +1,38 @@
+from pathlib import Path
+import shutil
+
 from PyQt5.QtWidgets import QApplication
-import os
-import glob
+
 from pyvisor.GUI.main_gui import MovScoreGUI
-HOME = os.path.expanduser("~")
+from pyvisor.paths import ensure_tmp_icon_dir, ensure_user_data_dir
 
 
-def delete_files_from_folder(folder_path):
-    files = glob.glob(folder_path + "/*")
-    for f in files:
-        if os.path.isdir(f):
-            delete_files_from_folder(f)
-            continue
-        os.remove(f)
+def reset_directory(directory: Path) -> None:
+    """Remove all contents from *directory* while keeping it available."""
+    if directory.exists():
+        shutil.rmtree(directory)
+    directory.mkdir(parents=True, exist_ok=True)
 
-        
-def empty_tmp_icon_folder():
-    delete_files_from_folder(HOME + '/.pyvisor/.tmp_icons')
 
-        
 def main():
     import sys
+
+    ensure_user_data_dir()
+    tmp_icon_dir = ensure_tmp_icon_dir()
+    reset_directory(tmp_icon_dir)
+
     app = QApplication(sys.argv)
+
+    def _cleanup_tmp_icons() -> None:
+        reset_directory(tmp_icon_dir)
+
+    app.aboutToQuit.connect(_cleanup_tmp_icons)
+
     gui = MovScoreGUI()
     gui.show()
 
-    import os
-    if not os.path.isdir(HOME + '/.pyvisor'):
-        os.makedirs(HOME + '/.pyvisor')
-    if not os.path.isdir(HOME + '/.pyvisor/.tmp_icons'):
-        os.makedirs(HOME + '/.pyvisor/.tmp_icons')
     code = app.exec_()
-    empty_tmp_icon_folder()
+    _cleanup_tmp_icons()
     sys.exit(code)
 
 
