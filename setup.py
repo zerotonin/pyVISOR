@@ -7,24 +7,19 @@ USAGE:
 """
 
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(name='pyvisor',
       version='0.0.1',
-      description='',
-      url='',
+      description='Desktop toolkit for manual ethology scoring with a PyQt GUI.',
+      url='https://github.com/bartgeurten/pyVISOR',
       author='Bart Geurten, Ilyas Kuhlemann',
       author_email='ilyasp.ku@gmail.com',
-      license='',
-      packages=["pyvisor",
-                "pyvisor.analysis",
-                "pyvisor.exception",
-                "pyvisor.GUI",
-                "pyvisor.GUI.icon_gallery",
-                "pyvisor.GUI.tab_behaviours"],
+      license='GPL-3.0-or-later',
+      packages=find_packages(include=['pyvisor', 'pyvisor.*']),
       entry_points={
           "console_scripts": [],
-          "gui_scripts": ["pyvisor-gui = pyvisor.GUI.run_gui:main"]         
+          "gui_scripts": ["pyvisor-gui = pyvisor.GUI.run_gui:main"]
       },
       install_requires=[
           "pillow",
@@ -39,4 +34,15 @@ setup(name='pyvisor',
           "xlsxwriter",
           "PyQt5"
       ],
+      include_package_data=True,
+      package_data={
+          'pyvisor.GUI': [
+              'guidefaults_animals.json',
+              'guidefaults_movscoregui.pkl',
+              'ana.npy',
+              'pictures/*',
+              'xwing.png'
+          ],
+          'pyvisor.resources': ['**/*'],
+      },
       zip_safe=False)

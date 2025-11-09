@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import *
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
-import glob
 
 from .icon_gallery import IconGallery
+from pyvisor.resources import icon_categories
 
 
 class IconSelectionWidget(QDialog):
@@ -24,7 +24,7 @@ class IconSelectionWidget(QDialog):
         vbox = QVBoxLayout()
         self.setLayout(vbox)
 
-        self.icon_categories = glob.glob(HERE + '/../../../resources/icons/*')
+        self.icon_categories = [str(path) for path in icon_categories()]
         self.icon_categories_button_group = QButtonGroup(self)
 
         self.hbox_top_panel = QHBoxLayout()

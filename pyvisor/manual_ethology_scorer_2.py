@@ -10,6 +10,7 @@ from .GUI.model.movie_bindings import MovieBindings
 from .MediaHandler import MediaHandler
 from .ethogram import Ethogram
 from .user_input_control import UserInputControl2
+from .resources import resource_path
 
 this_files_directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -41,8 +42,8 @@ class ManualEthologyScorer2:
         pygame.time.Clock()
 
         # setup icons
-        icon = self.image2surf(this_files_directory + "/../resources/MES.png")
-        self._delete_icon = self.image2surf(this_files_directory + "/../resources/icons/game/del.png")
+        icon = self.image2surf(str(resource_path("MES.png")))
+        self._delete_icon = self.image2surf(str(resource_path("icons", "game", "del.png")))
         self.window.set_icon(icon)
         self.window.set_caption("Manual Ethology Scorer - " + self.movie.fileName)
 

@@ -10,6 +10,7 @@ from ..icon_gallery.icon_selection_widget import IconSelectionWidget
 from ..model.gui_data_interface import GUIDataInterface, NameExistsException, NameIdenticalException
 from ..model.behaviour import Behaviour
 from ...icon import write_tmp_icon
+from pyvisor.resources import resource_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -49,7 +50,7 @@ class BehaviourWidget(QFrame):
         self.hbox.addStretch(1)
         vbox_remove = QVBoxLayout()
         self.btn_remove = QPushButton('', self)
-        self.btn_remove.setIcon(QIcon(HERE + '/../../../resources/icons/game/del.png'))
+        self.btn_remove.setIcon(QIcon(str(resource_path('icons', 'game', 'del.png'))))
         self.btn_remove.clicked.connect(self.remove)
         vbox_remove.addWidget(self.btn_remove)
         vbox_remove.addStretch(1)

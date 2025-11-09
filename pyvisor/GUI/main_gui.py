@@ -18,6 +18,7 @@ from .tab_analysis import TabAnalysis
 from .tab_behaviours.tab_behaviours import TabBehaviours
 from pyvisor.GUI.tab_buttons.tab_buttons import TabButtons
 from .tab_results import TabResults
+from pyvisor.resources import resource_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
@@ -73,7 +74,7 @@ class MovScoreGUI(QWidget):
         """        
         self._load_size_and_position_of_last_usage()
         self.setWindowTitle('Pyvisor')
-        self.setWindowIcon(QIcon(HERE + '/../resources/icons/game/MES_trans.png'))
+        self.setWindowIcon(QIcon(str(resource_path('icons', 'game', 'MES_trans.png'))))
         vbox = QVBoxLayout()
         self.setLayout(vbox)
 
