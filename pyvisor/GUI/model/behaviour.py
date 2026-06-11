@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Tuple
 
-import numpy as np
 
 from pyvisor.GUI.model.key_bindings import KeyBindings
 from .scorer_action import ScorerAction

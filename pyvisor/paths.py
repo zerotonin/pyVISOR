@@ -54,7 +54,8 @@ def ensure_extension(path: str, selected_filter: str) -> str:
     """
     if not path:
         return path
-    import re, os
+    import re
+    import os
     match = re.search(r'\*(\.\w+)', selected_filter)
     if match and not os.path.splitext(path)[1]:
         path += match.group(1)

@@ -2,10 +2,9 @@ import os
 from typing import Dict, List, Any
 
 import pygame
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QCloseEvent
+from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
-                             QMessageBox, QComboBox, QPushButton, QScrollArea)
+                             QComboBox, QPushButton, QScrollArea)
 
 from pyvisor.GUI.model.animal import Animal
 from pyvisor.GUI.model.behaviour import Behaviour
@@ -598,7 +597,7 @@ class TabButtons(QWidget):
     def _set_background_image(self):
         pass  # replaced by global dark theme
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event):  # noqa: F811  # intentionally overrides the earlier resize handler; background scaling disabled after the dark-theme refactor
         pass
 
     def _initialize_device_members(self):

@@ -5,10 +5,7 @@ Ported to Python 3.
 import pickle
 import os
 import numpy as np
-import scipy as sp
 import scipy.io as sio
-import scipy.stats
-import matplotlib.pyplot as plt
 from pyvisor.analysis import analysis_online as anaOn
 
 

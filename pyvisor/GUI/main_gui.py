@@ -10,7 +10,7 @@ import pickle
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTabWidget, QMessageBox,
-                             QApplication, QHBoxLayout, QLabel, QPushButton,
+                             QApplication, QHBoxLayout, QPushButton,
                              QFileDialog)
 
 from pyvisor.GUI.model.movie_bindings import MovieBindings

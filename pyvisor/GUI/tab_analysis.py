@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap

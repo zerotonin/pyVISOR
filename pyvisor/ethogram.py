@@ -1,8 +1,8 @@
 from threading import RLock
-from typing import Dict, List
+from typing import Dict
 
 from pyvisor.GUI.model.animal import Animal, AnimalNumber
-from pyvisor.GUI.model.behaviour import BehaviourName, Behaviour
+from pyvisor.GUI.model.behaviour import Behaviour
 from pyvisor.animal_ethogram_2 import AnimalEthogram2
 
 

@@ -1,4 +1,4 @@
-from typing import Dict, Callable
+from typing import Dict
 
 from .GUI.model.animal import AnimalNumber, Animal
 from .GUI.model.movie_bindings import MovieBindings

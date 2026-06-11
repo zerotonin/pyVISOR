@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Dict, List, Any, Callable, Union, Tuple
 
 from pyvisor.GUI.model.animal import Animal
@@ -7,7 +6,6 @@ from pyvisor.GUI.model.behaviour import Behaviour
 from .callback_handler import CallbackHandler
 from .movie_bindings import MovieBindings
 from .scorer_action import ScorerAction
-from ...manual_ethology_scorer_2 import ManualEthologyScorer2
 from ...paths import ensure_autosave_dir, settings_path
 
 

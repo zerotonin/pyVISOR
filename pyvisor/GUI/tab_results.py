@@ -12,12 +12,10 @@ from typing import Optional
 import numpy as np
 import matplotlib
 matplotlib.use("Qt5Agg")
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QMessageBox, QScrollArea, QSizePolicy, QGroupBox,
@@ -342,7 +340,7 @@ class TabResults(QWidget):
         labels = [s.label for s in stats]
         values = [s.percentage for s in stats]
         colours = self._get_behaviour_colours(labels)
-        short = [_short(l) for l in labels]
+        short = [_short(lab) for lab in labels]
 
         y_pos = np.arange(len(stats))
         ax.barh(y_pos, values, color=colours, edgecolor="white", linewidth=0.5)

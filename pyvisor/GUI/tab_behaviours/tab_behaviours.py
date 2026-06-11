@@ -1,6 +1,4 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
 import os
 
 from ..model.gui_data_interface import GUIDataInterface

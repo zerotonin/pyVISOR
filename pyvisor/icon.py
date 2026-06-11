@@ -97,9 +97,9 @@ def write_tmp_icon(path_to_icon, color):
     if target_path.is_file():
         return target_path
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    I = Icon(color=color)
-    I.readImage(str(icon_path))
-    I.decall2icon()
+    icon_obj = Icon(color=color)
+    icon_obj.readImage(str(icon_path))
+    icon_obj.decall2icon()
     with target_path.open('wb') as f:
-        I.icon.save(f)
+        icon_obj.icon.save(f)
     return target_path

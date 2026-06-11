@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 import threading
 
 import numpy as np

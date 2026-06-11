@@ -7,7 +7,6 @@ Created on Wed Jun 22 09:11:10 2016
 import numpy as np
 import scipy as sp
 import scipy.stats
-import matplotlib.pyplot as plt
 
 class analysis():
     def __init__(self,parent,fps=25):
@@ -67,7 +66,7 @@ class analysis():
         for behavI in range(len(self.sequenceIDX)):
             behav = self.sequenceIDX[behavI]
             temp = list()
-            if behav == False:
+            if behav is False:
                 temp.append([np.nan])
             else:
                 temp.append(np.divide(np.subtract(behav[1],behav[0])+1,float(self.fps)))
@@ -87,7 +86,7 @@ class analysis():
         self.frequency = list()
         totalDurS = float(self.ethograms.shape[0])/float(self.fps)
         for behav in self.sequenceIDX:     
-            if behav== False:
+            if behav is False:
                 temp = 0
             else:
                 # keep in mind that the memebers of self.sequenceIDX are tupels,
@@ -136,7 +135,7 @@ class analysis():
             stops = stops[0]
             goOn = True
                     
-        if goOn == True:
+        if goOn is True:
             #because of the diff starts  have to be offset by 1            
             starts =np.add(starts,1)
             # Now test if the first stop is before the first start

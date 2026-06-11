@@ -6,11 +6,13 @@ Created on Wed Jun  1 13:42:07 2016
 """
 import numpy as np
 import scipy.io as sio
-from time import sleep
 import threading
 from datetime import datetime
 #import pandas as pd
-import pickle, xlsxwriter, pygame,os
+import pickle
+import xlsxwriter
+import pygame
+import os
 
 class dataIO:
     """Data input/output handler for ethogram data.

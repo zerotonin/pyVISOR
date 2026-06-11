@@ -4,7 +4,6 @@ Created on Wed May 25 08:40:38 2016
 
 @author: bgeurten
 """
-from typing import Union
 
 import pims
 import numpy as np
