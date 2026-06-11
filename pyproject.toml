@@ -8,11 +8,34 @@ version = "0.1.0"
 description = "Desktop toolkit for manual ethology scoring with gamepad support."
 readme = "README.md"
 license = "GPL-3.0-or-later"
+requires-python = ">=3.9"
+keywords = [
+    "ethology",
+    "ethogram",
+    "behaviour-annotation",
+    "animal-behaviour",
+    "video-scoring",
+    "gamepad",
+    "neuroscience",
+]
 authors = [
     { name = "Bart Geurten" },
     { name = "Ilyas Kuhlemann", email = "ilyasp.ku@gmail.com" },
 ]
-requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Multimedia :: Video",
+]
 dependencies = [
     "appdirs",
     "pillow",
@@ -29,12 +52,20 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-qt"]
+dev = ["pytest", "pytest-qt", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/zerotonin/GameThogram"
+Repository = "https://github.com/zerotonin/GameThogram"
+Documentation = "https://zerotonin.github.io/GameThogram"
+Issues = "https://github.com/zerotonin/GameThogram/issues"
 
 [project.scripts]
+gamethogram = "pyvisor.GUI.run_gui:main"
 pyvisor = "pyvisor.GUI.run_gui:main"
 
 [project.gui-scripts]
+gamethogram-gui = "pyvisor.GUI.run_gui:main"
 pyvisor-gui = "pyvisor.GUI.run_gui:main"
 
 [tool.setuptools.packages.find]
@@ -48,3 +79,30 @@ include = ["pyvisor", "pyvisor.*"]
     "xwing.png",
 ]
 "pyvisor.resources" = ["**/*"]
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Ruff  « linter baseline — default rules, ratchet up later » │
+# └────────────────────────────────────────────────────────────┘
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+extend-exclude = [
+    "docs",
+    "executables",
+    "scripts/add_docs.py",
+    "tests/testOpenCV4MHandRec.py",
+]
+
+[tool.ruff.lint]
+# Conservative starting set (pyflakes + the pycodestyle logic/import rules).
+# Stylistic and modernisation families (I, UP, B, W) can be enabled
+# incrementally once the codebase has been swept for each.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Qt convenience star-imports are idiomatic in the icon-gallery widgets.
+"pyvisor/GUI/icon_gallery/*.py" = ["F403", "F405", "E402"]
+"tests/**" = ["F401", "F403", "F405", "F811", "E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
