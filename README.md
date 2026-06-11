@@ -1,7 +1,9 @@
 # GameThogram
 [![Tests](https://github.com/zerotonin/GameThogram/actions/workflows/tests.yml/badge.svg)](https://github.com/zerotonin/GameThogram/actions/workflows/tests.yml)
+[![Lint](https://github.com/zerotonin/GameThogram/actions/workflows/lint.yml/badge.svg)](https://github.com/zerotonin/GameThogram/actions/workflows/lint.yml)
 [![Documentation](https://github.com/zerotonin/GameThogram/actions/workflows/docs.yml/badge.svg)](https://zerotonin.github.io/GameThogram)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://zenodo.org/badge/725059593.svg)](https://doi.org/10.5281/zenodo.19324275)
 
@@ -153,17 +155,18 @@ GameThogram/
 │   └── user_input_control.py   # Input dispatch
 ├── docs/                       # Sphinx documentation source
 ├── tests/                      # Unit and integration tests
-├── pyproject.toml              # Modern Python packaging
-├── setup.py                    # Legacy packaging (kept for editable installs)
+├── pyproject.toml              # Packaging, dependencies, ruff + pytest config
+├── CITATION.cff                # How to cite (Zenodo DOI)
 └── environment.yml             # Conda environment specification
 ```
 
 ## Contributing
 
 1. Fork and create a feature branch
-2. Install dev dependencies: `pip install -e .[dev]`
-3. Run tests: `pytest`
-4. Open a pull request
+2. Install dev dependencies: `pip install -e ".[dev]"`
+3. Lint: `ruff check .`
+4. Run tests: `pytest`
+5. Open a pull request
 
 ## Troubleshooting
 

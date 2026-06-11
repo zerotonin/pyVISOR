@@ -1,14 +1,39 @@
 """Sphinx configuration for pyVISOR documentation."""
 
+import sys
+from pathlib import Path
+
+# Make the package importable for autodoc without a full install.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 project = "GameThogram"
 author = "Bart Geurten, Ilyas Kuhlemann"
 release = "0.1.0"
+version = release
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+]
+
+# Mock heavy / GUI runtime imports so docs build on cheap CI runners
+# without installing the full dependency stack.
+autodoc_mock_imports = [
+    "PyQt5",
+    "pygame",
+    "av",
+    "pims",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "scipy",
+    "PIL",
+    "dill",
+    "xlsxwriter",
+    "appdirs",
+    "imageio",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings
