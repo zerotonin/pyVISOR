@@ -1,0 +1,25 @@
+cff-version: "1.2.0"
+message: "If you use this software, please cite it as below."
+title: "GameThogram"
+abstract: "Desktop toolkit for manual ethology scoring of animal behaviour in video recordings using gamepads or a keyboard, with built-in analysis and export."
+type: software
+version: "0.1.0"
+license: "GPL-3.0-or-later"
+repository-code: "https://github.com/zerotonin/GameThogram"
+url: "https://zerotonin.github.io/GameThogram"
+doi: "10.5281/zenodo.19324275"
+keywords:
+  - ethology
+  - ethogram
+  - behaviour annotation
+  - animal behaviour
+  - video scoring
+  - gamepad
+authors:
+  - family-names: "Geurten"
+    given-names: "Bart R. H."
+    orcid: "https://orcid.org/0000-0002-1816-3241"
+    affiliation: "Department of Zoology, University of Otago, Dunedin, New Zealand"
+  - family-names: "Kuhlemann"
+    given-names: "Ilyas"
+    email: "ilyasp.ku@gmail.com"
