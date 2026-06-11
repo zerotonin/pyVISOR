@@ -51,7 +51,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-qt", "ruff>=0.6"]
+dev = ["pytest", "pytest-qt", "ruff>=0.6", "tqdm"]
 
 [project.urls]
 Homepage = "https://github.com/zerotonin/GameThogram"
