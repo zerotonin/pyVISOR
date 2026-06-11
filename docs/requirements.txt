@@ -1,0 +1,4 @@
+# Pinned documentation-build dependencies (separate from the package deps).
+# Kept minimal: heavy runtime imports are mocked in docs/conf.py.
+sphinx==7.4.7
+sphinx-rtd-theme==2.0.0
